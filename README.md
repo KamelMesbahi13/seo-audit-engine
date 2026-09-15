@@ -23,12 +23,9 @@ An executive-grade technical, on-page, and Generative Engine Optimization (GEO) 
 
 ## User Interfaces
 
-- **Native Desktop GUI**: Run 
-un_gui.bat (or python gui.py) for a clean, minimalist desktop application with real-time log stream and 1-click PDF viewer.
-- **Web Browser UI**: Run 
-un_web.bat (or python web_ui.py) to launch a local browser interface at http://127.0.0.1:8765.
-- **Command Line**: Run 
-un_audit.bat <URL> [MAX_PAGES] or python agy_seo.py audit <URL> --max-pages 10.
+- **Native Desktop GUI**: Run `run_gui.bat` (or `python gui.py`) for a clean, minimalist desktop application with real-time log stream and 1-click PDF viewer. Set Crawl Scope to 0 for unlimited (all pages).
+- **Web Browser UI**: Run `run_web.bat` (or `python web_ui.py`) to launch a local browser interface at http://127.0.0.1:8765. Default is 0 (all pages).
+- **Command Line**: Run `run_audit.bat <URL>` (defaults to all pages of the site) or `python agy_seo.py audit <URL>`.
 
 ## Installation (For New Clones)
 

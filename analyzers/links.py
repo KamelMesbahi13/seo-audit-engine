@@ -1,10 +1,194 @@
-"""agy-seo: Link analysis — internal/external links, broken links, anchor text."""
+"""agy-seo: Link Equity Intelligence — Internal PageRank, click-depth, anchor dilution.
 
-from utils import clamp_score, check_url_status, normalize_url
+Advanced link graph analysis including:
+- Internal PageRank approximation via iterative power method
+- Click-depth (crawl-depth) calculation from homepage
+- Anchor text dilution detection (over-optimized or repetitive anchors)
+- Link equity flow visualization data
+"""
+
+import re
+from collections import defaultdict
+from urllib.parse import urlparse
+from utils import clamp_score, check_url_status, normalize_url, is_same_domain
+
+
+def _compute_internal_pagerank(all_pages: dict, damping: float = 0.85, iterations: int = 20) -> dict:
+    """Compute simplified internal PageRank scores using the power iteration method.
+    
+    Args:
+        all_pages: Dict of {norm_url: page_info} from crawler
+        damping: Damping factor (default 0.85 per original PageRank)
+        iterations: Number of iterations for convergence
+    
+    Returns:
+        Dict of {url: pagerank_score} normalized to 0-100
+    """
+    # Build adjacency list
+    pages = {}
+    outlinks = defaultdict(set)
+    inlinks = defaultdict(set)
+    
+    for norm_url, page_info in all_pages.items():
+        if not page_info.get("parsed"):
+            continue
+        pages[norm_url] = True
+        internal_links = page_info["parsed"].get("links", {}).get("internal", [])
+        for link in internal_links:
+            target = normalize_url(link["href"])
+            if target in all_pages:
+                outlinks[norm_url].add(target)
+                inlinks[target].add(norm_url)
+    
+    if not pages:
+        return {}
+    
+    n = len(pages)
+    page_list = list(pages.keys())
+    
+    # Initialize uniform PageRank
+    pr = {url: 1.0 / n for url in page_list}
+    
+    # Power iteration
+    for _ in range(iterations):
+        new_pr = {}
+        for url in page_list:
+            rank_sum = 0.0
+            for src in inlinks.get(url, set()):
+                out_count = len(outlinks.get(src, set()))
+                if out_count > 0:
+                    rank_sum += pr.get(src, 0) / out_count
+            new_pr[url] = (1 - damping) / n + damping * rank_sum
+        pr = new_pr
+    
+    # Normalize to 0-100 scale
+    if pr:
+        max_pr = max(pr.values())
+        min_pr = min(pr.values())
+        range_pr = max_pr - min_pr if max_pr != min_pr else 1
+        pr_normalized = {url: round(((val - min_pr) / range_pr) * 100, 1) for url, val in pr.items()}
+    else:
+        pr_normalized = {}
+    
+    return pr_normalized
+
+
+def _compute_click_depth(all_pages: dict, base_url: str) -> dict:
+    """Compute click-depth (minimum clicks from homepage) for each page using BFS.
+    
+    Returns:
+        Dict of {url: depth} where depth is minimum clicks from homepage
+    """
+    from collections import deque
+    
+    homepage = normalize_url(base_url)
+    
+    # Build adjacency
+    adjacency = defaultdict(set)
+    for norm_url, page_info in all_pages.items():
+        if not page_info.get("parsed"):
+            continue
+        internal_links = page_info["parsed"].get("links", {}).get("internal", [])
+        for link in internal_links:
+            target = normalize_url(link["href"])
+            if target in all_pages:
+                adjacency[norm_url].add(target)
+    
+    # BFS from homepage
+    depths = {homepage: 0}
+    queue = deque([homepage])
+    
+    while queue:
+        current = queue.popleft()
+        current_depth = depths[current]
+        
+        for neighbor in adjacency.get(current, set()):
+            if neighbor not in depths:
+                depths[neighbor] = current_depth + 1
+                queue.append(neighbor)
+    
+    # Mark unreachable pages
+    for norm_url in all_pages:
+        if norm_url not in depths:
+            depths[norm_url] = -1  # Unreachable from homepage
+    
+    return depths
+
+
+def _analyze_anchor_text_dilution(all_pages: dict) -> dict:
+    """Analyze anchor text distribution across the site for dilution/over-optimization.
+    
+    Returns analysis of:
+    - Over-optimized anchors (same text used excessively)
+    - Under-descriptive anchors (generic text)
+    - Anchor text diversity per target page
+    """
+    # Collect all anchor texts pointing to each internal URL
+    target_anchors = defaultdict(list)
+    
+    for norm_url, page_info in all_pages.items():
+        if not page_info.get("parsed"):
+            continue
+        internal_links = page_info["parsed"].get("links", {}).get("internal", [])
+        for link in internal_links:
+            target = normalize_url(link["href"])
+            text = link.get("text", "").strip()
+            if text and target in all_pages:
+                target_anchors[target].append({
+                    "text": text,
+                    "source": norm_url,
+                })
+    
+    issues = []
+    
+    for target_url, anchors in target_anchors.items():
+        if len(anchors) < 3:
+            continue
+        
+        # Count anchor text frequency
+        text_counts = defaultdict(int)
+        for a in anchors:
+            text_counts[a["text"].lower()] += 1
+        
+        total = len(anchors)
+        
+        # Over-optimization: single anchor text used >60% of the time
+        for text, count in text_counts.items():
+            ratio = count / total
+            if ratio > 0.60 and count >= 3:
+                issues.append({
+                    "type": "over_optimized",
+                    "target": target_url,
+                    "anchor_text": text,
+                    "count": count,
+                    "total": total,
+                    "ratio": round(ratio * 100),
+                })
+        
+        # Low diversity: fewer than 3 unique anchor texts for a page with 5+ inbound links
+        unique_count = len(text_counts)
+        if total >= 5 and unique_count < 3:
+            issues.append({
+                "type": "low_diversity",
+                "target": target_url,
+                "unique_anchors": unique_count,
+                "total_links": total,
+            })
+    
+    return {
+        "issues": issues,
+        "pages_analyzed": len(target_anchors),
+    }
 
 
 def analyze_links(page_data: dict, all_pages: dict = None) -> dict:
-    """Analyze internal and external links for a single page."""
+    """Analyze internal and external links for a single page.
+    
+    Enhanced with:
+    - Internal PageRank scoring
+    - Click-depth analysis
+    - Anchor text dilution detection
+    """
     findings = []
     fixes = []
     score = 100
@@ -153,6 +337,118 @@ def analyze_links(page_data: dict, all_pages: dict = None) -> dict:
                        "2. Link from related content pages using descriptive anchor text\n"
                        "3. Include in a sitemap and footer links"})
 
+    # -------------------------------------------------------------------
+    # 8. NEW: Internal PageRank Analysis (site-wide)
+    # -------------------------------------------------------------------
+    pagerank_data = {}
+    click_depth_data = {}
+    anchor_dilution_data = {}
+    
+    if all_pages and len(all_pages) >= 2:
+        # Compute PageRank
+        pagerank_data = _compute_internal_pagerank(all_pages)
+        
+        # Check this page's PageRank
+        norm_current = normalize_url(url)
+        page_pr = pagerank_data.get(norm_current, 0)
+        
+        if page_pr < 10 and len(all_pages) > 3:
+            score -= 5
+            findings.append({
+                "category": "Link Equity",
+                "severity": "high",
+                "issue": f"Low internal PageRank ({page_pr:.1f}/100) — page receives minimal link equity",
+                "detail": "This page has very low internal PageRank relative to other site pages. "
+                          "It receives few inbound internal links and may be hard for search engines to prioritize.",
+            })
+            fixes.append({
+                "issue": "Low internal PageRank",
+                "fix": "Boost this page's internal PageRank:\n"
+                       "1. Add links from high-authority pages (homepage, main navigation)\n"
+                       "2. Include in site-wide footer or sidebar links\n"
+                       "3. Create contextual cross-links from related content\n"
+                       "4. Add this page to breadcrumb navigation\n"
+                       "5. Feature it in 'Related Pages' sections on high-traffic pages",
+            })
+        
+        # Compute click-depth
+        base_url = page_data.get("url", "")
+        parsed = urlparse(base_url)
+        homepage_url = f"{parsed.scheme}://{parsed.netloc}"
+        click_depth_data = _compute_click_depth(all_pages, homepage_url)
+        
+        page_depth = click_depth_data.get(norm_current, -1)
+        if page_depth > 3:
+            score -= 5
+            findings.append({
+                "category": "Click Depth",
+                "severity": "medium",
+                "issue": f"Deep page — {page_depth} clicks from homepage",
+                "detail": f"This page is {page_depth} clicks away from the homepage. "
+                          "Pages deeper than 3 clicks receive less crawl priority and link equity.",
+            })
+            fixes.append({
+                "issue": "Deep click-depth",
+                "fix": f"Reduce click-depth from {page_depth} to 3 or fewer:\n"
+                       "1. Add a direct link from a main category page\n"
+                       "2. Include in a flat navigation structure\n"
+                       "3. Add to a hub page that's linked from the homepage\n"
+                       "4. Use breadcrumbs to create shorter link paths",
+            })
+        elif page_depth == -1 and len(all_pages) > 1:
+            score -= 8
+            findings.append({
+                "category": "Click Depth",
+                "severity": "critical",
+                "issue": "Page is unreachable from homepage via internal links",
+                "detail": "No internal link path exists from the homepage to this page. "
+                          "Search engines may never discover or adequately crawl it.",
+            })
+            fixes.append({
+                "issue": "Unreachable page",
+                "fix": "Create an internal link path from the homepage:\n"
+                       "1. Add to main navigation or sidebar\n"
+                       "2. Link from a category page that IS reachable\n"
+                       "3. Include in site-wide footer links\n"
+                       "4. Add to XML sitemap as a safety net",
+            })
+        
+        # Anchor text dilution analysis
+        anchor_dilution_data = _analyze_anchor_text_dilution(all_pages)
+        
+        for issue in anchor_dilution_data.get("issues", []):
+            target = issue.get("target", "")
+            if normalize_url(url) != target:
+                continue  # Only report for current page
+            
+            if issue["type"] == "over_optimized":
+                score -= 3
+                findings.append({
+                    "category": "Anchor Text Dilution",
+                    "severity": "medium",
+                    "issue": f"Over-optimized anchor text: '{issue['anchor_text']}' used in {issue['ratio']}% of inbound links",
+                    "detail": f"The anchor text '{issue['anchor_text']}' is used {issue['count']} out of {issue['total']} times "
+                              f"({issue['ratio']}%) when linking to this page. Over-optimization can trigger algorithmic penalties.",
+                })
+                fixes.append({
+                    "issue": f"Anchor dilution: '{issue['anchor_text']}'",
+                    "fix": f"Diversify anchor text for this page:\n"
+                           f"Current: {issue['ratio']}% of links use '{issue['anchor_text']}'\n"
+                           f"Target: No single anchor text should exceed 30-40% of total links.\n\n"
+                           "Variations to use:\n"
+                           "- Brand name + keyword\n"
+                           "- Long-tail keyword variations\n"
+                           "- Natural phrases describing the page content\n"
+                           "- Partial-match keywords",
+                })
+            elif issue["type"] == "low_diversity":
+                findings.append({
+                    "category": "Anchor Text Dilution",
+                    "severity": "low",
+                    "issue": f"Low anchor text diversity: only {issue['unique_anchors']} unique texts across {issue['total_links']} inbound links",
+                    "detail": "Using more diverse anchor text helps search engines better understand what this page is about.",
+                })
+
     return {
         "analyzer": "links",
         "score": clamp_score(score),
@@ -162,4 +458,8 @@ def analyze_links(page_data: dict, all_pages: dict = None) -> dict:
         "external_count": len(external),
         "broken_count": len(broken_external),
         "empty_anchor_count": total_empty,
+        # NEW: Link equity intelligence
+        "pagerank": pagerank_data,
+        "click_depth": click_depth_data,
+        "anchor_dilution": anchor_dilution_data,
     }

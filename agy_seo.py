@@ -43,25 +43,29 @@ from analyzers.geo import analyze_geo
 from analyzers.images import analyze_images
 from analyzers.links import analyze_links
 from reporter import build_report_html, render_pdf
+from remediation import generate_all_remediation_files
 
 
-def run_audit(url: str, max_pages: int = 200, output_path: str = None) -> dict:
+def run_audit(url: str, max_pages: int = None, output_path: str = None) -> dict:
     """Run a complete SEO audit on a website."""
     
     start_time = time.monotonic()
     domain = urlparse(url).netloc
     
+    effective_max_pages = max_pages if (max_pages is not None and max_pages > 0) else None
+    pages_display = f"{effective_max_pages} pages" if effective_max_pages is not None else "Unlimited (All Pages of the Website)"
+
     print(f"\n{'='*60}")
     print(f"  InersiaLab Software Department — SEO Audit Engine")
     print(f"  Target: {url}")
-    print(f"  Max pages: {max_pages}")
+    print(f"  Crawl Scope: {pages_display}")
     print(f"{'='*60}\n")
 
     # ------------------------------------------------------------------
     # PHASE 1: Crawl the entire site
     # ------------------------------------------------------------------
     print("[Phase 1/4] Crawling site...")
-    crawler = SiteCrawler(url, max_pages=max_pages, max_depth=3)
+    crawler = SiteCrawler(url, max_pages=effective_max_pages, max_depth=None)
     crawl_result = crawler.crawl()
     
     pages = crawl_result["pages"]
@@ -134,7 +138,7 @@ def run_audit(url: str, max_pages: int = 200, output_path: str = None) -> dict:
                                       "issue": f"Analyzer error: {e}", "detail": ""}], "fixes": []}
         
         try:
-            results["ai_search_geo"] = analyze_geo(page_data, fetch_data, robots_data)
+            results["ai_search_geo"] = analyze_geo(page_data, fetch_data, robots_data, all_pages=valid_pages)
         except Exception as e:
             results["ai_search_geo"] = {"analyzer": "geo", "score": 0,
                                         "findings": [{"category": "Error", "severity": "critical",
@@ -239,6 +243,7 @@ def run_audit(url: str, max_pages: int = 200, output_path: str = None) -> dict:
         "site_findings": site_findings,
         "crawl_errors": crawl_errors,
         "elapsed_seconds": round(elapsed, 1),
+        "_all_pages": valid_pages,  # Needed by remediation engine
     }
 
     # ------------------------------------------------------------------
@@ -272,16 +277,34 @@ def run_audit(url: str, max_pages: int = 200, output_path: str = None) -> dict:
     # Render PDF
     try:
         render_pdf(html_content, output_path)
-        print(f"\n{'='*60}")
-        print(f"  [SUCCESS] AUDIT COMPLETE")
-        print(f"  Report: {output_path}")
-        print(f"  Overall Score: {overall_score}/100")
-        print(f"  Pages Analyzed: {len(valid_pages)}")
-        print(f"  Time: {elapsed:.1f}s")
-        print(f"{'='*60}\n")
+        print(f"  PDF saved: {output_path}")
     except Exception as e:
         print(f"\n  [ERROR] PDF rendering failed: {e}")
         print(f"  HTML report is available at: {html_path}")
+
+    # ------------------------------------------------------------------
+    # PHASE 5: Generate remediation files
+    # ------------------------------------------------------------------
+    print(f"\n[Phase 5/5] Generating remediation files...")
+    remediation_dir = output_path.replace(".pdf", "_remediation")
+    try:
+        generated_files = generate_all_remediation_files(audit_result, remediation_dir)
+        if generated_files:
+            print(f"  Generated {len(generated_files)} remediation files:")
+            for fname, fpath in generated_files.items():
+                print(f"    - {fname}")
+            print(f"  Remediation folder: {remediation_dir}")
+    except Exception as e:
+        print(f"  [WARNING] Remediation generation failed: {e}")
+
+    print(f"\n{'='*60}")
+    print(f"  [SUCCESS] AUDIT COMPLETE")
+    print(f"  Report: {output_path}")
+    print(f"  Overall Score: {overall_score}/100")
+    print(f"  Pages Analyzed: {len(valid_pages)}")
+    print(f"  Remediation Files: {remediation_dir}")
+    print(f"  Time: {elapsed:.1f}s")
+    print(f"{'='*60}\n")
 
     return audit_result
 
@@ -391,8 +414,8 @@ def main():
     # Audit command
     audit_parser = subparsers.add_parser("audit", help="Run a full SEO audit")
     audit_parser.add_argument("url", help="Target website URL")
-    audit_parser.add_argument("--max-pages", type=int, default=200,
-                             help="Maximum pages to crawl (default: 200)")
+    audit_parser.add_argument("--max-pages", type=int, default=0,
+                             help="Maximum pages to crawl (default: 0 = unlimited, crawls all pages)")
     audit_parser.add_argument("--output", "-o", help="Output PDF path (default: ~/Downloads/)")
 
     args = parser.parse_args()
@@ -403,7 +426,7 @@ def main():
         if not url.startswith("http"):
             url = "https://" + url
         
-        run_audit(url, max_pages=args.max_pages, output_path=args.output)
+        run_audit(url, max_pages=args.max_pages if args.max_pages > 0 else None, output_path=args.output)
     else:
         parser.print_help()
 

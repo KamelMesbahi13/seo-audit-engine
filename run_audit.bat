@@ -15,7 +15,7 @@ if "%~1"=="" (
     )
 ) else (
     set PAGES=%~2
-    if "%PAGES%"=="" set PAGES=10
+    if "%PAGES%"=="" set PAGES=0
     if exist ".venv\Scripts\python.exe" (
         ".venv\Scripts\python.exe" agy_seo.py audit "%~1" --max-pages %PAGES%
     ) else (

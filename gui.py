@@ -132,14 +132,14 @@ class SEOAuditApp:
         # Max Pages Input
         pages_label = tk.Label(
             inputs_frame,
-            text="Crawl Scope (Pages)",
+            text="Crawl Scope (0 = All Pages)",
             font=("Segoe UI", 9, "bold"),
             fg="#111827",
             bg="#ffffff"
         )
         pages_label.grid(row=0, column=2, sticky="w", pady=(0, 4))
 
-        self.pages_var = tk.StringVar(value="10")
+        self.pages_var = tk.StringVar(value="0")
         self.pages_entry = tk.Entry(
             inputs_frame,
             textvariable=self.pages_var,
@@ -149,7 +149,7 @@ class SEOAuditApp:
             insertbackground="#111827",
             relief="solid",
             bd=1,
-            width=12,
+            width=14,
             highlightthickness=0
         )
         self.pages_entry.grid(row=1, column=2, sticky="w", ipady=6, padx=(0, 16))
@@ -329,22 +329,28 @@ class SEOAuditApp:
             url = "https://" + url
             self.url_var.set(url)
 
-        try:
-            pages = int(self.pages_var.get().strip())
-            if pages <= 0:
-                raise ValueError()
-        except ValueError:
-            messagebox.showwarning("Invalid Input", "Crawl Scope must be a positive number (e.g. 10).")
-            return
+        pages_val = self.pages_var.get().strip()
+        if not pages_val or pages_val == "0" or pages_val.lower() in ("all", "unlimited"):
+            pages = 0
+            scope_desc = "All Pages (Unlimited)"
+        else:
+            try:
+                pages = int(pages_val)
+                if pages < 0:
+                    raise ValueError()
+                scope_desc = f"{pages} pages"
+            except ValueError:
+                messagebox.showwarning("Invalid Input", "Crawl Scope must be 0 for unlimited, or a positive integer.")
+                return
 
         self.is_running = True
         self.btn_start.config(state=tk.DISABLED)
         self.btn_stop.config(state=tk.NORMAL, fg="#111827")
         self.btn_open_pdf.config(state=tk.DISABLED)
-        self.status_var.set(f"Status: Auditing {url} (Crawling up to {pages} pages)...")
+        self.status_var.set(f"Status: Auditing {url} (Crawling {scope_desc})...")
         self.progress_bar.start(10)
 
-        self.log_text.insert(tk.END, f"\n--- Starting Audit: {url} ({pages} pages) ---\n\n")
+        self.log_text.insert(tk.END, f"\n--- Starting Audit: {url} ({scope_desc}) ---\n\n")
         self.log_text.see(tk.END)
 
         self.audit_thread = threading.Thread(target=self._run_audit_thread, args=(url, pages), daemon=True)
@@ -360,7 +366,8 @@ class SEOAuditApp:
             sys.stderr = redirector
 
             import agy_seo
-            result = agy_seo.run_audit(url, max_pages=pages)
+            effective_pages = pages if pages > 0 else None
+            result = agy_seo.run_audit(url, max_pages=effective_pages)
             score = result.get("overall_score", 0)
 
             # Look up newest generated PDF in Downloads

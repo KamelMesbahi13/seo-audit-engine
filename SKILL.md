@@ -15,8 +15,7 @@ Run a full-site audit with the dedicated Python virtual environment:
 & "C:\Users\EL ASSLI HI TECH\.gemini\config\skills\agy-seo\.venv\Scripts\python.exe" "C:\Users\EL ASSLI HI TECH\.gemini\config\skills\agy-seo\agy_seo.py" audit "<URL>"
 ```
 
-### Options:
-- `--max-pages <N>`: Maximum pages to crawl (default: `200`).
+- `--max-pages <N>`: Maximum pages to crawl (default: `0` = unlimited, crawls every page of the website).
 - `--output "<PATH>"`: Custom output PDF file path. If omitted, the audit report is **automatically saved directly into the user's Downloads folder**: `C:\Users\<User>\Downloads\SEO_Audit_<Domain>_<Timestamp>.pdf`.
 
 ---

@@ -215,11 +215,124 @@ def analyze_technical(page_data: dict, fetch_data: dict, robots_data: dict,
             "fix": 'Add to your <html> tag:\n<html lang="en">  (or the appropriate language code)',
         })
 
+    # -------------------------------------------------------------------
+    # 9. Hreflang Validation (bidirectional check)
+    # -------------------------------------------------------------------
+    hreflang_tags = page_data.get("hreflang", [])
+    if hreflang_tags:
+        # Check for self-referencing hreflang
+        has_self_ref = any(
+            h.get("href", "").rstrip("/") == url.rstrip("/")
+            for h in hreflang_tags
+        )
+        if not has_self_ref:
+            score -= 5
+            findings.append({
+                "category": "Hreflang", "severity": "medium",
+                "issue": "Hreflang tags present but no self-referencing tag",
+                "detail": f"Found {len(hreflang_tags)} hreflang tags but none point back to this URL ({url}). "
+                          "Every page with hreflang must include a self-referencing tag.",
+            })
+            fixes.append({
+                "issue": "Missing self-referencing hreflang",
+                "fix": f'Add a self-referencing hreflang tag:\n'
+                       f'<link rel="alternate" hreflang="{page_data.get("lang", "en")}" href="{url}" />',
+            })
+        
+        # Check for x-default
+        has_x_default = any(h.get("lang", "") == "x-default" for h in hreflang_tags)
+        if not has_x_default and len(hreflang_tags) >= 2:
+            findings.append({
+                "category": "Hreflang", "severity": "low",
+                "issue": "Missing x-default hreflang tag",
+                "detail": "When using multiple hreflang tags, include an x-default for users whose language doesn't match.",
+            })
+            fixes.append({
+                "issue": "Missing x-default hreflang",
+                "fix": f'Add an x-default hreflang pointing to your primary/fallback version:\n'
+                       f'<link rel="alternate" hreflang="x-default" href="{url}" />',
+            })
+        
+        # Check for invalid language codes
+        valid_lang_pattern = re.compile(r'^[a-z]{2}(-[A-Z]{2})?$|^x-default$')
+        invalid_langs = [h for h in hreflang_tags if not valid_lang_pattern.match(h.get("lang", ""))]
+        if invalid_langs:
+            score -= 3
+            findings.append({
+                "category": "Hreflang", "severity": "medium",
+                "issue": f"{len(invalid_langs)} hreflang tag(s) with invalid language codes",
+                "detail": "Invalid codes: " + ", ".join(h.get("lang", "") for h in invalid_langs[:5]),
+            })
+
+    # -------------------------------------------------------------------
+    # 10. Compression Detection (gzip / brotli / zstd)
+    # -------------------------------------------------------------------
+    content_encoding = header_lower.get("content-encoding", "").lower()
+    if content_encoding:
+        if any(enc in content_encoding for enc in ("br", "gzip", "zstd")):
+            pass  # Good — compression is active
+        else:
+            findings.append({
+                "category": "Performance", "severity": "low",
+                "issue": f"Unknown compression encoding: {content_encoding}",
+                "detail": "Expected gzip, br (brotli), or zstd compression.",
+            })
+    else:
+        score -= 5
+        findings.append({
+            "category": "Performance", "severity": "medium",
+            "issue": "No response compression detected (missing Content-Encoding header)",
+            "detail": "Gzip or Brotli compression typically reduces transfer size by 60-80%, "
+                      "significantly improving page load speed.",
+        })
+        fixes.append({
+            "issue": "Enable response compression",
+            "fix": "Enable Brotli or gzip compression on your server:\n\n"
+                   "# Apache (.htaccess):\n"
+                   "<IfModule mod_deflate.c>\n"
+                   "  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json\n"
+                   "</IfModule>\n\n"
+                   "# Nginx:\n"
+                   "gzip on;\n"
+                   "gzip_types text/html text/css application/javascript application/json;\n"
+                   "brotli on;\n"
+                   "brotli_types text/html text/css application/javascript application/json;",
+        })
+
+    # -------------------------------------------------------------------
+    # 11. HTTP Protocol Version
+    # -------------------------------------------------------------------
+    # Check for HTTP/2 indicators (alt-svc header, or server push hints)
+    alt_svc = header_lower.get("alt-svc", "")
+    has_h2_hint = "h2" in alt_svc.lower() if alt_svc else False
+    has_h3_hint = "h3" in alt_svc.lower() if alt_svc else False
+    
+    if not alt_svc:
+        findings.append({
+            "category": "Protocol", "severity": "low",
+            "issue": "No Alt-Svc header — HTTP/3 (QUIC) not advertised",
+            "detail": "HTTP/3 uses QUIC protocol for faster connections. The Alt-Svc header advertises "
+                      "HTTP/3 support to compatible browsers.",
+        })
+        fixes.append({
+            "issue": "Advertise HTTP/3 support",
+            "fix": "If your server supports HTTP/3, add the Alt-Svc header:\n\n"
+                   'Alt-Svc: h3=":443"; ma=86400\n\n'
+                   "Most CDNs (Cloudflare, Fastly, AWS CloudFront) support HTTP/3 automatically. "
+                   "Enable it in your CDN dashboard.",
+        })
+    elif has_h3_hint:
+        pass  # HTTP/3 advertised — excellent
+
     return {
         "analyzer": "technical",
         "score": clamp_score(score),
         "findings": findings,
         "fixes": fixes,
+        "compression": content_encoding or "none",
+        "has_http3": has_h3_hint,
+        "has_http2": has_h2_hint,
+        "hreflang_count": len(hreflang_tags) if hreflang_tags else 0,
     }
 
 

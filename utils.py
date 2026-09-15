@@ -4,7 +4,7 @@ import hashlib
 import re
 import sys
 import time
-from urllib.parse import urljoin, urlparse, urlunparse
+from urllib.parse import urljoin, urlparse, urlunparse, parse_qsl, urlencode
 
 import requests
 from bs4 import BeautifulSoup, Comment
@@ -68,8 +68,21 @@ def normalize_url(url: str) -> str:
     # Remove trailing slash except for root
     if path != "/" and path.endswith("/"):
         path = path.rstrip("/")
+    # Filter common marketing tracking parameters
+    if parsed.query:
+        pairs = [
+            (k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True)
+            if k.lower() not in {
+                "utm_source", "utm_medium", "utm_campaign", "utm_term",
+                "utm_content", "fbclid", "gclid", "_ga", "_gl", "msclkid",
+                "mc_cid", "mc_eid"
+            }
+        ]
+        clean_query = urlencode(pairs)
+    else:
+        clean_query = ""
     # Remove fragment
-    return urlunparse((scheme, netloc, path, parsed.params, parsed.query, ""))
+    return urlunparse((scheme, netloc, path, parsed.params, clean_query, ""))
 
 
 def get_domain(url: str) -> str:

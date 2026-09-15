@@ -51,7 +51,9 @@ class ThreadSafeLogWriter:
 def run_audit_in_background(target_url: str, max_pages: int):
     global audit_state
     audit_state["is_running"] = True
-    audit_state["status"] = f"Auditing {target_url} ({max_pages} pages)..."
+    effective_pages = max_pages if (max_pages and max_pages > 0) else None
+    scope_desc = f"{effective_pages} pages" if effective_pages else "All Pages (Unlimited)"
+    audit_state["status"] = f"Auditing {target_url} ({scope_desc})..."
     audit_state["last_result"] = None
     audit_state["last_pdf"] = None
 
@@ -64,7 +66,7 @@ def run_audit_in_background(target_url: str, max_pages: int):
         sys.stderr = writer
 
         import agy_seo
-        result = agy_seo.run_audit(target_url, max_pages=max_pages)
+        result = agy_seo.run_audit(target_url, max_pages=effective_pages)
         audit_state["last_result"] = {
             "domain": result.get("domain", ""),
             "overall_score": result.get("overall_score", 0),
@@ -350,8 +352,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         <input type="text" id="urlInput" placeholder="https://example.com/" required value="https://">
                     </div>
                     <div class="form-group">
-                        <label for="pagesInput">Crawl Scope (Pages)</label>
-                        <input type="number" id="pagesInput" value="10" min="1" max="500" required>
+                        <label for="pagesInput">Crawl Scope (0 = All Pages)</label>
+                        <input type="number" id="pagesInput" value="0" min="0" max="50000" required>
                     </div>
                     <div>
                         <button type="submit" id="btnStart">START AUDIT</button>
@@ -441,7 +443,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             document.getElementById("statusBadge").textContent = "Status: Auditing in progress...";
             document.getElementById("resultsBox").style.display = "none";
             clearTerminal();
-            appendLog("--- Initializing SEO Audit for: " + url + " (Pages: " + pages + ") ---\\n\\n");
+            const scopeDesc = (pages === 0) ? "All Pages (Unlimited)" : (pages + " pages");
+            appendLog("--- Initializing SEO Audit for: " + url + " (" + scopeDesc + ") ---\\n\\n");
 
             try {
                 const res = await fetch("/api/start", {

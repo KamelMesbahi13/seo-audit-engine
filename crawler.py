@@ -1,5 +1,6 @@
 """agy-seo: Full-site crawler. Discovers ALL pages via sitemaps + internal link following."""
 
+from collections import deque
 import xml.etree.ElementTree as ET
 from urllib.parse import urljoin, urlparse
 
@@ -10,14 +11,15 @@ from utils import (
 
 
 class SiteCrawler:
-    """Crawl a website and discover all pages."""
+    """Crawl a website and discover all pages without artificial limits."""
 
-    def __init__(self, base_url: str, max_pages: int = 200, max_depth: int = 3,
+    def __init__(self, base_url: str, max_pages: int = None, max_depth: int = None,
                  verbose: bool = True):
         self.base_url = base_url.rstrip("/")
         self.domain = get_domain(base_url)
-        self.max_pages = max_pages
-        self.max_depth = max_depth
+        # 0 or None represents unlimited crawl (all pages)
+        self.max_pages = max_pages if (max_pages is not None and max_pages > 0) else None
+        self.max_depth = max_depth if (max_depth is not None and max_depth > 0) else None
         self.verbose = verbose
 
         self.discovered: dict[str, dict] = {}   # normalized_url -> metadata
@@ -33,8 +35,10 @@ class SiteCrawler:
 
     def crawl(self) -> dict:
         """Run the full crawl pipeline. Returns a summary dict."""
+        scope_str = f"{self.max_pages} pages" if self.max_pages is not None else "Unlimited (All Pages)"
+        depth_str = f"{self.max_depth}" if self.max_depth is not None else "Unlimited"
         self.log(f"Starting crawl of {self.base_url}")
-        self.log(f"Max pages: {self.max_pages}, Max depth: {self.max_depth}")
+        self.log(f"Crawl scope: {scope_str}, Depth limit: {depth_str}")
 
         # 1. Fetch and parse robots.txt
         self._fetch_robots()
@@ -45,7 +49,7 @@ class SiteCrawler:
         # 3. Add the base URL
         self._add_url(self.base_url, source="seed", depth=0)
 
-        # 4. Crawl discovered pages and follow internal links
+        # 4. Crawl discovered pages and follow internal links (full BFS queue)
         self._crawl_pages()
 
         self.log(f"Crawl complete. {len(self.crawled)} pages crawled, "
@@ -70,14 +74,26 @@ class SiteCrawler:
             return False
         if not is_same_domain(url, self.base_url):
             return False
-        # Skip non-HTML resources
+
         parsed = urlparse(url)
+
+        # Skip non-HTML resources and binary assets
         skip_extensions = (
             ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp",
             ".css", ".js", ".ico", ".woff", ".woff2", ".ttf", ".eot",
-            ".mp4", ".mp3", ".zip", ".gz", ".tar", ".rar",
+            ".mp4", ".mp3", ".zip", ".gz", ".tar", ".rar", ".avi",
+            ".mov", ".wmv", ".doc", ".docx", ".xls", ".xlsx", ".ppt",
+            ".pptx", ".xml", ".json", ".txt", ".csv", ".exe", ".dmg",
         )
-        if any(parsed.path.lower().endswith(ext) for ext in skip_extensions):
+        path_lower = parsed.path.lower()
+        if any(path_lower.endswith(ext) for ext in skip_extensions):
+            return False
+
+        # Spider trap prevention: skip paths with excessive repeating segments
+        path_segments = [s for s in path_lower.split("/") if s]
+        if len(path_segments) > 12:
+            return False
+        if any(path_segments.count(s) >= 3 for s in set(path_segments)):
             return False
 
         self.discovered[norm] = {
@@ -114,7 +130,7 @@ class SiteCrawler:
 
         visited_sitemaps = set()
         for sitemap_url in sitemap_candidates:
-            if len(self.discovered) >= self.max_pages:
+            if self.max_pages is not None and len(self.discovered) >= self.max_pages:
                 break
             self._parse_sitemap(sitemap_url, visited_sitemaps)
 
@@ -159,7 +175,7 @@ class SiteCrawler:
             # URL set → extract URLs
             count = 0
             for url_elem in root:
-                if len(self.discovered) >= self.max_pages:
+                if self.max_pages is not None and len(self.discovered) >= self.max_pages:
                     break
                 loc = url_elem.find(f"{ns_pattern}loc")
                 if loc is None:
@@ -171,26 +187,37 @@ class SiteCrawler:
             self.log(f"  Found {count} new URLs in sitemap")
 
     def _crawl_pages(self):
-        """Crawl discovered pages, following internal links."""
-        queue = sorted(
-            self.discovered.values(),
-            key=lambda x: x["depth"]
-        )
+        """Crawl discovered pages using a continuous BFS queue until all reachable pages are crawled."""
+        queue = deque()
+
+        # Seed the queue with all initial discovered URLs sorted by depth
+        for norm, entry in sorted(self.discovered.items(), key=lambda x: x[1]["depth"]):
+            if norm not in self.crawled:
+                queue.append(entry["url"])
 
         crawl_count = 0
-        for entry in queue:
-            if crawl_count >= self.max_pages:
+        limit_str = str(self.max_pages) if self.max_pages is not None else "unlimited"
+
+        while queue:
+            if self.max_pages is not None and crawl_count >= self.max_pages:
+                self.log(f"Reached crawl limit of {self.max_pages} pages. Stopping.")
                 break
 
-            norm = normalize_url(entry["url"])
+            url = queue.popleft()
+            norm = normalize_url(url)
+
             if norm in self.crawled:
                 continue
 
-            url = entry["url"]
-            depth = entry["depth"]
+            entry = self.discovered.get(norm, {"depth": 0, "url": url})
+            depth = entry.get("depth", 0)
 
-            self.log(f"Crawling [{crawl_count + 1}/{self.max_pages}] "
-                     f"(depth={depth}): {url}")
+            # Check depth limit if specified
+            if self.max_depth is not None and depth > self.max_depth:
+                continue
+
+            crawl_count += 1
+            self.log(f"Crawling [{crawl_count}/{limit_str}] (depth={depth}, queue={len(queue)}): {url}")
 
             result = fetch_url(url)
             if result["error"]:
@@ -204,7 +231,6 @@ class SiteCrawler:
                     "fetch": result,
                     "parsed": None,
                 }
-                crawl_count += 1
                 continue
 
             # Check content type
@@ -218,45 +244,19 @@ class SiteCrawler:
                 "fetch": result,
                 "parsed": parsed,
             }
-            crawl_count += 1
 
-            # Follow internal links (if within depth limit)
-            if depth < self.max_depth:
+            # Map final URL if redirected on the same domain
+            final_norm = normalize_url(result["final_url"])
+            if final_norm != norm and is_same_domain(result["final_url"], self.base_url):
+                self.crawled[final_norm] = self.crawled[norm]
+
+            # Discover and enqueue new internal links
+            if self.max_depth is None or depth < self.max_depth:
                 internal_links = parsed.get("links", {}).get("internal", [])
                 for link in internal_links:
                     href = link.get("href", "")
                     if href:
-                        self._add_url(href, source="link", depth=depth + 1)
-
-        # Re-sort queue after new discoveries
-        remaining = [
-            e for e in self.discovered.values()
-            if normalize_url(e["url"]) not in self.crawled
-        ]
-        remaining.sort(key=lambda x: x["depth"])
-
-        for entry in remaining:
-            if crawl_count >= self.max_pages:
-                break
-            norm = normalize_url(entry["url"])
-            if norm in self.crawled:
-                continue
-
-            url = entry["url"]
-            self.log(f"Crawling [{crawl_count + 1}/{self.max_pages}] "
-                     f"(depth={entry['depth']}): {url}")
-
-            result = fetch_url(url)
-            if result["error"] or result["status"] != 200:
-                if result["error"]:
-                    self.errors.append({"url": url, "error": result["error"]})
-                crawl_count += 1
-                continue
-
-            content_type = result["headers"].get("Content-Type", "")
-            if "text/html" not in content_type.lower():
-                continue
-
-            parsed = parse_page(result["html"], result["final_url"])
-            self.crawled[norm] = {"fetch": result, "parsed": parsed}
-            crawl_count += 1
+                        if self._add_url(href, source="link", depth=depth + 1):
+                            new_norm = normalize_url(href)
+                            if new_norm not in self.crawled:
+                                queue.append(href)
