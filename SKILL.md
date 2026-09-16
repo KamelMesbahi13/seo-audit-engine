@@ -16,6 +16,10 @@ Run a full-site audit with the dedicated Python virtual environment:
 ```
 
 - `--max-pages <N>`: Maximum pages to crawl (default: `0` = unlimited, crawls every page of the website).
+- `--mode <detailed|short|both>`: Report format selection:
+  - `detailed` (default): Exhaustive diagnostic report with full Problem & Solution tables for every crawled URL and site discipline.
+  - `short`: High-level executive report focusing strictly on Critical & High priority defects with a master scorecard table across all pages.
+  - `both`: Generates both detailed and short reports side-by-side.
 - `--output "<PATH>"`: Custom output PDF file path. If omitted, the audit report is **automatically saved directly into the user's Downloads folder**: `C:\Users\<User>\Downloads\SEO_Audit_<Domain>_<Timestamp>.pdf`.
 
 ---

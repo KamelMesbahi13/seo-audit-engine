@@ -14,13 +14,14 @@ class SiteCrawler:
     """Crawl a website and discover all pages without artificial limits."""
 
     def __init__(self, base_url: str, max_pages: int = None, max_depth: int = None,
-                 verbose: bool = True):
+                 verbose: bool = True, cancel_check: callable = None):
         self.base_url = base_url.rstrip("/")
         self.domain = get_domain(base_url)
         # 0 or None represents unlimited crawl (all pages)
         self.max_pages = max_pages if (max_pages is not None and max_pages > 0) else None
         self.max_depth = max_depth if (max_depth is not None and max_depth > 0) else None
         self.verbose = verbose
+        self.cancel_check = cancel_check
 
         self.discovered: dict[str, dict] = {}   # normalized_url -> metadata
         self.crawled: dict[str, dict] = {}       # normalized_url -> fetch result + parsed
@@ -130,6 +131,8 @@ class SiteCrawler:
 
         visited_sitemaps = set()
         for sitemap_url in sitemap_candidates:
+            if self.cancel_check and self.cancel_check():
+                break
             if self.max_pages is not None and len(self.discovered) >= self.max_pages:
                 break
             self._parse_sitemap(sitemap_url, visited_sitemaps)
@@ -199,6 +202,10 @@ class SiteCrawler:
         limit_str = str(self.max_pages) if self.max_pages is not None else "unlimited"
 
         while queue:
+            if self.cancel_check and self.cancel_check():
+                self.log("Crawl interrupted by user stop request.")
+                break
+
             if self.max_pages is not None and crawl_count >= self.max_pages:
                 self.log(f"Reached crawl limit of {self.max_pages} pages. Stopping.")
                 break

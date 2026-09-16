@@ -16,6 +16,7 @@ import threading
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
+from datetime import datetime
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
@@ -38,6 +39,10 @@ def add_log(message: str):
     audit_state["logs"].append(message)
     if len(audit_state["logs"]) > 2000:
         audit_state["logs"].pop(0)
+    if "(ETA:" in message:
+        for line in message.split("\n"):
+            if "(ETA:" in line:
+                audit_state["status"] = line.strip()
 
 
 class ThreadSafeLogWriter:
@@ -48,12 +53,16 @@ class ThreadSafeLogWriter:
         pass
 
 
-def run_audit_in_background(target_url: str, max_pages: int):
+cancel_event = threading.Event()
+
+
+def run_audit_in_background(target_url: str, max_pages: int, report_mode: str = "detailed"):
     global audit_state
     audit_state["is_running"] = True
+    cancel_event.clear()
     effective_pages = max_pages if (max_pages and max_pages > 0) else None
     scope_desc = f"{effective_pages} pages" if effective_pages else "All Pages (Unlimited)"
-    audit_state["status"] = f"Auditing {target_url} ({scope_desc})..."
+    audit_state["status"] = f"Auditing {target_url} ({scope_desc}) [{report_mode.upper()} mode]..."
     audit_state["last_result"] = None
     audit_state["last_pdf"] = None
 
@@ -66,7 +75,12 @@ def run_audit_in_background(target_url: str, max_pages: int):
         sys.stderr = writer
 
         import agy_seo
-        result = agy_seo.run_audit(target_url, max_pages=effective_pages)
+        result = agy_seo.run_audit(
+            target_url,
+            max_pages=effective_pages,
+            report_mode=report_mode,
+            cancel_check=cancel_event.is_set
+        )
         audit_state["last_result"] = {
             "domain": result.get("domain", ""),
             "overall_score": result.get("overall_score", 0),
@@ -86,9 +100,16 @@ def run_audit_in_background(target_url: str, max_pages: int):
             audit_state["last_pdf"] = candidates[0]
 
         audit_state["status"] = f"Audit complete. Overall Score: {result.get('overall_score', 0)}/100"
+    except KeyboardInterrupt:
+        audit_state["status"] = "Audit stopped by user."
+        add_log("\n[USER ACTION] Audit cancelled and stopped successfully.\n")
     except Exception as e:
-        audit_state["status"] = f"Audit failed: {e}"
-        add_log(f"\n[ERROR] {e}\n")
+        if cancel_event.is_set():
+            audit_state["status"] = "Audit stopped by user."
+            add_log("\n[USER ACTION] Audit cancelled and stopped successfully.\n")
+        else:
+            audit_state["status"] = f"Audit failed: {e}"
+            add_log(f"\n[ERROR] {e}\n")
     finally:
         audit_state["is_running"] = False
         sys.stdout = old_stdout
@@ -162,7 +183,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         .form-grid {
             display: grid;
-            grid-template-columns: 1fr 160px auto;
+            grid-template-columns: 1fr 140px 140px auto;
             gap: 16px;
             align-items: end;
         }
@@ -181,7 +202,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 6px;
         }
 
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             border: 1px solid #111827;
             padding: 10px 14px;
             font-size: 14px;
@@ -189,9 +210,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             background: #ffffff;
             color: #111827;
             outline: none;
+            height: 42px;
+            box-sizing: border-box;
         }
 
-        input[type="text"]:focus, input[type="number"]:focus {
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
             outline: 2px solid #111827;
         }
 
@@ -345,18 +368,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         <!-- Configuration Form -->
         <div class="card">
-            <form id="auditForm" onsubmit="startAudit(event)">
+            <form id="auditForm" onsubmit="event.preventDefault(); startAudit(event); return false;">
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="urlInput">Target Website URL</label>
-                        <input type="text" id="urlInput" placeholder="https://example.com/" required value="https://">
+                        <input type="text" id="urlInput" placeholder="https://example.com/" required value="https://" onkeydown="if(event.key === 'Enter'){event.preventDefault();startAudit(event);}">
                     </div>
                     <div class="form-group">
-                        <label for="pagesInput">Crawl Scope (0 = All Pages)</label>
-                        <input type="number" id="pagesInput" value="0" min="0" max="50000" required>
+                        <label for="pagesInput">Scope (0=All)</label>
+                        <input type="number" id="pagesInput" value="0" min="0" max="50000" required onkeydown="if(event.key === 'Enter'){event.preventDefault();startAudit(event);}">
                     </div>
-                    <div>
-                        <button type="submit" id="btnStart">START AUDIT</button>
+                    <div class="form-group">
+                        <label for="modeInput">Report Mode</label>
+                        <select id="modeInput">
+                            <option value="short" selected>Short (Recommended, ~17 pgs)</option>
+                            <option value="detailed">Detailed (Full Breakdown)</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: flex-end;">
+                        <button type="button" id="btnStart" onclick="startAudit(event)" style="flex: 1;">START AUDIT</button>
+                        <button type="button" id="btnStop" class="btn-secondary" onclick="stopAudit()" disabled style="color: #b91c1c; border-color: #b91c1c; font-weight: 700; padding: 10px 14px;">STOP</button>
                     </div>
                 </div>
             </form>
@@ -430,27 +462,37 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         async function startAudit(event) {
-            event.preventDefault();
-            const url = document.getElementById("urlInput").value.trim();
-            const pages = parseInt(document.getElementById("pagesInput").value, 10) || 10;
+            if (event && event.preventDefault) {
+                event.preventDefault();
+            }
+            let url = document.getElementById("urlInput").value.trim();
+            const pages = parseInt(document.getElementById("pagesInput").value, 10) || 0;
+            const mode = document.getElementById("modeInput").value || "short";
 
             if (!url || url === "https://" || url === "http://") {
-                alert("Please enter a valid target URL.");
-                return;
+                alert("Please enter a valid website URL (e.g. https://example.com).");
+                return false;
+            }
+
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "https://" + url;
+                document.getElementById("urlInput").value = url;
             }
 
             document.getElementById("btnStart").disabled = true;
+            document.getElementById("btnStop").disabled = false;
+            document.getElementById("btnStop").textContent = "STOP";
             document.getElementById("statusBadge").textContent = "Status: Auditing in progress...";
             document.getElementById("resultsBox").style.display = "none";
             clearTerminal();
             const scopeDesc = (pages === 0) ? "All Pages (Unlimited)" : (pages + " pages");
-            appendLog("--- Initializing SEO Audit for: " + url + " (" + scopeDesc + ") ---\\n\\n");
+            appendLog("--- Initializing SEO Audit for: " + url + " (" + scopeDesc + ") [" + mode.toUpperCase() + " mode] ---" + String.fromCharCode(10, 10));
 
             try {
                 const res = await fetch("/api/start", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ url: url, max_pages: pages })
+                    body: JSON.stringify({ url: url, max_pages: pages, mode: mode })
                 });
                 const data = await res.json();
                 if (data.status === "started") {
@@ -458,10 +500,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 } else {
                     alert("Failed to start: " + (data.error || "Unknown error"));
                     document.getElementById("btnStart").disabled = false;
+                    document.getElementById("btnStop").disabled = true;
                 }
             } catch (err) {
                 alert("Network error: " + err.message);
                 document.getElementById("btnStart").disabled = false;
+                document.getElementById("btnStop").disabled = true;
+            }
+            return false;
+        }
+
+        async function stopAudit() {
+            try {
+                const btnStop = document.getElementById("btnStop");
+                btnStop.disabled = true;
+                btnStop.textContent = "STOPPING...";
+                await fetch("/api/stop", { method: "POST" });
+            } catch (err) {
+                console.error("Stop error:", err);
             }
         }
 
@@ -482,10 +538,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     terminal.scrollTop = terminal.scrollHeight;
                 }
 
-                if (!data.is_running) {
+                if (data.is_running) {
+                    document.getElementById("btnStart").disabled = true;
+                    document.getElementById("btnStop").disabled = false;
+                } else {
                     clearInterval(pollTimer);
                     pollTimer = null;
                     document.getElementById("btnStart").disabled = false;
+                    document.getElementById("btnStop").disabled = true;
+                    document.getElementById("btnStop").textContent = "STOP";
 
                     if (data.last_result) {
                         displayResult(data.last_result);
@@ -568,12 +629,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
                 data.reports.forEach(r => {
                     const row = document.createElement("tr");
-                    row.innerHTML = '<td><strong>' + r.filename + '</strong></td>' +
-                                    '<td style="color: #4b5563;">' + r.date + '</td>' +
-                                    '<td style="color: #4b5563;">' + r.size + '</td>' +
-                                    '<td style="text-align: center;">' +
-                                    '<button type="button" class="btn-secondary" style="padding: 3px 8px; font-size: 11px;" onclick="openFile(\\'' + r.filename + '\\')">OPEN PDF</button>' +
-                                    '</td>';
+
+                    const tdName = document.createElement("td");
+                    tdName.innerHTML = "<strong>" + r.filename + "</strong>";
+                    row.appendChild(tdName);
+
+                    const tdDate = document.createElement("td");
+                    tdDate.style.color = "#4b5563";
+                    tdDate.textContent = r.date;
+                    row.appendChild(tdDate);
+
+                    const tdSize = document.createElement("td");
+                    tdSize.style.color = "#4b5563";
+                    tdSize.textContent = r.size;
+                    row.appendChild(tdSize);
+
+                    const tdAction = document.createElement("td");
+                    tdAction.style.textAlign = "center";
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "btn-secondary";
+                    btn.style.padding = "3px 8px";
+                    btn.style.fontSize = "11px";
+                    btn.textContent = "OPEN PDF";
+                    btn.onclick = function() { openFile(r.filename); };
+                    tdAction.appendChild(btn);
+                    row.appendChild(tdAction);
+
                     tbody.appendChild(row);
                 });
             } catch (err) {
@@ -660,11 +742,12 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(body) if body else {}
                 url = data.get("url", "").strip()
-                max_pages = int(data.get("max_pages", 10))
+                max_pages = int(data.get("max_pages", 0))
+                mode = data.get("mode", "detailed").strip().lower()
                 if not url:
                     raise ValueError("URL required")
 
-                t = threading.Thread(target=run_audit_in_background, args=(url, max_pages), daemon=True)
+                t = threading.Thread(target=run_audit_in_background, args=(url, max_pages, mode), daemon=True)
                 t.start()
 
                 self.send_response(200)
@@ -676,6 +759,21 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+        elif path == "/api/stop":
+            if audit_state["is_running"]:
+                cancel_event.set()
+                audit_state["status"] = "Stopping audit..."
+                add_log("\n[STOP REQUEST] Immediate cancellation requested by user. Terminating audit...\n")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "stopping"}).encode("utf-8"))
+            else:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "not_running"}).encode("utf-8"))
 
         elif path == "/api/open-latest":
             pdf_p = audit_state.get("last_pdf")
@@ -737,9 +835,24 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
 
-def start_server(port=8765):
-    server_address = ("127.0.0.1", port)
-    httpd = HTTPServer(server_address, SEOHttpHandler)
+def start_server(preferred_port=8765):
+    import socket
+    httpd = None
+    port = preferred_port
+    for p in range(preferred_port, preferred_port + 20):
+        try:
+            server_address = ("127.0.0.1", p)
+            httpd = HTTPServer(server_address, SEOHttpHandler)
+            httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            port = p
+            break
+        except OSError:
+            continue
+
+    if not httpd:
+        print(f"[ERROR] Could not bind to any port in range {preferred_port}-{preferred_port+20}")
+        sys.exit(1)
+
     url = f"http://127.0.0.1:{port}"
     print(f"============================================================")
     print(f"  InersiaLab Software Department — SEO Audit Engine")

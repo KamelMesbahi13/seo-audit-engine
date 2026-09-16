@@ -46,6 +46,7 @@ class SEOAuditApp:
         self.log_queue = queue.Queue()
         self.audit_thread = None
         self.is_running = False
+        self.cancel_event = threading.Event()
         self.last_pdf_path = None
 
         self._setup_styles()
@@ -127,17 +128,17 @@ class SEOAuditApp:
             bd=1,
             highlightthickness=0
         )
-        self.url_entry.grid(row=1, column=0, columnspan=2, sticky="ew", ipady=6, padx=(0, 16))
+        self.url_entry.grid(row=1, column=0, sticky="ew", ipady=6, padx=(0, 12))
 
         # Max Pages Input
         pages_label = tk.Label(
             inputs_frame,
-            text="Crawl Scope (0 = All Pages)",
+            text="Crawl Scope (0=All)",
             font=("Segoe UI", 9, "bold"),
             fg="#111827",
             bg="#ffffff"
         )
-        pages_label.grid(row=0, column=2, sticky="w", pady=(0, 4))
+        pages_label.grid(row=0, column=1, sticky="w", pady=(0, 4))
 
         self.pages_var = tk.StringVar(value="0")
         self.pages_entry = tk.Entry(
@@ -149,10 +150,31 @@ class SEOAuditApp:
             insertbackground="#111827",
             relief="solid",
             bd=1,
-            width=14,
+            width=10,
             highlightthickness=0
         )
-        self.pages_entry.grid(row=1, column=2, sticky="w", ipady=6, padx=(0, 16))
+        self.pages_entry.grid(row=1, column=1, sticky="w", ipady=6, padx=(0, 12))
+
+        # Report Mode Dropdown
+        mode_label = tk.Label(
+            inputs_frame,
+            text="Report Mode",
+            font=("Segoe UI", 9, "bold"),
+            fg="#111827",
+            bg="#ffffff"
+        )
+        mode_label.grid(row=0, column=2, sticky="w", pady=(0, 4))
+
+        self.mode_var = tk.StringVar(value="Short")
+        self.mode_combo = ttk.Combobox(
+            inputs_frame,
+            textvariable=self.mode_var,
+            values=["Detailed", "Short", "Both"],
+            state="readonly",
+            width=10,
+            font=("Segoe UI", 9)
+        )
+        self.mode_combo.grid(row=1, column=2, sticky="w", ipady=4, padx=(0, 14))
 
         # Action Buttons Frame
         btn_frame = tk.Frame(inputs_frame, bg="#ffffff")
@@ -307,6 +329,12 @@ class SEOAuditApp:
                 self.log_text.insert(tk.END, msg)
                 self.log_text.see(tk.END)
 
+                # Check if message contains ETA timer update
+                if "(ETA:" in msg:
+                    for line in msg.split("\n"):
+                        if "(ETA:" in line:
+                            self.status_var.set(f"Status: {line.strip()}")
+
                 # Check if message contains output report path
                 if "PDF Report:" in msg or "Report:" in msg:
                     for line in msg.split("\n"):
@@ -344,19 +372,21 @@ class SEOAuditApp:
                 return
 
         self.is_running = True
+        self.cancel_event.clear()
         self.btn_start.config(state=tk.DISABLED)
         self.btn_stop.config(state=tk.NORMAL, fg="#111827")
         self.btn_open_pdf.config(state=tk.DISABLED)
         self.status_var.set(f"Status: Auditing {url} (Crawling {scope_desc})...")
         self.progress_bar.start(10)
 
-        self.log_text.insert(tk.END, f"\n--- Starting Audit: {url} ({scope_desc}) ---\n\n")
+        mode = self.mode_var.get().strip().lower()
+        self.log_text.insert(tk.END, f"\n--- Starting Audit: {url} ({scope_desc}) [{mode.upper()} mode] ---\n\n")
         self.log_text.see(tk.END)
 
-        self.audit_thread = threading.Thread(target=self._run_audit_thread, args=(url, pages), daemon=True)
+        self.audit_thread = threading.Thread(target=self._run_audit_thread, args=(url, pages, mode), daemon=True)
         self.audit_thread.start()
 
-    def _run_audit_thread(self, url, pages):
+    def _run_audit_thread(self, url, pages, mode):
         old_stdout = sys.stdout
         old_stderr = sys.stderr
         redirector = StdoutRedirector(self.log_queue)
@@ -367,7 +397,7 @@ class SEOAuditApp:
 
             import agy_seo
             effective_pages = pages if pages > 0 else None
-            result = agy_seo.run_audit(url, max_pages=effective_pages)
+            result = agy_seo.run_audit(url, max_pages=effective_pages, report_mode=mode, cancel_check=self.cancel_event.is_set)
             score = result.get("overall_score", 0)
 
             # Look up newest generated PDF in Downloads
@@ -382,8 +412,13 @@ class SEOAuditApp:
                 self.last_pdf_path = candidates[0]
 
             self.root.after(0, self._on_audit_success, score)
+        except KeyboardInterrupt:
+            self.root.after(0, self._on_audit_stopped)
         except Exception as e:
-            self.root.after(0, self._on_audit_failure, str(e))
+            if self.cancel_event.is_set():
+                self.root.after(0, self._on_audit_stopped)
+            else:
+                self.root.after(0, self._on_audit_failure, str(e))
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
@@ -397,6 +432,14 @@ class SEOAuditApp:
         if self.last_pdf_path and os.path.exists(self.last_pdf_path):
             self.btn_open_pdf.config(state=tk.NORMAL)
 
+    def _on_audit_stopped(self):
+        self.is_running = False
+        self.progress_bar.stop()
+        self.btn_start.config(state=tk.NORMAL)
+        self.btn_stop.config(state=tk.DISABLED, fg="#6b7280")
+        self.status_var.set("Status: Audit stopped by user.")
+        self.log_queue.put("\n[USER ACTION] Audit cancelled and stopped successfully.\n")
+
     def _on_audit_failure(self, error_msg):
         self.is_running = False
         self.progress_bar.stop()
@@ -407,8 +450,9 @@ class SEOAuditApp:
 
     def stop_audit(self):
         if self.is_running:
-            self.status_var.set("Status: Stop requested (process will terminate after current page)")
-            self.is_running = False
+            self.cancel_event.set()
+            self.status_var.set("Status: Stopping audit (aborting crawler / page analysis)...")
+            self.log_queue.put("\n[USER ACTION] Stop requested by user. Aborting audit immediately...\n")
             self.btn_stop.config(state=tk.DISABLED, fg="#6b7280")
 
     def open_pdf(self):

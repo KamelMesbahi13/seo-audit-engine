@@ -109,7 +109,7 @@ def _analyze_quotability(body_text: str) -> dict:
         paragraphs = [c for c in chunks if len(c.split()) >= 30]
     
     if not paragraphs:
-        return {"overall_score": 0, "passages": [], "citable_count": 0, "total_count": 0}
+        return {"overall_score": 0, "passages": [], "citable_count": 0, "total_count": 0, "citable_ratio": 0.0, "avg_passage_words": 0}
     
     passage_scores = []
     for p in paragraphs[:20]:  # Limit to first 20 passages
@@ -119,12 +119,16 @@ def _analyze_quotability(body_text: str) -> dict:
     
     citable = [p for p in passage_scores if p["score"] >= 60]
     avg_score = sum(p["score"] for p in passage_scores) / len(passage_scores) if passage_scores else 0
+    citable_ratio = len(citable) / len(passage_scores) if passage_scores else 0.0
+    avg_words = round(sum(p.get("word_count", 0) for p in passage_scores) / len(passage_scores)) if passage_scores else 0
     
     return {
         "overall_score": round(avg_score),
         "passages": passage_scores,
         "citable_count": len(citable),
         "total_count": len(passage_scores),
+        "citable_ratio": citable_ratio,
+        "avg_passage_words": avg_words,
     }
 
 
