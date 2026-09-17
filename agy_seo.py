@@ -416,7 +416,7 @@ def _analyze_cross_page(page_results: dict) -> dict:
             "issue": f"{len(pages_without_schema)}/{len(page_results)} pages have NO structured data",
             "detail": "More than half of crawled pages lack JSON-LD schema.\n" +
                       "\n".join(f"  - {url}" for url in pages_without_schema[:10]),
-        })
+    })
         fixes.append({
             "issue": "Site-wide missing schema",
             "fix": "Implement a site-wide schema strategy:\n"
@@ -424,7 +424,7 @@ def _analyze_cross_page(page_results: dict) -> dict:
                    "2. Add BreadcrumbList to all interior pages\n"
                    "3. Add page-specific schema (Article for blog posts, Product for products, Service for services)\n"
                    "4. Use a WordPress plugin (Rank Math, Yoast) or a CMS-level JSON-LD template",
-        })
+    })
 
     # Check for site-wide image alt issues
     total_images = 0
@@ -440,7 +440,7 @@ def _analyze_cross_page(page_results: dict) -> dict:
             "category": "Images", "severity": "high",
             "issue": f"{missing_alt}/{total_images} images site-wide have no alt text ({missing_alt/total_images:.0%})",
             "detail": "More than 30% of images across the site lack alt attributes.",
-        })
+    })
 
     # Average scores report
     avg_scores = {}
@@ -465,7 +465,7 @@ def _analyze_cross_page(page_results: dict) -> dict:
             "issue": f"Weakest area: {weakest.replace('_', ' ').title()} (avg {weakest_score:.0f}/100)",
             "detail": f"The {weakest.replace('_', ' ')} category has the lowest average score across all pages. "
                       f"Prioritize fixing issues in this category for maximum impact.",
-        })
+    })
 
     return {
         "analyzer": "cross_page",
@@ -482,7 +482,7 @@ def _analyze_cross_page(page_results: dict) -> dict:
 def main():
     parser = argparse.ArgumentParser(
         prog="agy-seo",
-        description="AGY-SEO: Full-site SEO audit toolkit for Antigravity",
+        description="AGY-SEO: Full-site SEO audit & Pre-Launch Architecture toolkit",
     )
     subparsers = parser.add_subparsers(dest="command")
 
@@ -495,16 +495,57 @@ def main():
                              default="detailed", help="Report format: detailed, short, or both (default: detailed)")
     audit_parser.add_argument("--output", "-o", help="Output PDF path (default: ~/Downloads/)")
 
+    # Blueprint command
+    bp_parser = subparsers.add_parser("blueprint", help="Generate a pre-launch architecture guide & turnkey starter kit")
+    bp_parser.add_argument("--brand", default="InersiaLab", help="Brand or company name")
+    bp_parser.add_argument("--domain", default="https://example.com", help="Primary domain")
+    bp_parser.add_argument("--type", default="corporate_services", choices=["corporate_services", "saas_webapp", "ecommerce", "local_business", "content_blog", "portfolio_creative"], help="Website archetype")
+    bp_parser.add_argument("--stack", default="nextjs", choices=["nextjs", "astro", "react_vite", "wordpress", "shopify", "nuxt", "vanilla_html"], help="Frontend framework")
+    bp_parser.add_argument("--hosting", default="cloudflare", choices=["cloudflare", "vercel", "nginx_vps", "netlify", "aws_gcp"], help="Hosting platform")
+    bp_parser.add_argument("--lang", default="bilingual_en_fr", choices=["single_en", "single_fr", "single_ar", "bilingual_en_fr", "multilingual_en_fr_ar", "global_multi"], help="Language setup")
+    bp_parser.add_argument("--geo", default="high_geo", choices=["high_geo", "balanced_seo_geo", "standard_seo"], help="GEO ambition")
+    bp_parser.add_argument("--cwv", default="ultra_fast", choices=["ultra_fast", "enterprise", "standard"], help="Core Web Vitals target")
+    bp_parser.add_argument("--output-pdf", help="Output PDF path")
+    bp_parser.add_argument("--starter-dir", help="Output starter kit directory")
+
     args = parser.parse_args()
 
     if args.command == "audit":
-        # Ensure URL has scheme
         url = args.url
         if not url.startswith("http"):
             url = "https://" + url
-        
         run_audit(url, max_pages=args.max_pages if args.max_pages > 0 else None,
                   output_path=args.output, report_mode=args.report_mode)
+
+    elif args.command == "blueprint":
+        from blueprint import BlueprintSynthesizer, generate_blueprint_pdf, generate_blueprint_starter_kit
+        answers = {
+            "brand_name": args.brand,
+            "domain": args.domain,
+            "site_type": args.type,
+            "tech_stack": args.stack,
+            "hosting": args.hosting,
+            "language_setup": args.lang,
+            "geo_priority": args.geo,
+            "cwv_target": args.cwv,
+            "llms_txt": "yes",
+            "schema_strategy": "comprehensive_graph",
+        }
+        synth = BlueprintSynthesizer(answers)
+        data = synth.synthesize()
+
+        downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_brand = "".join(c for c in args.brand if c.isalnum() or c in ("-", "_")).strip() or "Architecture"
+
+        pdf_path = args.output_pdf or os.path.join(downloads, f"Architecture_Blueprint_{safe_brand}_{timestamp}.pdf")
+        starter_dir = args.starter_dir or os.path.join(downloads, f"StarterKit_{safe_brand}_{timestamp}")
+
+        generate_blueprint_pdf(data, pdf_path)
+        generate_blueprint_starter_kit(data, starter_dir)
+        print(f"[OK] Pre-Launch Architecture Manual: {pdf_path}")
+        print(f"[OK] Turnkey Repository Starter Kit: {starter_dir}")
+
     else:
         parser.print_help()
 
