@@ -40,6 +40,24 @@ except ImportError:
     generate_blueprint_pdf = None
     generate_blueprint_starter_kit = None
 
+# Import content generator module
+try:
+    from content_generator import (
+        INDUSTRY_PRESETS,
+        ContentSynthesizer,
+        export_content,
+        _render_page_markdown,
+        _render_page_html,
+        _render_master_document,
+    )
+except ImportError:
+    INDUSTRY_PRESETS = {}
+    ContentSynthesizer = None
+    export_content = None
+    _render_page_markdown = None
+    _render_page_html = None
+    _render_master_document = None
+
 # Global state for audit execution
 audit_state = {
     "is_running": False,
@@ -57,6 +75,14 @@ blueprint_state = {
     "last_starter_dir": None,
     "last_html": None,
     "last_brand": None,
+}
+
+# Global state for page content generator
+content_state = {
+    "is_generating": False,
+    "status": "Ready",
+    "last_dir": None,
+    "last_results": None,
 }
 
 log_subscribers = []
@@ -561,6 +587,101 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             color: #14532d;
             margin-bottom: 2px;
         }
+
+        /* Tab 3: Content Architect Styles */
+        .badge-metric {
+            display: inline-block;
+            padding: 2px 7px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            border-radius: 2px;
+        }
+        .badge-good { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .badge-warn { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .badge-bad  { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+        .content-layout {
+            display: grid;
+            grid-template-columns: 290px 1fr;
+            gap: 16px;
+            margin-top: 16px;
+            align-items: start;
+        }
+        .content-pages-sidebar {
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            max-height: 720px;
+            overflow-y: auto;
+        }
+        .sidebar-page-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-page-item:hover {
+            background: #f9fafb;
+        }
+        .sidebar-page-item.active {
+            background: #111827;
+            color: #ffffff;
+            border-color: #111827;
+        }
+        .sidebar-page-item.active .badge-metric {
+            background: #374151;
+            color: #ffffff;
+            border-color: #4b5563;
+        }
+        .sidebar-page-item.active .page-sub {
+            color: #9ca3af !important;
+        }
+        .aeo-callout {
+            border-left: 3px solid #15803d;
+            background: #f0fdf4;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #166534;
+            line-height: 1.6;
+        }
+        .section-block {
+            border: 1px solid #e5e7eb;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #ffffff;
+        }
+        .section-block h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+        .section-block h4 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            color: #374151;
+        }
+        .tag-pill {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            background: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+        .tag-pill.req {
+            background: #fef2f2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
     </style>
 </head>
 <body>
@@ -581,6 +702,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <nav class="tabs-nav">
             <button id="nav-btn-audit" class="tab-btn active" onclick="switchTab('audit')">1. Existing Website Audit</button>
             <button id="nav-btn-blueprint" class="tab-btn" onclick="switchTab('blueprint')">2. New Website Architect (Pre-Launch)</button>
+            <button id="nav-btn-content" class="tab-btn" onclick="switchTab('content')">3. Page Content Architect</button>
         </nav>
 
         <!-- ============================================================= -->
@@ -723,6 +845,161 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 </div>
             </div>
         </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 3: PAGE CONTENT ARCHITECT (PRE-LAUNCH CONTENT GENERATOR) -->
+        <!-- ============================================================= -->
+        <section id="tab-content" class="tab-content">
+            <div class="card" style="border-left: 3px solid #15803d;">
+                <div class="card-title">Pre-Launch Page & Section Content Generator</div>
+                <p style="font-size: 13px; color: #4b5563; margin-bottom: 16px;">
+                    Select an industry archetype and choose the pages for your upcoming website. The engine generates complete, fully-structured, SEO/GEO-optimized text content and sections for every single page (strict heading hierarchy, AEO hooks, E-E-A-T signals, Schema.org JSON-LD, and Core Web Vitals asset specs) with zero CSS bloat.
+                </p>
+
+                <!-- Generation Parameters Form -->
+                <form id="content-form" onsubmit="event.preventDefault(); generateSiteContent();">
+                    <div class="form-grid-3">
+                        <div class="field-group">
+                            <label class="field-label" for="cg-brand">Brand / Business Name</label>
+                            <input type="text" id="cg-brand" placeholder="e.g. Apex Health Clinic" value="InersiaMedical" required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="cg-domain">Target Domain</label>
+                            <input type="text" id="cg-domain" placeholder="https://example.com" value="https://example.com">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="cg-lang">Content Language</label>
+                            <select id="cg-lang">
+                                <option value="en" selected>English (Default)</option>
+                                <option value="fr">French (Français)</option>
+                                <option value="ar">Arabic (العربية - RTL)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2" style="margin-top: 10px;">
+                        <div class="field-group">
+                            <label class="field-label" for="cg-industry">Website Archetype / Industry</label>
+                            <select id="cg-industry" onchange="onIndustryChange()">
+                                <!-- Dynamically loaded from presets -->
+                            </select>
+                            <div class="field-help" id="cg-industry-help">Pre-configured pages tailored to this archetype.</div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="cg-keywords">Core Value Proposition / Focus Keywords</label>
+                            <input type="text" id="cg-keywords" placeholder="e.g. expert dental implants, cosmetic dentistry, gentle care">
+                            <div class="field-help">Injected into section copy, answer engine hooks, and metadata.</div>
+                        </div>
+                    </div>
+
+                    <!-- Sitemap Page Selection Checklist -->
+                    <div style="margin-top: 18px; border-top: 1px solid #e5e7eb; padding-top: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <label class="field-label" style="margin-bottom: 0;">Select Pages to Generate Content For</label>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllContentPages(true)">Select All</button>
+                                <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllContentPages(false)">Clear Optional</button>
+                            </div>
+                        </div>
+
+                        <div id="content-pages-checklist" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb;">
+                            <!-- Checkboxes injected dynamically -->
+                        </div>
+
+                        <!-- Add Custom Page Row -->
+                        <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
+                            <input type="text" id="cg-custom-title" placeholder="Add custom page title (e.g. Pediatric Care, London Office, VIP Concierge)" style="flex: 1; padding: 7px 10px; font-size: 12px;">
+                            <button type="button" class="btn btn-outline" style="padding: 7px 14px; font-size: 12px;" onclick="addCustomContentPage()">+ Add Custom Page</button>
+                        </div>
+                    </div>
+
+                    <div class="btn-row" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                        <button type="submit" id="btn-generate-content" class="btn btn-accent">GENERATE SITE CONTENT</button>
+                        <button type="button" id="btn-open-content-folder" class="btn btn-outline" onclick="openContentFolder()" disabled>OPEN GENERATED FOLDER</button>
+                        <button type="button" id="btn-copy-master-md" class="btn btn-outline" onclick="copyMasterMarkdown()" disabled>COPY MASTER MARKDOWN</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Content Generation Status Box -->
+            <div id="cg-status-box" class="status-box" style="display: none;">
+                <div>
+                    <span id="cg-status-badge" class="status-badge">READY</span>
+                    <span id="cg-status-text" style="margin-left: 10px;">Idle</span>
+                </div>
+            </div>
+
+            <!-- Content Export Success Banner -->
+            <div id="cg-downloads-banner" class="downloads-banner" style="display: none;">
+                <div class="downloads-banner-text">
+                    <strong id="cg-banner-title">Content Architecture Successfully Exported</strong>
+                    <span id="cg-banner-info">Exported to Downloads with Markdown, HTML, JSON, and llms.txt.</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-accent" onclick="openContentFolder()">Open Export Folder</button>
+                </div>
+            </div>
+
+            <!-- Multi-Page Content Viewer -->
+            <div id="cg-viewer-wrapper" style="display: none; margin-top: 20px;">
+                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Generated Pages Content Explorer</span>
+                    <span id="cg-summary-metrics" style="font-size: 11px; color: #6b7280; font-family: monospace;"></span>
+                </div>
+
+                <div class="content-layout">
+                    <!-- Left Sidebar: Pages List -->
+                    <div class="content-pages-sidebar" id="cg-pages-list">
+                        <!-- Rendered dynamically -->
+                    </div>
+
+                    <!-- Right Main Content Area -->
+                    <div class="card" style="margin-bottom: 0;">
+                        <!-- Active Page Meta Header -->
+                        <div id="cg-page-header" style="border-bottom: 1px solid #e5e7eb; padding-bottom: 14px; margin-bottom: 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <h2 id="cg-view-title" style="font-size: 18px; font-weight: 800; color: #111827;">Page Title</h2>
+                                    <div id="cg-view-slug" style="font-size: 12px; color: #6b7280; font-family: monospace; margin-top: 2px;"></div>
+                                </div>
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copyActivePageMarkdown()">Copy MD</button>
+                                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copyActivePageHtml()">Copy HTML</button>
+                                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copyActivePageSchema()">Copy Schema</button>
+                                </div>
+                            </div>
+
+                            <!-- Meta tags inspection grid -->
+                            <div style="margin-top: 12px; background: #f9fafb; border: 1px solid #e5e7eb; padding: 10px 12px; font-size: 12px;">
+                                <div style="margin-bottom: 6px; display: flex; align-items: baseline; gap: 8px;">
+                                    <strong style="color: #374151; width: 110px;">Meta Title:</strong>
+                                    <span id="cg-view-meta-title" style="flex: 1; color: #111827; font-weight: 600;"></span>
+                                    <span id="cg-view-title-pill" class="badge-metric badge-good">54 chars</span>
+                                </div>
+                                <div style="display: flex; align-items: baseline; gap: 8px;">
+                                    <strong style="color: #374151; width: 110px;">Meta Description:</strong>
+                                    <span id="cg-view-meta-desc" style="flex: 1; color: #4b5563;"></span>
+                                    <span id="cg-view-desc-pill" class="badge-metric badge-good">152 chars</span>
+                                </div>
+                            </div>
+
+                            <!-- View Mode Tabs -->
+                            <div style="display: flex; gap: 4px; margin-top: 14px; border-bottom: 1px solid #e5e7eb;">
+                                <button type="button" class="tab-btn active" id="btn-mode-formatted" style="padding: 6px 14px; font-size: 11px;" onclick="switchPageViewMode('formatted')">Structured Sections</button>
+                                <button type="button" class="tab-btn" id="btn-mode-markdown" style="padding: 6px 14px; font-size: 11px;" onclick="switchPageViewMode('markdown')">Markdown Source</button>
+                                <button type="button" class="tab-btn" id="btn-mode-html" style="padding: 6px 14px; font-size: 11px;" onclick="switchPageViewMode('html')">Semantic HTML</button>
+                                <button type="button" class="tab-btn" id="btn-mode-schema" style="padding: 6px 14px; font-size: 11px;" onclick="switchPageViewMode('schema')">Schema JSON-LD</button>
+                            </div>
+                        </div>
+
+                        <!-- Active Page Body Container -->
+                        <div id="cg-page-body">
+                            <!-- Dynamic Content Rendered Here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- JavaScript Controller -->
@@ -745,6 +1022,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
             if (tabId === "blueprint" && !window.blueprintSchemaLoaded) {
                 loadBlueprintSchema();
+            }
+            if (tabId === "content" && !window.contentPresetsLoaded) {
+                loadContentPresets();
             }
         }
 
@@ -1047,6 +1327,499 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 .replace(/'/g, "&#039;");
         }
 
+        // -------------------------------------------------------------
+        // Tab 3: Content Architect Controller
+        // -------------------------------------------------------------
+        let contentPresets = {};
+        let lastContentResults = null;
+        let lastContentDir = null;
+        let activeContentPageIndex = 0;
+        let currentContentMode = 'formatted';
+        let customContentPagesList = [];
+
+        async function loadContentPresets() {
+            try {
+                const res = await fetch("/api/content/presets");
+                contentPresets = await res.json();
+                window.contentPresetsLoaded = true;
+
+                const indSelect = document.getElementById("cg-industry");
+                indSelect.innerHTML = "";
+                for (const [key, data] of Object.entries(contentPresets)) {
+                    const opt = document.createElement("option");
+                    opt.value = key;
+                    opt.textContent = data.label;
+                    indSelect.appendChild(opt);
+                }
+                onIndustryChange();
+            } catch (e) {
+                console.error("Failed to load content presets:", e);
+            }
+        }
+
+        function onIndustryChange() {
+            const key = document.getElementById("cg-industry").value;
+            const data = contentPresets[key];
+            if (!data) return;
+
+            document.getElementById("cg-industry-help").textContent = "Tone: " + data.tone + " | Audience: " + data.audience;
+            if (!document.getElementById("cg-keywords").value) {
+                document.getElementById("cg-keywords").value = data.keywords_hint || "";
+            }
+
+            const checklist = document.getElementById("content-pages-checklist");
+            checklist.innerHTML = "";
+
+            data.default_pages.forEach(p => {
+                const item = document.createElement("div");
+                item.className = "checklist-item";
+                item.style.alignItems = "center";
+                const chk = document.createElement("input");
+                chk.type = "checkbox";
+                chk.id = "cg-chk-" + p.id;
+                chk.value = p.id;
+                chk.checked = true;
+                chk.dataset.title = p.title;
+
+                const lbl = document.createElement("label");
+                lbl.htmlFor = chk.id;
+                lbl.style.cursor = "pointer";
+                lbl.style.display = "flex";
+                lbl.style.alignItems = "center";
+                lbl.style.gap = "6px";
+                lbl.style.flex = "1";
+
+                lbl.innerHTML = "<span>" + escapeHtml(p.title) + "</span>" + (p.required ? '<span class="tag-pill req">Required</span>' : '<span class="tag-pill">Standard</span>');
+
+                item.appendChild(chk);
+                item.appendChild(lbl);
+                checklist.appendChild(item);
+            });
+
+            customContentPagesList.forEach((cp, idx) => {
+                renderCustomPageItem(cp, idx);
+            });
+        }
+
+        function selectAllContentPages(selectAll) {
+            const key = document.getElementById("cg-industry").value;
+            const data = contentPresets[key];
+            const requiredIds = new Set(data ? data.default_pages.filter(p => p.required).map(p => p.id) : []);
+
+            document.querySelectorAll("#content-pages-checklist input[type='checkbox']").forEach(chk => {
+                if (selectAll) {
+                    chk.checked = true;
+                } else {
+                    chk.checked = requiredIds.has(chk.value);
+                }
+            });
+        }
+
+        function addCustomContentPage() {
+            const input = document.getElementById("cg-custom-title");
+            const title = input.value.trim();
+            if (!title) return;
+
+            const customObj = { id: "custom_" + Date.now(), title: title };
+            customContentPagesList.push(customObj);
+            renderCustomPageItem(customObj, customContentPagesList.length - 1);
+            input.value = "";
+        }
+
+        function renderCustomPageItem(cp, idx) {
+            const checklist = document.getElementById("content-pages-checklist");
+            const item = document.createElement("div");
+            item.className = "checklist-item";
+            item.style.alignItems = "center";
+            item.id = "cg-item-" + cp.id;
+
+            const chk = document.createElement("input");
+            chk.type = "checkbox";
+            chk.id = "cg-chk-" + cp.id;
+            chk.value = cp.id;
+            chk.checked = true;
+            chk.dataset.isCustom = "true";
+            chk.dataset.title = cp.title;
+
+            const lbl = document.createElement("label");
+            lbl.htmlFor = chk.id;
+            lbl.style.cursor = "pointer";
+            lbl.style.display = "flex";
+            lbl.style.alignItems = "center";
+            lbl.style.gap = "6px";
+            lbl.style.flex = "1";
+            lbl.innerHTML = "<span>" + escapeHtml(cp.title) + '</span> <span class="tag-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Custom</span>';
+
+            const delBtn = document.createElement("button");
+            delBtn.type = "button";
+            delBtn.style.background = "none";
+            delBtn.style.border = "none";
+            delBtn.style.color = "#b91c1c";
+            delBtn.style.cursor = "pointer";
+            delBtn.style.fontSize = "12px";
+            delBtn.style.fontWeight = "bold";
+            delBtn.innerText = "×";
+            delBtn.onclick = () => {
+                customContentPagesList = customContentPagesList.filter(x => x.id !== cp.id);
+                item.remove();
+            };
+
+            item.appendChild(chk);
+            item.appendChild(lbl);
+            item.appendChild(delBtn);
+            checklist.appendChild(item);
+        }
+
+        async function generateSiteContent() {
+            const brand = document.getElementById("cg-brand").value.trim();
+            if (!brand) {
+                alert("Please enter a Brand Name.");
+                return;
+            }
+            const domain = document.getElementById("cg-domain").value.trim() || "https://example.com";
+            const lang = document.getElementById("cg-lang").value;
+            const industry = document.getElementById("cg-industry").value;
+            const keywords = document.getElementById("cg-keywords").value.trim();
+
+            const checkedBoxes = Array.from(document.querySelectorAll("#content-pages-checklist input[type='checkbox']:checked"));
+            if (checkedBoxes.length === 0) {
+                alert("Please select at least one page to generate.");
+                return;
+            }
+
+            const standardPages = [];
+            const customPages = [];
+            checkedBoxes.forEach(chk => {
+                if (chk.dataset.isCustom === "true") {
+                    customPages.push({ id: chk.value, title: chk.dataset.title });
+                } else {
+                    standardPages.push(chk.value);
+                }
+            });
+
+            const btn = document.getElementById("btn-generate-content");
+            btn.disabled = true;
+            const sBox = document.getElementById("cg-status-box");
+            sBox.style.display = "flex";
+            const sBadge = document.getElementById("cg-status-badge");
+            sBadge.className = "status-badge running";
+            sBadge.innerText = "GENERATING";
+            const sText = document.getElementById("cg-status-text");
+            sText.innerText = `Synthesizing structured SEO/GEO content for ${checkedBoxes.length} pages...`;
+
+            try {
+                const res = await fetch("/api/content/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        brand_name: brand,
+                        domain: domain,
+                        language: lang,
+                        industry: industry,
+                        description: keywords,
+                        pages: standardPages,
+                        custom_pages: customPages,
+                    })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    throw new Error(data.error || "Generation failed.");
+                }
+
+                lastContentResults = data.results;
+                lastContentDir = data.output_dir;
+
+                sBadge.className = "status-badge success";
+                sBadge.innerText = "COMPLETED";
+                sText.innerText = `Successfully synthesized ${data.results.pages.length} pages (${data.export.total_words} words). Saved to Downloads!`;
+
+                document.getElementById("btn-open-content-folder").disabled = false;
+                document.getElementById("btn-copy-master-md").disabled = false;
+
+                const banner = document.getElementById("cg-downloads-banner");
+                banner.style.display = "flex";
+                document.getElementById("cg-banner-info").textContent = `Exported to: ${data.output_dir}`;
+
+                renderContentViewer(data.results);
+            } catch (e) {
+                sBadge.className = "status-badge";
+                sBadge.innerText = "ERROR";
+                sText.innerText = "Content synthesis error: " + e.message;
+                alert("Error generating content: " + e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function renderContentViewer(results) {
+            const wrapper = document.getElementById("cg-viewer-wrapper");
+            wrapper.style.display = "block";
+
+            const totalWords = results.pages.reduce((acc, p) => acc + p.total_word_count, 0);
+            document.getElementById("cg-summary-metrics").textContent = `${results.pages.length} Pages | ${totalWords} Words`;
+
+            const sidebar = document.getElementById("cg-pages-list");
+            sidebar.innerHTML = "";
+
+            results.pages.forEach((page, idx) => {
+                const item = document.createElement("div");
+                item.className = "sidebar-page-item" + (idx === 0 ? " active" : "");
+                item.id = "cg-side-item-" + idx;
+                item.onclick = () => selectContentPage(idx);
+
+                item.innerHTML = `
+                    <div>
+                        <div style="font-size: 13px; font-weight: 700;">${escapeHtml(page.title)}</div>
+                        <div class="page-sub" style="font-size: 11px; color: #6b7280; font-family: monospace;">/${escapeHtml(page.slug)}</div>
+                    </div>
+                    <span class="badge-metric badge-good">${page.total_word_count}w</span>
+                `;
+                sidebar.appendChild(item);
+            });
+
+            selectContentPage(0);
+        }
+
+        function selectContentPage(idx) {
+            if (!lastContentResults || !lastContentResults.pages[idx]) return;
+            activeContentPageIndex = idx;
+
+            document.querySelectorAll(".sidebar-page-item").forEach((el, i) => {
+                if (i === idx) el.classList.add("active");
+                else el.classList.remove("active");
+            });
+
+            const page = lastContentResults.pages[idx];
+            document.getElementById("cg-view-title").textContent = page.title;
+            document.getElementById("cg-view-slug").textContent = `URL: ${page.url} (Slug: ${page.slug})`;
+
+            document.getElementById("cg-view-meta-title").textContent = page.meta_title;
+            const tLen = page.meta_title_length;
+            const tPill = document.getElementById("cg-view-title-pill");
+            tPill.textContent = `${tLen} chars`;
+            tPill.className = "badge-metric " + (tLen >= 50 && tLen <= 60 ? "badge-good" : (tLen >= 40 && tLen <= 65 ? "badge-warn" : "badge-bad"));
+
+            document.getElementById("cg-view-meta-desc").textContent = page.meta_description;
+            const dLen = page.meta_description_length;
+            const dPill = document.getElementById("cg-view-desc-pill");
+            dPill.textContent = `${dLen} chars`;
+            dPill.className = "badge-metric " + (dLen >= 140 && dLen <= 160 ? "badge-good" : (dLen >= 120 && dLen <= 170 ? "badge-warn" : "badge-bad"));
+
+            renderCurrentPageBody();
+        }
+
+        function switchPageViewMode(mode) {
+            currentContentMode = mode;
+            ["formatted", "markdown", "html", "schema"].forEach(m => {
+                const btn = document.getElementById("btn-mode-" + m);
+                if (btn) {
+                    if (m === mode) btn.classList.add("active");
+                    else btn.classList.remove("active");
+                }
+            });
+            renderCurrentPageBody();
+        }
+
+        function renderCurrentPageBody() {
+            if (!lastContentResults) return;
+            const page = lastContentResults.pages[activeContentPageIndex];
+            if (!page) return;
+            const container = document.getElementById("cg-page-body");
+            container.innerHTML = "";
+
+            if (currentContentMode === "formatted") {
+                const article = document.createElement("div");
+                article.style.lineHeight = "1.6";
+
+                page.sections.forEach(sec => {
+                    const block = document.createElement("div");
+                    block.className = "section-block";
+
+                    const hTag = "h" + sec.heading_level;
+                    const hEl = document.createElement(hTag);
+                    hEl.textContent = sec.heading;
+                    hEl.style.color = "#111827";
+                    hEl.style.marginBottom = "8px";
+                    block.appendChild(hEl);
+
+                    if (sec.guidance) {
+                        const guide = document.createElement("div");
+                        guide.style.fontSize = "11px";
+                        guide.style.color = "#6b7280";
+                        guide.style.marginBottom = "10px";
+                        guide.style.fontStyle = "italic";
+                        guide.textContent = "Objective: " + sec.guidance;
+                        block.appendChild(guide);
+                    }
+
+                    const lines = sec.content.split("\n");
+                    let inAeo = true;
+                    let aeoText = "";
+                    let remainingLines = [];
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const l = lines[i];
+                        if (inAeo && l.trim()) {
+                            aeoText = l.trim();
+                            inAeo = false;
+                        } else if (!inAeo) {
+                            remainingLines.push(l);
+                        }
+                    }
+
+                    if (aeoText) {
+                        const aeoDiv = document.createElement("div");
+                        aeoDiv.className = "aeo-callout";
+                        aeoDiv.innerHTML = "<strong>AEO Answer Hook (AI Citability):</strong><br>" + escapeHtml(aeoText);
+                        block.appendChild(aeoDiv);
+                    }
+
+                    if (remainingLines.length > 0) {
+                        const restDiv = document.createElement("div");
+                        restDiv.style.fontSize = "13px";
+                        restDiv.style.color = "#374151";
+
+                        let currentUl = null;
+                        remainingLines.forEach(rl => {
+                            const trimmed = rl.trim();
+                            if (!trimmed) return;
+
+                            if (trimmed.startsWith("### ")) {
+                                currentUl = null;
+                                const h3 = document.createElement("h4");
+                                h3.textContent = trimmed.substring(4);
+                                restDiv.appendChild(h3);
+                            } else if (trimmed.startsWith("- ")) {
+                                if (!currentUl) {
+                                    currentUl = document.createElement("ul");
+                                    currentUl.style.paddingLeft = "20px";
+                                    currentUl.style.margin = "8px 0";
+                                    restDiv.appendChild(currentUl);
+                                }
+                                const li = document.createElement("li");
+                                li.innerHTML = escapeHtml(trimmed.substring(2));
+                                currentUl.appendChild(li);
+                            } else if (trimmed.startsWith("> ")) {
+                                currentUl = null;
+                                const bq = document.createElement("blockquote");
+                                bq.style.borderLeft = "2px solid #9ca3af";
+                                bq.style.paddingLeft = "10px";
+                                bq.style.margin = "8px 0";
+                                bq.style.color = "#4b5563";
+                                bq.style.fontStyle = "italic";
+                                bq.textContent = trimmed.substring(2);
+                                restDiv.appendChild(bq);
+                            } else {
+                                currentUl = null;
+                                const p = document.createElement("p");
+                                p.style.marginBottom = "8px";
+                                p.textContent = trimmed;
+                                restDiv.appendChild(p);
+                            }
+                        });
+                        block.appendChild(restDiv);
+                    }
+
+                    article.appendChild(block);
+                });
+                container.appendChild(article);
+
+            } else if (currentContentMode === "markdown") {
+                const pre = document.createElement("pre");
+                pre.className = "code-box";
+                pre.style.maxHeight = "550px";
+                pre.style.overflow = "auto";
+                pre.style.padding = "14px";
+                pre.style.fontSize = "12px";
+
+                let md = "---\ntitle: \"" + page.meta_title + "\"\ndescription: \"" + page.meta_description + "\"\nurl: \"" + page.url + "\"\ncanonical: \"" + page.canonical_url + "\"\nword_count: " + page.total_word_count + "\n---\n\n# " + page.h1 + "\n\n";
+                page.sections.forEach(s => {
+                    md += "#".repeat(s.heading_level) + " " + s.heading + "\n\n" + s.content + "\n\n";
+                });
+                pre.textContent = md;
+                container.appendChild(pre);
+
+            } else if (currentContentMode === "html") {
+                const pre = document.createElement("pre");
+                pre.className = "code-box";
+                pre.style.maxHeight = "550px";
+                pre.style.overflow = "auto";
+                pre.style.padding = "14px";
+                pre.style.fontSize = "12px";
+
+                let html = '<!DOCTYPE html>\n<html lang="' + page.language + '" dir="' + page.direction + '">\n<head>\n  <meta charset="UTF-8">\n  <title>' + escapeHtml(page.meta_title) + '</title>\n  <meta name="description" content="' + escapeHtml(page.meta_description) + '">\n  <link rel="canonical" href="' + page.canonical_url + '">\n</head>\n<body>\n  <main>\n    <article>\n      <h1>' + escapeHtml(page.h1) + '</h1>\n';
+                page.sections.forEach(s => {
+                    html += "      <section>\n        <h" + s.heading_level + ">" + escapeHtml(s.heading) + "</h" + s.heading_level + ">\n        <p>" + escapeHtml(s.content) + "</p>\n      </section>\n";
+                });
+                html += "    </article>\n  </main>\n</body>\n</html>";
+                pre.textContent = html;
+                container.appendChild(pre);
+
+            } else if (currentContentMode === "schema") {
+                const pre = document.createElement("pre");
+                pre.className = "code-box";
+                pre.style.maxHeight = "550px";
+                pre.style.overflow = "auto";
+                pre.style.padding = "14px";
+                pre.style.fontSize = "12px";
+                pre.textContent = JSON.stringify(page.schema_jsonld, null, 2);
+                container.appendChild(pre);
+            }
+        }
+
+        function copyActivePageMarkdown() {
+            if (!lastContentResults) return;
+            const page = lastContentResults.pages[activeContentPageIndex];
+            if (!page) return;
+            let md = "---\ntitle: \"" + page.meta_title + "\"\ndescription: \"" + page.meta_description + "\"\nurl: \"" + page.url + "\"\ncanonical: \"" + page.canonical_url + "\"\nword_count: " + page.total_word_count + "\n---\n\n# " + page.h1 + "\n\n";
+            page.sections.forEach(s => {
+                md += "#".repeat(s.heading_level) + " " + s.heading + "\n\n" + s.content + "\n\n";
+            });
+            navigator.clipboard.writeText(md).then(() => alert("Page Markdown copied to clipboard!"));
+        }
+
+        function copyActivePageHtml() {
+            if (!lastContentResults) return;
+            const page = lastContentResults.pages[activeContentPageIndex];
+            if (!page) return;
+            let html = '<!DOCTYPE html>\n<html lang="' + page.language + '" dir="' + page.direction + '">\n<head>\n  <meta charset="UTF-8">\n  <title>' + page.meta_title + '</title>\n  <meta name="description" content="' + page.meta_description + '">\n  <link rel="canonical" href="' + page.canonical_url + '">\n</head>\n<body>\n  <main>\n    <article>\n      <h1>' + page.h1 + '</h1>\n';
+            page.sections.forEach(s => {
+                html += "      <section>\n        <h" + s.heading_level + ">" + s.heading + "</h" + s.heading_level + ">\n        <p>" + s.content + "</p>\n      </section>\n";
+            });
+            html += "    </article>\n  </main>\n</body>\n</html>";
+            navigator.clipboard.writeText(html).then(() => alert("Page Semantic HTML copied to clipboard!"));
+        }
+
+        function copyActivePageSchema() {
+            if (!lastContentResults) return;
+            const page = lastContentResults.pages[activeContentPageIndex];
+            if (!page) return;
+            navigator.clipboard.writeText(JSON.stringify(page.schema_jsonld, null, 2)).then(() => alert("Schema JSON-LD copied to clipboard!"));
+        }
+
+        function copyMasterMarkdown() {
+            if (!lastContentResults) return;
+            let master = "# " + lastContentResults.brand + " - Complete Website Content Architecture\n\n";
+            master += "Industry: " + lastContentResults.industry + "\nDomain: " + lastContentResults.domain + "\n\n---\n\n";
+            lastContentResults.pages.forEach(p => {
+                master += "## " + p.title + "\n\nURL: " + p.url + "\nMeta Title: " + p.meta_title + "\nMeta Description: " + p.meta_description + "\n\n";
+                p.sections.forEach(s => {
+                    master += "#".repeat(s.heading_level) + " " + s.heading + "\n\n" + s.content + "\n\n";
+                });
+                master += "\n---\n\n";
+            });
+            navigator.clipboard.writeText(master).then(() => alert("Master website content markdown copied to clipboard!"));
+        }
+
+        async function openContentFolder() {
+            if (!lastContentDir) return;
+            await fetch("/api/content/open-folder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ dir: lastContentDir })
+            });
+        }
+
         // Intervals
         setInterval(pollAuditStatus, 1500);
         setInterval(loadReportsList, 5000);
@@ -1055,6 +1828,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         window.addEventListener("DOMContentLoaded", () => {
             pollAuditStatus();
             loadReportsList();
+            loadContentPresets();
         });
     </script>
 </body>
@@ -1127,6 +1901,24 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                 "last_brand": blueprint_state["last_brand"],
             }
             self.wfile.write(json.dumps(resp).encode("utf-8"))
+
+        elif path == "/api/content/presets":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(INDUSTRY_PRESETS, ensure_ascii=False).encode("utf-8"))
+
+        elif path == "/api/content/latest":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            resp = {
+                "is_generating": content_state["is_generating"],
+                "status": content_state["status"],
+                "last_dir": content_state["last_dir"],
+                "results": content_state["last_results"],
+            }
+            self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))
 
         else:
             self.send_response(404)
@@ -1303,6 +2095,65 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps({"success": False, "error": "Starter kit directory not found."}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/content/generate":
+            try:
+                data = json.loads(body) if body else {}
+                content_state["is_generating"] = True
+                brand = data.get("brand_name", "Site").strip() or "Site"
+                content_state["status"] = f"Synthesizing page content for {brand}..."
+
+                synth = ContentSynthesizer(data)
+                results = synth.generate_all()
+
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                safe_brand = "".join(c for c in brand if c.isalnum() or c in ("-", "_")).strip() or "Site"
+                output_dir = os.path.join(DOWNLOADS_DIR, f"SiteContent_{safe_brand}_{ts}")
+
+                export_res = export_content(results, output_dir)
+
+                content_state["last_dir"] = output_dir
+                content_state["last_results"] = results
+                content_state["status"] = f"Complete: {len(results['pages'])} pages generated"
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "results": results,
+                    "export": export_res,
+                    "output_dir": output_dir,
+                }, ensure_ascii=False).encode("utf-8"))
+            except Exception as e:
+                content_state["status"] = f"Error: {str(e)}"
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            finally:
+                content_state["is_generating"] = False
+
+        elif path == "/api/content/open-folder":
+            try:
+                data = json.loads(body) if body else {}
+                target_dir = data.get("dir") or content_state.get("last_dir") or DOWNLOADS_DIR
+                if target_dir and os.path.exists(target_dir):
+                    os.startfile(target_dir)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+                else:
+                    self.send_response(404)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": "Folder not found."}).encode("utf-8"))
             except Exception as e:
                 self.send_response(500)
                 self.send_header("Content-Type", "application/json")

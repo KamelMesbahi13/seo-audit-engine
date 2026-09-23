@@ -54,8 +54,34 @@ AI_CRAWLERS = {
 # URL helpers
 # ---------------------------------------------------------------------------
 
-def normalize_url(url: str) -> str:
-    """Normalize a URL for deduplication."""
+# Common marketing and analytics tracking parameters
+TRACKING_PARAMS = {
+    "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+    "fbclid", "gclid", "msclkid", "yclid", "dclid", "twclid", "igshid", "srsltid",
+    "_ga", "_gl", "mc_cid", "mc_eid", "vgo_ee", "_hsenc", "_hsmi", "vero_id",
+    "wickedid", "wt_mc", "sc_src", "sc_lid", "ref", "referrer", "affiliate", "aff"
+}
+
+# E-commerce faceted navigation, sorting & view parameters (spider traps)
+FACET_AND_SORT_PARAMS = {
+    # Sorting
+    "order", "orderby", "sort", "sort_by", "sortby", "direction", "dir", "orderway",
+    "product_list_order", "product_list_dir", "sorting",
+    # PrestaShop & generic faceted search
+    "q", "selected_filters", "filter", "filters", "facet", "facets",
+    "min_price", "max_price", "price_min", "price_max", "in_stock", "price",
+    # View & layout
+    "display", "view", "mode", "layout", "limit", "per_page", "perpage",
+    "items_per_page", "page_size", "count",
+    # Interactive / actions / carts
+    "action", "add-to-cart", "add_to_cart", "remove_item", "do",
+    "replytocom", "print", "share", "modal", "quickview", "quick-view",
+    "sid", "sessionid", "phpsessid", "token"
+}
+
+
+def normalize_url(url: str, strip_facets: bool = True) -> str:
+    """Normalize a URL for deduplication and spider trap prevention."""
     parsed = urlparse(url)
     scheme = parsed.scheme.lower() or "https"
     netloc = parsed.netloc.lower().rstrip(".")
@@ -68,16 +94,21 @@ def normalize_url(url: str) -> str:
     # Remove trailing slash except for root
     if path != "/" and path.endswith("/"):
         path = path.rstrip("/")
-    # Filter common marketing tracking parameters
+    # Filter marketing tracking parameters and faceted navigation query strings
     if parsed.query:
-        pairs = [
-            (k, v) for k, v in parse_qsl(parsed.query, keep_blank_values=True)
-            if k.lower() not in {
-                "utm_source", "utm_medium", "utm_campaign", "utm_term",
-                "utm_content", "fbclid", "gclid", "_ga", "_gl", "msclkid",
-                "mc_cid", "mc_eid"
-            }
-        ]
+        pairs = []
+        for k, v in parse_qsl(parsed.query, keep_blank_values=True):
+            k_lower = k.lower()
+            if k_lower in TRACKING_PARAMS:
+                continue
+            if strip_facets:
+                if (k_lower in FACET_AND_SORT_PARAMS or 
+                    k_lower.startswith(("filter_", "facet_", "attr_", "layered_"))):
+                    continue
+                # Normalize page 1 to base URL (e.g. ?page=1 or ?p=1 is identical to root)
+                if k_lower in ("page", "p", "paged", "pg") and v in ("1", "0", ""):
+                    continue
+            pairs.append((k, v))
         clean_query = urlencode(pairs)
     else:
         clean_query = ""
@@ -485,6 +516,49 @@ def parse_robots_txt(robots_text: str) -> dict:
                 pass
     
     return result
+
+
+def is_url_disallowed(url: str, robots_data: dict, user_agent: str = "*") -> bool:
+    """Check if a URL is disallowed by robots.txt rules according to Google/RFC 9309 standards."""
+    if not robots_data or not robots_data.get("rules"):
+        return False
+
+    parsed = urlparse(url)
+    target = parsed.path or "/"
+    if parsed.query:
+        target = f"{target}?{parsed.query}"
+
+    rules = robots_data.get("rules", {})
+    # Check UA specific rules first, fallback to wildcard '*'
+    ua_rules = rules.get(user_agent, rules.get("*", []))
+    if not ua_rules:
+        return False
+
+    matching_rules = []
+    for rule in ua_rules:
+        pattern = rule.get("path", "").strip()
+        if not pattern:
+            continue
+        try:
+            # Handle robots.txt wildcards: * -> .*, $ -> end of string
+            esc = re.escape(pattern)
+            esc = esc.replace(r"\*", ".*")
+            if esc.endswith(r"\$"):
+                regex_str = f"^{esc[:-2]}$"
+            else:
+                regex_str = f"^{esc}"
+            if re.search(regex_str, target, re.IGNORECASE):
+                matching_rules.append((len(pattern), rule.get("type") == "allow", rule))
+        except Exception:
+            continue
+
+    if not matching_rules:
+        return False
+
+    # Most specific pattern (longest path) takes precedence. If lengths equal, allow wins.
+    matching_rules.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    winner = matching_rules[0]
+    return not winner[1]  # True if disallow wins
 
 
 def is_bot_blocked(robots_data: dict, bot_name: str) -> bool:

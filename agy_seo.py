@@ -213,8 +213,8 @@ def run_audit(url: str, max_pages: int = None, output_path: str = None,
     for analyzer in analyzer_names:
         scores = []
         finding_count = 0
-        has_critical = False
-        has_high = False
+        critical_count = 0
+        high_count = 0
         for page_url, results in page_results.items():
             if analyzer in results and "score" in results[analyzer]:
                 scores.append(results[analyzer]["score"])
@@ -223,29 +223,35 @@ def run_audit(url: str, max_pages: int = None, output_path: str = None,
                     finding_count += 1
                     sev = f.get("severity", "")
                     if sev == "critical":
-                        has_critical = True
+                        critical_count += 1
                     elif sev == "high":
-                        has_high = True
+                        high_count += 1
         
         if scores:
             raw_avg = round(sum(scores) / len(scores))
-            
-            # PENALTY FLOOR: cap score based on total finding count
-            if finding_count >= 15:
+            num_pages = len(scores) or 1
+            avg_findings = finding_count / num_pages
+
+            # Normalized penalty floor based on average findings per page
+            if avg_findings >= 8.0:
                 raw_avg = min(raw_avg, 60)
-            elif finding_count >= 8:
+            elif avg_findings >= 5.0:
                 raw_avg = min(raw_avg, 72)
-            elif finding_count >= 4:
+            elif avg_findings >= 3.0:
                 raw_avg = min(raw_avg, 82)
-            elif finding_count >= 1:
-                raw_avg = min(raw_avg, 92)
-            
-            # Additional severity caps
-            if has_critical:
-                raw_avg = min(raw_avg, 75)
-            elif has_high:
-                raw_avg = min(raw_avg, 85)
-            
+            elif avg_findings >= 1.5:
+                raw_avg = min(raw_avg, 90)
+
+            # Severity caps: scale with defect density across pages
+            if critical_count > 0:
+                if (critical_count / num_pages) >= 0.2:
+                    raw_avg = min(raw_avg, 75)
+                elif (critical_count / num_pages) >= 0.05:
+                    raw_avg = min(raw_avg, 85)
+            elif high_count > 0:
+                if (high_count / num_pages) >= 0.3:
+                    raw_avg = min(raw_avg, 85)
+
             site_scores[analyzer.replace("_", " ").title()] = clamp_score(raw_avg)
     
     # Add site-level scores

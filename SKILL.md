@@ -76,3 +76,13 @@ Run a full-site audit with the dedicated Python virtual environment:
 - Compiles an exhaustive HTML document with executive summaries, visual scorecards, category radar breakdowns, per-page analysis tables, and prioritized step-by-step remediation plans.
 - Produces before-and-after code snippets for developers (HTML meta tags, JSON-LD, robots.txt, Apache/Nginx headers).
 - Automatically converts to high-fidelity A4 PDF using headless Chromium (Playwright).
+
+### 4. Pre-Launch Page & Section Content Generator (`content_generator.py`)
+- Automatically generates comprehensive, fully-structured text content for every page of a new website based on selected business archetype and custom page lists before coding begins.
+- 10 Industry Presets (Medical/Healthcare, SaaS/Tech, E-Commerce, Agency, Finance/Legal, Real Estate, Education, Hospitality, Local Contractor, Media Publishing).
+- Enforces strict heading hierarchy (`<h1>` -> `<h2>` -> `<h3>`, no skipped levels).
+- Titles engineered to 50–60 chars, meta descriptions to 140–160 chars.
+- First-sentence Answer Engine Optimization (AEO) hooks in every section for AI search citability (SearchGPT, Perplexity, Claude).
+- Generates Schema.org JSON-LD structured data block for every page.
+- Exports clean Markdown (`.md`), semantic HTML (`.html`), JSON, master document (`MASTER_CONTENT.md`), and `llms.txt` directly to the user's Downloads directory.
+- Integrated into **Web Browser UI** (Tab 3: Page Content Architect) and **Desktop PC GUI** (Tab 3: Page Content Architect).

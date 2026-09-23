@@ -37,6 +37,24 @@ except ImportError:
     generate_blueprint_pdf = None
     generate_blueprint_starter_kit = None
 
+# Import content generator module
+try:
+    from content_generator import (
+        INDUSTRY_PRESETS,
+        ContentSynthesizer,
+        export_content,
+        _render_page_markdown,
+        _render_page_html,
+        _render_master_document,
+    )
+except ImportError:
+    INDUSTRY_PRESETS = {}
+    ContentSynthesizer = None
+    export_content = None
+    _render_page_markdown = None
+    _render_page_html = None
+    _render_master_document = None
+
 
 class StdoutRedirector:
     """Redirects stdout/stderr to a thread-safe queue."""
@@ -62,12 +80,18 @@ class SEOAuditApp:
         self.log_queue = queue.Queue()
         self.audit_thread = None
         self.blueprint_thread = None
+        self.content_thread = None
         self.is_running = False
         self.is_generating_bp = False
+        self.is_generating_content = False
         self.cancel_event = threading.Event()
         self.last_pdf_path = None
         self.last_bp_pdf_path = None
         self.last_starter_dir = None
+        self.last_content_results = None
+        self.last_content_dir = None
+        self.cg_page_vars = {}
+        self.cg_custom_pages = []
 
         self._setup_styles()
         self._build_ui()
@@ -148,6 +172,11 @@ class SEOAuditApp:
         self.tab_blueprint = tk.Frame(self.notebook, bg="#ffffff")
         self.notebook.add(self.tab_blueprint, text="  2. New Website Architect (Pre-Launch)  ")
         self._build_blueprint_tab(self.tab_blueprint)
+
+        # Tab 3: Page Content Architect
+        self.tab_content = tk.Frame(self.notebook, bg="#ffffff")
+        self.notebook.add(self.tab_content, text="  3. Page Content Architect  ")
+        self._build_content_tab(self.tab_content)
 
     # -----------------------------------------------------------------------
     # TAB 1: EXISTING WEBSITE AUDIT
@@ -808,6 +837,445 @@ class SEOAuditApp:
     def open_starter_folder(self):
         if self.last_starter_dir and os.path.exists(self.last_starter_dir):
             os.startfile(self.last_starter_dir)
+
+    # -----------------------------------------------------------------------
+    # TAB 3: PAGE CONTENT ARCHITECT
+    # -----------------------------------------------------------------------
+    def _build_content_tab(self, parent):
+        # Description banner
+        desc_frame = tk.Frame(parent, bg="#f9fafb", padx=16, pady=8, relief="solid", bd=1)
+        desc_frame.pack(fill=tk.X, padx=16, pady=(10, 6))
+
+        tk.Label(
+            desc_frame,
+            text="Pre-Launch Page & Section Content Generator",
+            font=("Segoe UI", 10, "bold"),
+            fg="#111827",
+            bg="#f9fafb"
+        ).pack(anchor="w")
+
+        tk.Label(
+            desc_frame,
+            text="Synthesizes complete, fully-structured SEO/GEO-optimized text content and sections for every single page before development begins (strict heading hierarchy, AEO hooks, E-E-A-T signals, and Schema.org JSON-LD).",
+            font=("Segoe UI", 8),
+            fg="#4b5563",
+            bg="#f9fafb",
+            wraplength=780,
+            justify="left"
+        ).pack(anchor="w", pady=(2, 0))
+
+        # Form Inputs Frame
+        form_frame = tk.Frame(parent, bg="#ffffff", padx=16, pady=4)
+        form_frame.pack(fill=tk.X)
+
+        # Row 1: Brand, Domain, Language
+        r1 = tk.Frame(form_frame, bg="#ffffff")
+        r1.pack(fill=tk.X, pady=2)
+
+        tk.Label(r1, text="Brand Name:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        self.cg_brand_var = tk.StringVar(value="InersiaMedical")
+        tk.Entry(r1, textvariable=self.cg_brand_var, font=("Segoe UI", 9), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12))
+
+        tk.Label(r1, text="Domain:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=8, anchor="w").pack(side=tk.LEFT)
+        self.cg_domain_var = tk.StringVar(value="https://example.com")
+        tk.Entry(r1, textvariable=self.cg_domain_var, font=("Segoe UI", 9), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12))
+
+        tk.Label(r1, text="Language:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=9, anchor="w").pack(side=tk.LEFT)
+        self.cg_lang_var = tk.StringVar(value="English (en)")
+        self.cg_lang_combo = ttk.Combobox(
+            r1, textvariable=self.cg_lang_var, state="readonly", font=("Segoe UI", 9),
+            values=["English (en)", "French (fr)", "Arabic (ar RTL)"], width=14
+        )
+        self.cg_lang_combo.pack(side=tk.LEFT)
+
+        # Row 2: Industry Archetype & Core Keywords
+        r2 = tk.Frame(form_frame, bg="#ffffff")
+        r2.pack(fill=tk.X, pady=4)
+
+        tk.Label(r2, text="Archetype:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        self.cg_industry_labels = [data["label"] for data in INDUSTRY_PRESETS.values()]
+        self.cg_industry_keys = list(INDUSTRY_PRESETS.keys())
+        default_label = INDUSTRY_PRESETS.get("healthcare_medical", {}).get("label", "Healthcare, Medical Clinic & Dental Services")
+        self.cg_industry_var = tk.StringVar(value=default_label)
+        self.cg_industry_combo = ttk.Combobox(
+            r2, textvariable=self.cg_industry_var, state="readonly", font=("Segoe UI", 9),
+            values=self.cg_industry_labels, width=38
+        )
+        self.cg_industry_combo.pack(side=tk.LEFT, padx=(0, 12))
+        self.cg_industry_combo.bind("<<ComboboxSelected>>", self._on_cg_industry_change)
+
+        tk.Label(r2, text="Keywords:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=9, anchor="w").pack(side=tk.LEFT)
+        self.cg_keywords_var = tk.StringVar(value="medical treatment, healthcare clinic, patient care, certified doctors")
+        tk.Entry(r2, textvariable=self.cg_keywords_var, font=("Segoe UI", 9), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Page Checklist Frame
+        check_container = tk.Frame(parent, bg="#ffffff", padx=16, pady=2)
+        check_container.pack(fill=tk.X)
+
+        check_hdr = tk.Frame(check_container, bg="#ffffff")
+        check_hdr.pack(fill=tk.X, pady=(2, 4))
+        tk.Label(check_hdr, text="Select Pages to Generate Content For:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff").pack(side=tk.LEFT)
+
+        tk.Button(check_hdr, text="Select All", font=("Segoe UI", 8), relief="solid", bd=1, bg="#f9fafb", command=lambda: self._select_all_cg_pages(True)).pack(side=tk.RIGHT, padx=(4, 0))
+        tk.Button(check_hdr, text="Clear Optional", font=("Segoe UI", 8), relief="solid", bd=1, bg="#f9fafb", command=lambda: self._select_all_cg_pages(False)).pack(side=tk.RIGHT)
+
+        # Scrollable checklist canvas
+        canvas_frame = tk.Frame(check_container, bg="#f9fafb", relief="solid", bd=1)
+        canvas_frame.pack(fill=tk.X)
+
+        self.cg_canvas = tk.Canvas(canvas_frame, bg="#f9fafb", highlightthickness=0, height=95)
+        self.cg_scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=self.cg_canvas.yview)
+        self.cg_scroll_inner = tk.Frame(self.cg_canvas, bg="#f9fafb")
+        self.cg_scroll_inner.bind("<Configure>", lambda e: self.cg_canvas.configure(scrollregion=self.cg_canvas.bbox("all")))
+        self.cg_canvas.create_window((0, 0), window=self.cg_scroll_inner, anchor="nw")
+        self.cg_canvas.configure(yscrollcommand=self.cg_scrollbar.set)
+
+        self.cg_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.cg_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Add Custom Page row
+        cp_row = tk.Frame(check_container, bg="#ffffff")
+        cp_row.pack(fill=tk.X, pady=(4, 6))
+        self.cg_custom_title_var = tk.StringVar()
+        tk.Entry(cp_row, textvariable=self.cg_custom_title_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        tk.Button(cp_row, text="+ Add Custom Page", font=("Segoe UI", 8, "bold"), relief="solid", bd=1, bg="#f3f4f6", command=self._add_custom_cg_page).pack(side=tk.LEFT)
+
+        # Populate checklist for default industry
+        self._populate_cg_checklist()
+
+        # Action Buttons Row
+        btn_frame = tk.Frame(parent, bg="#ffffff", padx=16, pady=4)
+        btn_frame.pack(fill=tk.X)
+
+        self.btn_gen_content = tk.Button(
+            btn_frame,
+            text="GENERATE SITE CONTENT",
+            font=("Segoe UI", 9, "bold"),
+            bg="#111827",
+            fg="#ffffff",
+            activebackground="#374151",
+            activeforeground="#ffffff",
+            relief="flat",
+            padx=14,
+            pady=6,
+            cursor="hand2",
+            command=self.generate_content
+        )
+        self.btn_gen_content.pack(side=tk.LEFT, padx=(0, 8))
+
+        self.btn_open_content_folder = tk.Button(
+            btn_frame,
+            text="OPEN GENERATED FOLDER",
+            font=("Segoe UI", 9),
+            bg="#f3f4f6",
+            fg="#111827",
+            relief="solid",
+            bd=1,
+            padx=12,
+            pady=6,
+            state=tk.DISABLED,
+            command=self.open_content_folder
+        )
+        self.btn_open_content_folder.pack(side=tk.LEFT, padx=(0, 8))
+
+        self.btn_copy_master_content = tk.Button(
+            btn_frame,
+            text="COPY MASTER MARKDOWN",
+            font=("Segoe UI", 9),
+            bg="#f3f4f6",
+            fg="#111827",
+            relief="solid",
+            bd=1,
+            padx=12,
+            pady=6,
+            state=tk.DISABLED,
+            command=self.copy_master_markdown
+        )
+        self.btn_copy_master_content.pack(side=tk.LEFT)
+
+        # Status & Progress Frame
+        status_frame = tk.Frame(parent, bg="#ffffff", padx=16, pady=2)
+        status_frame.pack(fill=tk.X)
+
+        self.cg_status_var = tk.StringVar(value="Status: Ready")
+        tk.Label(status_frame, textvariable=self.cg_status_var, font=("Segoe UI", 8), fg="#4b5563", bg="#ffffff").pack(side=tk.LEFT)
+
+        self.cg_progress_bar = ttk.Progressbar(status_frame, mode="indeterminate", style="TProgressbar", length=140)
+        self.cg_progress_bar.pack(side=tk.RIGHT)
+
+        # Explorer Split Pane (Left: pages listbox, Right: page preview)
+        split_frame = tk.Frame(parent, bg="#ffffff", padx=16, pady=4)
+        split_frame.pack(fill=tk.BOTH, expand=True)
+
+        paned = tk.PanedWindow(split_frame, orient=tk.HORIZONTAL, bg="#e5e7eb", bd=1, sashwidth=4)
+        paned.pack(fill=tk.BOTH, expand=True)
+
+        # Left: Pages Listbox Frame
+        left_pane = tk.Frame(paned, bg="#ffffff", width=220)
+        paned.add(left_pane, minsize=180)
+
+        tk.Label(left_pane, text="GENERATED PAGES", font=("Segoe UI", 8, "bold"), fg="#4b5563", bg="#ffffff", anchor="w").pack(fill=tk.X, pady=(2, 4))
+        lb_frame = tk.Frame(left_pane, bg="#ffffff")
+        lb_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.cg_pages_listbox = tk.Listbox(
+            lb_frame, font=("Segoe UI", 9), relief="solid", bd=1,
+            selectbackground="#111827", selectforeground="#ffffff", activestyle="none"
+        )
+        lb_scroll = ttk.Scrollbar(lb_frame, orient="vertical", command=self.cg_pages_listbox.yview)
+        self.cg_pages_listbox.configure(yscrollcommand=lb_scroll.set)
+        self.cg_pages_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        lb_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.cg_pages_listbox.bind("<<ListboxSelect>>", self._on_cg_page_select)
+
+        # Right: Content Preview Frame
+        right_pane = tk.Frame(paned, bg="#ffffff")
+        paned.add(right_pane, minsize=380)
+
+        # Meta & Action header
+        rh = tk.Frame(right_pane, bg="#ffffff")
+        rh.pack(fill=tk.X, pady=(0, 4))
+
+        self.cg_meta_summary_var = tk.StringVar(value="Select a generated page to view structured content...")
+        tk.Label(rh, textvariable=self.cg_meta_summary_var, font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", anchor="w").pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        tk.Button(rh, text="Copy MD", font=("Segoe UI", 7), relief="solid", bd=1, bg="#f9fafb", command=self.copy_cg_page_md).pack(side=tk.RIGHT, padx=(2, 0))
+        tk.Button(rh, text="Copy HTML", font=("Segoe UI", 7), relief="solid", bd=1, bg="#f9fafb", command=self.copy_cg_page_html).pack(side=tk.RIGHT, padx=(2, 0))
+        tk.Button(rh, text="Copy Schema", font=("Segoe UI", 7), relief="solid", bd=1, bg="#f9fafb", command=self.copy_cg_page_schema).pack(side=tk.RIGHT)
+
+        # Scrolled Text Box
+        self.cg_content_text = scrolledtext.ScrolledText(
+            right_pane, font=("Consolas", 9), relief="solid", bd=1,
+            bg="#f9fafb", fg="#111827", wrap=tk.WORD
+        )
+        self.cg_content_text.pack(fill=tk.BOTH, expand=True)
+
+    def _get_current_industry_key(self):
+        label = self.cg_industry_var.get()
+        for k, v in INDUSTRY_PRESETS.items():
+            if v["label"] == label:
+                return k
+        return "healthcare_medical"
+
+    def _on_cg_industry_change(self, event=None):
+        ind_key = self._get_current_industry_key()
+        ind_data = INDUSTRY_PRESETS.get(ind_key, {})
+        self.cg_keywords_var.set(ind_data.get("keywords_hint", ""))
+        self._populate_cg_checklist()
+
+    def _populate_cg_checklist(self):
+        for widget in self.cg_scroll_inner.winfo_children():
+            widget.destroy()
+
+        self.cg_page_vars.clear()
+        ind_key = self._get_current_industry_key()
+        ind_data = INDUSTRY_PRESETS.get(ind_key, {})
+
+        col = 0
+        row = 0
+        for p in ind_data.get("default_pages", []):
+            var = tk.BooleanVar(value=True)
+            self.cg_page_vars[p["id"]] = var
+            tag = " [Req]" if p.get("required") else ""
+            cb = tk.Checkbutton(
+                self.cg_scroll_inner,
+                text=p["title"] + tag,
+                variable=var,
+                font=("Segoe UI", 8),
+                bg="#f9fafb",
+                anchor="w"
+            )
+            cb.grid(row=row, column=col, sticky="w", padx=6, pady=2)
+            col += 1
+            if col >= 2:
+                col = 0
+                row += 1
+
+        for cp in self.cg_custom_pages:
+            var = tk.BooleanVar(value=True)
+            self.cg_page_vars[cp["id"]] = var
+            cb = tk.Checkbutton(
+                self.cg_scroll_inner,
+                text=cp["title"] + " [Custom]",
+                variable=var,
+                font=("Segoe UI", 8),
+                fg="#0369a1",
+                bg="#f9fafb",
+                anchor="w"
+            )
+            cb.grid(row=row, column=col, sticky="w", padx=6, pady=2)
+            col += 1
+            if col >= 2:
+                col = 0
+                row += 1
+
+    def _select_all_cg_pages(self, select_all=True):
+        ind_key = self._get_current_industry_key()
+        ind_data = INDUSTRY_PRESETS.get(ind_key, {})
+        req_ids = {p["id"] for p in ind_data.get("default_pages", []) if p.get("required")}
+
+        for pid, var in self.cg_page_vars.items():
+            if select_all:
+                var.set(True)
+            else:
+                var.set(pid in req_ids)
+
+    def _add_custom_cg_page(self):
+        title = self.cg_custom_title_var.get().strip()
+        if not title:
+            return
+        cid = f"custom_{len(self.cg_custom_pages) + 1}"
+        self.cg_custom_pages.append({"id": cid, "title": title})
+        self.cg_custom_title_var.set("")
+        self._populate_cg_checklist()
+
+    def generate_content(self):
+        if self.is_generating_content:
+            return
+
+        brand = self.cg_brand_var.get().strip()
+        if not brand:
+            messagebox.showwarning("Brand Required", "Please enter a brand name.")
+            return
+
+        selected_page_ids = [pid for pid, var in self.cg_page_vars.items() if var.get() and not pid.startswith("custom_")]
+        custom_selected = [cp for cp in self.cg_custom_pages if self.cg_page_vars.get(cp["id"], tk.BooleanVar(value=False)).get()]
+
+        if not selected_page_ids and not custom_selected:
+            messagebox.showwarning("Pages Required", "Please select at least one page to generate.")
+            return
+
+        lang_val = self.cg_lang_var.get()
+        lang_code = "en"
+        if "fr" in lang_val.lower():
+            lang_code = "fr"
+        elif "ar" in lang_val.lower():
+            lang_code = "ar"
+
+        ind_key = self._get_current_industry_key()
+
+        config = {
+            "brand_name": brand,
+            "domain": self.cg_domain_var.get().strip() or "https://example.com",
+            "language": lang_code,
+            "industry": ind_key,
+            "description": self.cg_keywords_var.get().strip(),
+            "pages": selected_page_ids,
+            "custom_pages": custom_selected,
+        }
+
+        self.is_generating_content = True
+        self.btn_gen_content.config(state=tk.DISABLED)
+        self.cg_progress_bar.start(10)
+        self.cg_status_var.set(f"Status: Synthesizing structured SEO/GEO content for {len(selected_page_ids) + len(custom_selected)} pages...")
+
+        self.content_thread = threading.Thread(target=self._run_content_thread, args=(config,), daemon=True)
+        self.content_thread.start()
+
+    def _run_content_thread(self, config):
+        try:
+            synth = ContentSynthesizer(config)
+            results = synth.generate_all()
+
+            brand = config.get("brand_name", "Site")
+            safe_brand = "".join(c for c in brand if c.isalnum() or c in ("-", "_")).strip() or "Site"
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir = os.path.join(DOWNLOADS_DIR, f"SiteContent_{safe_brand}_{ts}")
+
+            export_content(results, output_dir)
+            self.root.after(0, lambda: self._on_content_success(results, output_dir))
+        except Exception as e:
+            self.root.after(0, lambda: self._on_content_error(str(e)))
+
+    def _on_content_success(self, results, output_dir):
+        self.is_generating_content = False
+        self.cg_progress_bar.stop()
+        self.btn_gen_content.config(state=tk.NORMAL)
+        self.btn_open_content_folder.config(state=tk.NORMAL)
+        self.btn_copy_master_content.config(state=tk.NORMAL)
+
+        self.last_content_results = results
+        self.last_content_dir = output_dir
+
+        total_words = sum(p["total_word_count"] for p in results["pages"])
+        self.cg_status_var.set(f"Status: Complete! {len(results['pages'])} pages ({total_words} words) exported to Downloads.")
+
+        # Populate listbox
+        self.cg_pages_listbox.delete(0, tk.END)
+        for p in results["pages"]:
+            self.cg_pages_listbox.insert(tk.END, f"{p['title']}  ({p['total_word_count']}w)")
+
+        if results["pages"]:
+            self.cg_pages_listbox.selection_set(0)
+            self._display_cg_page(0)
+
+    def _on_content_error(self, err):
+        self.is_generating_content = False
+        self.cg_progress_bar.stop()
+        self.btn_gen_content.config(state=tk.NORMAL)
+        self.cg_status_var.set(f"Status: Error — {err}")
+        messagebox.showerror("Content Generation Failed", str(err))
+
+    def _on_cg_page_select(self, event=None):
+        sel = self.cg_pages_listbox.curselection()
+        if not sel:
+            return
+        self._display_cg_page(sel[0])
+
+    def _display_cg_page(self, idx):
+        if not self.last_content_results or idx >= len(self.last_content_results["pages"]):
+            return
+        p = self.last_content_results["pages"][idx]
+
+        self.cg_meta_summary_var.set(
+            f"Title: {p['meta_title_length']}c | Desc: {p['meta_description_length']}c | Words: {p['total_word_count']}w | Slug: /{p['slug']}"
+        )
+
+        md = _render_page_markdown(p)
+        self.cg_content_text.delete(1.0, tk.END)
+        self.cg_content_text.insert(tk.END, md)
+
+    def copy_cg_page_md(self):
+        sel = self.cg_pages_listbox.curselection()
+        if not sel or not self.last_content_results:
+            return
+        p = self.last_content_results["pages"][sel[0]]
+        md = _render_page_markdown(p)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(md)
+        messagebox.showinfo("Copied", f"Markdown for '{p['title']}' copied to clipboard.")
+
+    def copy_cg_page_html(self):
+        sel = self.cg_pages_listbox.curselection()
+        if not sel or not self.last_content_results:
+            return
+        p = self.last_content_results["pages"][sel[0]]
+        html = _render_page_html(p)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(html)
+        messagebox.showinfo("Copied", f"Semantic HTML for '{p['title']}' copied to clipboard.")
+
+    def copy_cg_page_schema(self):
+        sel = self.cg_pages_listbox.curselection()
+        if not sel or not self.last_content_results:
+            return
+        p = self.last_content_results["pages"][sel[0]]
+        schema_str = json.dumps(p["schema_jsonld"], indent=2, ensure_ascii=False)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(schema_str)
+        messagebox.showinfo("Copied", f"Schema JSON-LD for '{p['title']}' copied to clipboard.")
+
+    def copy_master_markdown(self):
+        if not self.last_content_results:
+            return
+        master = _render_master_document(self.last_content_results)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(master)
+        messagebox.showinfo("Copied", "Master document with all pages copied to clipboard.")
+
+    def open_content_folder(self):
+        if self.last_content_dir and os.path.exists(self.last_content_dir):
+            os.startfile(self.last_content_dir)
 
     # -----------------------------------------------------------------------
     # LOG QUEUE POLLING

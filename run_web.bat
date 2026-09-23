@@ -1,7 +1,7 @@
 @echo off
 title InersiaLab SEO Audit - Web Dashboard
 setlocal
-cd /d "C:\Users\EL ASSLI HI TECH\Downloads\agy-seo"
+cd /d "%~dp0"
 
 echo ============================================================
 echo   Starting InersiaLab SEO Audit Web Server...

@@ -2,11 +2,12 @@
 
 from collections import deque
 import xml.etree.ElementTree as ET
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qsl
 
 from utils import (
     fetch_url, fetch_robots_txt, normalize_url, get_domain,
     is_same_domain, resolve_url, parse_robots_txt, parse_page,
+    is_url_disallowed,
 )
 
 
@@ -29,6 +30,7 @@ class SiteCrawler:
         self.robots_raw: str = ""
         self.sitemap_urls: list[str] = []
         self.errors: list[dict] = []
+        self.path_query_counts: dict[str, int] = {}  # base path -> number of query variants queued
 
     def log(self, msg: str):
         if self.verbose:
@@ -77,6 +79,7 @@ class SiteCrawler:
             return False
 
         parsed = urlparse(url)
+        path_lower = parsed.path.lower()
 
         # Skip non-HTML resources and binary assets
         skip_extensions = (
@@ -86,16 +89,47 @@ class SiteCrawler:
             ".mov", ".wmv", ".doc", ".docx", ".xls", ".xlsx", ".ppt",
             ".pptx", ".xml", ".json", ".txt", ".csv", ".exe", ".dmg",
         )
-        path_lower = parsed.path.lower()
         if any(path_lower.endswith(ext) for ext in skip_extensions):
             return False
 
-        # Spider trap prevention: skip paths with excessive repeating segments
+        # Spider trap prevention 1: Robots.txt rules (disallow patterns)
+        if self.robots_data and is_url_disallowed(url, self.robots_data):
+            return False
+
+        # Spider trap prevention 2: Excessive repeating segments
         path_segments = [s for s in path_lower.split("/") if s]
         if len(path_segments) > 12:
             return False
         if any(path_segments.count(s) >= 3 for s in set(path_segments)):
             return False
+
+        # Spider trap prevention 3: Non-SEO transactional, cart, auth, and search paths
+        trap_path_prefixes = (
+            "/cart", "/panier", "/checkout", "/commander", "/commande", "/order", "/basket",
+            "/my-account", "/mon-compte", "/login", "/connexion", "/register", "/signup",
+            "/inscription", "/auth", "/logout", "/deconnexion", "/password",
+            "/password-recovery", "/mot-de-passe-oublie", "/forgot-password",
+            "/wishlist", "/liste-d-envies", "/compare", "/comparateur",
+            "/quick-view", "/quickview", "/search", "/recherche", "/find",
+            "/wp-admin", "/admin", "/feed", "/rss"
+        )
+        if any(path_lower == p or path_lower.startswith(p + "/") for p in trap_path_prefixes):
+            return False
+
+        # Spider trap prevention 4: Deep pagination traps (page 4+ of listings)
+        if parsed.query:
+            for k, v in parse_qsl(parsed.query):
+                k_lower = k.lower()
+                if k_lower in ("page", "p", "paged", "pg") and v.isdigit() and int(v) > 3:
+                    return False
+                if k_lower == "start" and v.isdigit() and int(v) > 60:
+                    return False
+
+            # Spider trap prevention 5: Cap query variations to at most 2 per base path
+            query_count = self.path_query_counts.get(path_lower, 0)
+            if query_count >= 2:
+                return False
+            self.path_query_counts[path_lower] = query_count + 1
 
         self.discovered[norm] = {
             "url": url,
