@@ -41,16 +41,20 @@ except ImportError:
 try:
     from content_generator import (
         INDUSTRY_PRESETS,
+        DEMO_CLIENT_BRIEFS,
         ContentSynthesizer,
         export_content,
+        normalize_client_brief,
         _render_page_markdown,
         _render_page_html,
         _render_master_document,
     )
 except ImportError:
     INDUSTRY_PRESETS = {}
+    DEMO_CLIENT_BRIEFS = {}
     ContentSynthesizer = None
     export_content = None
+    normalize_client_brief = None
     _render_page_markdown = None
     _render_page_html = None
     _render_master_document = None
@@ -864,49 +868,116 @@ class SEOAuditApp:
             justify="left"
         ).pack(anchor="w", pady=(2, 0))
 
+        # 1-Click Realistic Client Demo Profiles Bar
+        demo_bar = tk.Frame(parent, bg="#f9fafb", padx=16, pady=6, relief="solid", bd=1)
+        demo_bar.pack(fill=tk.X, padx=16, pady=(6, 4))
+
+        tk.Label(demo_bar, text="1-Click Client Profiles:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#f9fafb").pack(side=tk.LEFT, padx=(0, 6))
+        tk.Button(demo_bar, text="Surgical Clinic", font=("Segoe UI", 8), relief="solid", bd=1, bg="#ffffff", cursor="hand2", command=lambda: self._load_demo_profile("dental_clinic")).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Button(demo_bar, text="Cybersecurity SaaS", font=("Segoe UI", 8), relief="solid", bd=1, bg="#ffffff", cursor="hand2", command=lambda: self._load_demo_profile("cybersecurity_saas")).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Button(demo_bar, text="Luxury Contractor", font=("Segoe UI", 8), relief="solid", bd=1, bg="#ffffff", cursor="hand2", command=lambda: self._load_demo_profile("luxury_contractor")).pack(side=tk.LEFT, padx=(0, 4))
+        tk.Button(demo_bar, text="Clear", font=("Segoe UI", 8), relief="solid", bd=1, bg="#ffffff", fg="#b91c1c", cursor="hand2", command=self._clear_demo_profile).pack(side=tk.LEFT)
+
         # Form Inputs Frame
-        form_frame = tk.Frame(parent, bg="#ffffff", padx=16, pady=4)
+        form_frame = tk.Frame(parent, bg="#ffffff", padx=16, pady=2)
         form_frame.pack(fill=tk.X)
+
+        self.active_demo_brief = dict(DEMO_CLIENT_BRIEFS.get("dental_clinic", {}))
 
         # Row 1: Brand, Domain, Language
         r1 = tk.Frame(form_frame, bg="#ffffff")
         r1.pack(fill=tk.X, pady=2)
 
-        tk.Label(r1, text="Brand Name:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
-        self.cg_brand_var = tk.StringVar(value="InersiaMedical")
-        tk.Entry(r1, textvariable=self.cg_brand_var, font=("Segoe UI", 9), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12))
+        tk.Label(r1, text="Brand Name:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        self.cg_brand_var = tk.StringVar(value="AuraDental Implant & Surgical Center")
+        tk.Entry(r1, textvariable=self.cg_brand_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        tk.Label(r1, text="Domain:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=8, anchor="w").pack(side=tk.LEFT)
-        self.cg_domain_var = tk.StringVar(value="https://example.com")
-        tk.Entry(r1, textvariable=self.cg_domain_var, font=("Segoe UI", 9), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 12))
+        tk.Label(r1, text="Domain:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=7, anchor="w").pack(side=tk.LEFT)
+        self.cg_domain_var = tk.StringVar(value="https://auradentalcare.com")
+        tk.Entry(r1, textvariable=self.cg_domain_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        tk.Label(r1, text="Language:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=9, anchor="w").pack(side=tk.LEFT)
+        tk.Label(r1, text="Language:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=8, anchor="w").pack(side=tk.LEFT)
         self.cg_lang_var = tk.StringVar(value="English (en)")
         self.cg_lang_combo = ttk.Combobox(
-            r1, textvariable=self.cg_lang_var, state="readonly", font=("Segoe UI", 9),
-            values=["English (en)", "French (fr)", "Arabic (ar RTL)"], width=14
+            r1, textvariable=self.cg_lang_var, state="readonly", font=("Segoe UI", 8),
+            values=["English (en)", "French (fr)", "Arabic (ar RTL)"], width=13
         )
         self.cg_lang_combo.pack(side=tk.LEFT)
 
-        # Row 2: Industry Archetype & Core Keywords
+        # Row 2: Archetype & Tagline
         r2 = tk.Frame(form_frame, bg="#ffffff")
-        r2.pack(fill=tk.X, pady=4)
+        r2.pack(fill=tk.X, pady=2)
 
-        tk.Label(r2, text="Archetype:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        tk.Label(r2, text="Archetype:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
         self.cg_industry_labels = [data["label"] for data in INDUSTRY_PRESETS.values()]
         self.cg_industry_keys = list(INDUSTRY_PRESETS.keys())
         default_label = INDUSTRY_PRESETS.get("healthcare_medical", {}).get("label", "Healthcare, Medical Clinic & Dental Services")
         self.cg_industry_var = tk.StringVar(value=default_label)
         self.cg_industry_combo = ttk.Combobox(
-            r2, textvariable=self.cg_industry_var, state="readonly", font=("Segoe UI", 9),
-            values=self.cg_industry_labels, width=38
+            r2, textvariable=self.cg_industry_var, state="readonly", font=("Segoe UI", 8),
+            values=self.cg_industry_labels, width=34
         )
-        self.cg_industry_combo.pack(side=tk.LEFT, padx=(0, 12))
+        self.cg_industry_combo.pack(side=tk.LEFT, padx=(0, 10))
         self.cg_industry_combo.bind("<<ComboboxSelected>>", self._on_cg_industry_change)
 
-        tk.Label(r2, text="Keywords:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff", width=9, anchor="w").pack(side=tk.LEFT)
-        self.cg_keywords_var = tk.StringVar(value="medical treatment, healthcare clinic, patient care, certified doctors")
-        tk.Entry(r2, textvariable=self.cg_keywords_var, font=("Segoe UI", 9), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True)
+        tk.Label(r2, text="Tagline:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=7, anchor="w").pack(side=tk.LEFT)
+        self.cg_tagline_var = tk.StringVar(value="Advanced Digital Implantology & Aesthetic Restorations")
+        tk.Entry(r2, textvariable=self.cg_tagline_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Row 3: Founder & Contact (NAP)
+        r3 = tk.Frame(form_frame, bg="#ffffff")
+        r3.pack(fill=tk.X, pady=2)
+
+        tk.Label(r3, text="Founder/Lead:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        self.cg_founder_name_var = tk.StringVar(value="Dr. Julian Vance, DDS, FICOI")
+        tk.Entry(r3, textvariable=self.cg_founder_name_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        tk.Label(r3, text="Phone:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=7, anchor="w").pack(side=tk.LEFT)
+        self.cg_phone_var = tk.StringVar(value="+1 (212) 555-0198")
+        tk.Entry(r3, textvariable=self.cg_phone_var, font=("Segoe UI", 8), relief="solid", bd=1, width=16).pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Label(r3, text="Address:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=7, anchor="w").pack(side=tk.LEFT)
+        self.cg_address_var = tk.StringVar(value="450 Lexington Ave, Suite 1400, New York, NY 10017")
+        tk.Entry(r3, textvariable=self.cg_address_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Row 4: Custom Services (Live Sync to Checklist)
+        r4 = tk.Frame(form_frame, bg="#ffffff")
+        r4.pack(fill=tk.X, pady=2)
+
+        tk.Label(r4, text="Service 1:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        self.cg_svc1_var = tk.StringVar(value="All-on-4 Same-Day Full Arch Dental Implants")
+        self.cg_svc1_entry = tk.Entry(r4, textvariable=self.cg_svc1_var, font=("Segoe UI", 8), relief="solid", bd=1)
+        self.cg_svc1_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        self.cg_svc1_var.trace_add("write", lambda *args: self._populate_cg_checklist())
+
+        tk.Label(r4, text="Service 2:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=8, anchor="w").pack(side=tk.LEFT)
+        self.cg_svc2_var = tk.StringVar(value="Digital Smile Design Porcelain Veneers")
+        self.cg_svc2_entry = tk.Entry(r4, textvariable=self.cg_svc2_var, font=("Segoe UI", 8), relief="solid", bd=1)
+        self.cg_svc2_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        self.cg_svc2_var.trace_add("write", lambda *args: self._populate_cg_checklist())
+
+        tk.Label(r4, text="Service 3:", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff", width=8, anchor="w").pack(side=tk.LEFT)
+        self.cg_svc3_var = tk.StringVar(value="IV Sedation Dentistry & Laser Periodontics")
+        self.cg_svc3_entry = tk.Entry(r4, textvariable=self.cg_svc3_var, font=("Segoe UI", 8), relief="solid", bd=1)
+        self.cg_svc3_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.cg_svc3_var.trace_add("write", lambda *args: self._populate_cg_checklist())
+
+        # Row 5: Competitor URLs for Live Benchmarking
+        r5 = tk.Frame(form_frame, bg="#ffffff")
+        r5.pack(fill=tk.X, pady=2)
+
+        tk.Label(r5, text="Competitors:", font=("Segoe UI", 8, "bold"), fg="#b91c1c", bg="#ffffff", width=12, anchor="w").pack(side=tk.LEFT)
+        self.cg_competitors_var = tk.StringVar(value="https://www.clevelandclinic.org, https://www.mayoclinic.org")
+        tk.Entry(r5, textvariable=self.cg_competitors_var, font=("Segoe UI", 8), relief="solid", bd=1).pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Additional Brief Details Variables
+        self.cg_founder_title_var = tk.StringVar(value="Chief Oral Surgeon & Fellow of ICOI")
+        self.cg_founder_creds_var = tk.StringVar(value="DDS Columbia University, 18+ yrs surgical experience, 3,400+ successful implants")
+        self.cg_year_founded_var = tk.StringVar(value="2008")
+        self.cg_areas_var = tk.StringVar(value="Manhattan, Brooklyn, Queens, Westchester County, Tri-State Area")
+        self.cg_techs_var = tk.StringVar(value="Planmeca 3D CBCT Imaging, Fotona Laser, 3Shape TRIOS 5, SprintRay 3D Printing")
+        self.cg_guarantees_var = tk.StringVar(value="Lifetime structural warranty on titanium implants, 10-year replacement warranty on zirconia")
+        self.cg_cta_var = tk.StringVar(value="Book Your 3D Surgical Implant Consultation")
 
         # Page Checklist Frame
         check_container = tk.Frame(parent, bg="#ffffff", padx=16, pady=2)
@@ -914,7 +985,7 @@ class SEOAuditApp:
 
         check_hdr = tk.Frame(check_container, bg="#ffffff")
         check_hdr.pack(fill=tk.X, pady=(2, 4))
-        tk.Label(check_hdr, text="Select Pages to Generate Content For:", font=("Segoe UI", 9, "bold"), fg="#111827", bg="#ffffff").pack(side=tk.LEFT)
+        tk.Label(check_hdr, text="Select Pages to Generate Content For (Titles live-synced from Services):", font=("Segoe UI", 8, "bold"), fg="#111827", bg="#ffffff").pack(side=tk.LEFT)
 
         tk.Button(check_hdr, text="Select All", font=("Segoe UI", 8), relief="solid", bd=1, bg="#f9fafb", command=lambda: self._select_all_cg_pages(True)).pack(side=tk.RIGHT, padx=(4, 0))
         tk.Button(check_hdr, text="Clear Optional", font=("Segoe UI", 8), relief="solid", bd=1, bg="#f9fafb", command=lambda: self._select_all_cg_pages(False)).pack(side=tk.RIGHT)
@@ -1058,9 +1129,56 @@ class SEOAuditApp:
         return "healthcare_medical"
 
     def _on_cg_industry_change(self, event=None):
-        ind_key = self._get_current_industry_key()
-        ind_data = INDUSTRY_PRESETS.get(ind_key, {})
-        self.cg_keywords_var.set(ind_data.get("keywords_hint", ""))
+        self._populate_cg_checklist()
+
+    def _load_demo_profile(self, profile_key):
+        if profile_key not in DEMO_CLIENT_BRIEFS:
+            return
+        b = DEMO_CLIENT_BRIEFS[profile_key]
+        self.active_demo_brief = dict(b)
+
+        self.cg_brand_var.set(b.get("brand_name", ""))
+        self.cg_domain_var.set(b.get("domain", "https://example.com"))
+        self.cg_tagline_var.set(b.get("tagline", ""))
+        self.cg_founder_name_var.set(b.get("founder_name", ""))
+        self.cg_founder_title_var.set(b.get("founder_title", ""))
+        self.cg_founder_creds_var.set(b.get("founder_credentials", ""))
+        self.cg_year_founded_var.set(b.get("year_founded", ""))
+        self.cg_phone_var.set(b.get("phone", ""))
+        self.cg_address_var.set(b.get("address", ""))
+        self.cg_areas_var.set(", ".join(b.get("service_areas", [])))
+        self.cg_techs_var.set(", ".join(b.get("technologies", [])))
+        self.cg_guarantees_var.set(b.get("guarantees", ""))
+        self.cg_cta_var.set(b.get("primary_cta", ""))
+        self.cg_competitors_var.set(", ".join(b.get("competitor_urls", [])))
+
+        svcs = b.get("services", [])
+        if len(svcs) >= 1:
+            self.cg_svc1_var.set(svcs[0]["name"])
+        if len(svcs) >= 2:
+            self.cg_svc2_var.set(svcs[1]["name"])
+        if len(svcs) >= 3:
+            self.cg_svc3_var.set(svcs[2]["name"])
+
+        # Update industry combobox
+        ind_key = b.get("industry", "technology_software")
+        if ind_key in INDUSTRY_PRESETS:
+            self.cg_industry_var.set(INDUSTRY_PRESETS[ind_key]["label"])
+
+        self._populate_cg_checklist()
+
+    def _clear_demo_profile(self):
+        self.active_demo_brief = {}
+        self.cg_brand_var.set("")
+        self.cg_tagline_var.set("")
+        self.cg_domain_var.set("https://example.com")
+        self.cg_founder_name_var.set("")
+        self.cg_phone_var.set("")
+        self.cg_address_var.set("")
+        self.cg_svc1_var.set("")
+        self.cg_svc2_var.set("")
+        self.cg_svc3_var.set("")
+        self.cg_competitors_var.set("")
         self._populate_cg_checklist()
 
     def _populate_cg_checklist(self):
@@ -1077,9 +1195,17 @@ class SEOAuditApp:
             var = tk.BooleanVar(value=True)
             self.cg_page_vars[p["id"]] = var
             tag = " [Req]" if p.get("required") else ""
+            title_text = p["title"]
+            if p["id"] == "service_detail_1" and hasattr(self, "cg_svc1_var") and self.cg_svc1_var.get().strip():
+                title_text = self.cg_svc1_var.get().strip()
+            elif p["id"] == "service_detail_2" and hasattr(self, "cg_svc2_var") and self.cg_svc2_var.get().strip():
+                title_text = self.cg_svc2_var.get().strip()
+            elif p["id"] == "service_detail_3" and hasattr(self, "cg_svc3_var") and self.cg_svc3_var.get().strip():
+                title_text = self.cg_svc3_var.get().strip()
+
             cb = tk.Checkbutton(
                 self.cg_scroll_inner,
-                text=p["title"] + tag,
+                text=title_text + tag,
                 variable=var,
                 font=("Segoe UI", 8),
                 bg="#f9fafb",
@@ -1154,20 +1280,47 @@ class SEOAuditApp:
 
         ind_key = self._get_current_industry_key()
 
-        config = {
-            "brand_name": brand,
-            "domain": self.cg_domain_var.get().strip() or "https://example.com",
-            "language": lang_code,
-            "industry": ind_key,
-            "description": self.cg_keywords_var.get().strip(),
-            "pages": selected_page_ids,
-            "custom_pages": custom_selected,
-        }
+        # Build brief starting from active demo brief or clean dict
+        config = dict(self.active_demo_brief) if hasattr(self, "active_demo_brief") and self.active_demo_brief else {}
+        config["brand_name"] = brand
+        config["domain"] = self.cg_domain_var.get().strip() or "https://example.com"
+        config["language"] = lang_code
+        config["industry"] = ind_key
+        config["tagline"] = self.cg_tagline_var.get().strip()
+        config["founder_name"] = self.cg_founder_name_var.get().strip()
+        config["founder_title"] = self.cg_founder_title_var.get().strip()
+        config["founder_credentials"] = self.cg_founder_creds_var.get().strip()
+        config["year_founded"] = self.cg_year_founded_var.get().strip()
+        config["phone"] = self.cg_phone_var.get().strip()
+        config["address"] = self.cg_address_var.get().strip()
+        config["service_areas"] = [a.strip() for a in self.cg_areas_var.get().split(",") if a.strip()]
+        config["primary_cta"] = self.cg_cta_var.get().strip()
+
+        # Update services list
+        svcs = list(config.get("services", []))
+        while len(svcs) < 3:
+            svcs.append({})
+        if self.cg_svc1_var.get().strip():
+            svcs[0]["name"] = self.cg_svc1_var.get().strip()
+            svcs[0]["id"] = "service_detail_1"
+        if self.cg_svc2_var.get().strip():
+            svcs[1]["name"] = self.cg_svc2_var.get().strip()
+            svcs[1]["id"] = "service_detail_2"
+        if self.cg_svc3_var.get().strip():
+            svcs[2]["name"] = self.cg_svc3_var.get().strip()
+            svcs[2]["id"] = "service_detail_3"
+        config["services"] = [s for s in svcs if s.get("name")]
+
+        config["technologies"] = [t.strip() for t in self.cg_techs_var.get().split(",") if t.strip()]
+        config["guarantees"] = self.cg_guarantees_var.get().strip()
+        config["competitor_urls"] = [u.strip() for u in self.cg_competitors_var.get().split(",") if u.strip().startswith("http")]
+        config["pages"] = selected_page_ids
+        config["custom_pages"] = custom_selected
 
         self.is_generating_content = True
         self.btn_gen_content.config(state=tk.DISABLED)
         self.cg_progress_bar.start(10)
-        self.cg_status_var.set(f"Status: Synthesizing structured SEO/GEO content for {len(selected_page_ids) + len(custom_selected)} pages...")
+        self.cg_status_var.set(f"Status: Benchmarking competitors & synthesizing content for {len(selected_page_ids) + len(custom_selected)} pages...")
 
         self.content_thread = threading.Thread(target=self._run_content_thread, args=(config,), daemon=True)
         self.content_thread.start()

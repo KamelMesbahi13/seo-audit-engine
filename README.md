@@ -21,20 +21,26 @@ An executive-grade technical SEO audit engine, pre-launch technical architecture
 - **Turnkey Repository Starter Kit**: Automatically generates production-ready `robots.txt`, `llms.txt`, semantic HTML5 boilerplate with pre-configured `<head>`, security headers, and Schema.org knowledge graph JSON-LD.
 
 ### 3. Pre-Launch Page & Section Content Architect
-- **Content Synthesis Engine**: Automatically generates complete, fully-structured text content for every page of a new website based on selected business archetype and custom page lists.
-- **10 Industry Presets**: Healthcare/Clinic, SaaS/Software, E-Commerce, Digital Agency, Finance/Legal, Real Estate, Education/Courses, Hospitality/Tourism, Local Business/Contractor, and Media Publishing.
-- **SEO/GEO Optimization Standards**:
-  - Strict heading hierarchy (exactly 1 `<h1>`, ordered `<h2>` -> `<h3>`, zero skipped levels)
-  - Title tags engineered to 50–60 characters; Meta descriptions to 140–160 characters
-  - First-sentence Answer Engine Optimization (AEO) hooks in every section for AI search engine extraction (SearchGPT, Perplexity, Claude)
-  - Comprehensive body paragraphs, process steps, comparison tables, and FAQ accordion pairs
-  - Schema.org JSON-LD graph tailored per page type
+- **45-Question Client Diagnostic Intake Survey**: An exhaustive, 8-section discovery questionnaire covering legal business DNA, E-E-A-T leadership pedigree, ideal customer personas & buyer psychology, proprietary named frameworks (4 delivery phases), transparent pricing, local landmarks & cross-streets (Local SEO / NAP), before-and-after case studies, and prohibited/banned buzzwords.
+- **Active Competitor Web Benchmarking**: Live HTTP crawler and semantic analyzer that inspects leading competitor sites in real-time, extracts their semantic heading hierarchies (`<h1>`, `<h2>`, `<h3>`) and topical entity clusters, and synthesizes bespoke content engineered to outrank them.
+- **Zero-Placeholder Synthesis Guarantee**: Every generated page is 100% custom and factual—no `[Founder Name]`, `[Client Name]`, or boilerplate placeholders.
+- **10 Industry Presets & 3 Realistic Demo Profiles**:
+  - `dental_clinic`: *AuraDental Implant & Surgical Center* (Dr. Julian Vance, DDS, FICOI; All-on-4 implants, 3D CBCT, Beverly Hills/New York)
+  - `cybersecurity_saas`: *AegisVector AI Cloud Security* (Tariq Al-Mansoor, CISSP; Autonomous SOC & Zero-Trust, San Francisco, CA)
+  - `luxury_contractor`: *Vanguard Heritage Custom Builders* (Harrison Sterling; Custom estates, Passive House, Austin & Aspen)
+- **Strict SEO/GEO Calibration**:
+  - Exactly 1 `<h1>`, ordered `<h2>` -> `<h3>`, zero skipped levels
+  - Title tags calibrated to 50–60 characters; Meta descriptions to 140–160 characters
+  - First-sentence Answer Engine Optimization (AEO) hooks in every section for AI search engines (SearchGPT, Perplexity, Claude)
+  - Dynamic service-to-sitemap synchronization (custom services rename pages and generate custom URL slugs)
+  - Schema.org JSON-LD knowledge graph tailored per page type
   - Multilingual support: English (EN), French (FR), and Arabic (AR RTL)
-- **Export Artifacts**:
+- **Export Package**:
   - Structured Markdown per page (`pages/<slug>.md`)
   - Semantic HTML per page (`html/<slug>.html`)
   - Headless CMS JSON per page (`json/<slug>.json`)
   - Master Website Content document (`MASTER_CONTENT.md`)
+  - Competitor Benchmark Intelligence Report (`competitor_benchmark.json`)
   - AI Crawler Index (`llms.txt`)
   - Sitemap URLs (`sitemap_urls.txt`)
 
@@ -46,7 +52,7 @@ An executive-grade technical SEO audit engine, pre-launch technical architecture
 ## User Interfaces
 
 - **Native Desktop GUI**: Run `run_gui.bat` (or `python gui.py`) for a clean, minimalist 3-tab desktop application (Tab 1: Audit, Tab 2: Architect Blueprint, Tab 3: Page Content Architect).
-- **Web Browser UI**: Run `run_web.bat` (or `python web_ui.py`) to launch the local web interface at `http://127.0.0.1:8765` featuring real-time execution streaming and interactive multi-page content viewer.
+- **Web Browser UI**: Run `run_web.bat` (or `python web_ui.py`) to launch the local web interface at `http://127.0.0.1:8765` featuring real-time execution streaming, 1-click realistic demo profiles, live competitor benchmark intelligence, and interactive multi-page content viewer.
 - **CLI Commands**:
   - Audit: `python agy_seo.py audit <URL>`
   - Content Generator: `python content_generator.py --brand "MyBrand" --industry healthcare_medical --all-pages`

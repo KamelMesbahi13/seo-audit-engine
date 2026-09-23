@@ -44,16 +44,20 @@ except ImportError:
 try:
     from content_generator import (
         INDUSTRY_PRESETS,
+        DEMO_CLIENT_BRIEFS,
         ContentSynthesizer,
         export_content,
+        normalize_client_brief,
         _render_page_markdown,
         _render_page_html,
         _render_master_document,
     )
 except ImportError:
     INDUSTRY_PRESETS = {}
+    DEMO_CLIENT_BRIEFS = {}
     ContentSynthesizer = None
     export_content = None
+    normalize_client_brief = None
     _render_page_markdown = None
     _render_page_html = None
     _render_master_document = None
@@ -193,7 +197,7 @@ def run_blueprint_in_background(answers: dict):
         blueprint_state["is_generating"] = False
 
 
-HTML_TEMPLATE = """<!DOCTYPE html>
+HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -856,46 +860,442 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     Select an industry archetype and choose the pages for your upcoming website. The engine generates complete, fully-structured, SEO/GEO-optimized text content and sections for every single page (strict heading hierarchy, AEO hooks, E-E-A-T signals, Schema.org JSON-LD, and Core Web Vitals asset specs) with zero CSS bloat.
                 </p>
 
-                <!-- Generation Parameters Form -->
+                <!-- 1-Click Realistic Client Demo Profiles Bar -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 14px; background: #f9fafb; border: 1px solid #e5e7eb; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #374151; letter-spacing: 0.05em;">1-Click Realistic Client Profiles:</span>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="loadDemoProfile('dental_clinic')">Surgical / Dental Clinic</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="loadDemoProfile('cybersecurity_saas')">Cybersecurity SaaS</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="loadDemoProfile('luxury_contractor')">Luxury Contractor</button>
+                    <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; color: #b91c1c; border-color: #fca5a5;" onclick="resetClientBriefForm()">Clear Form</button>
+                </div>
+
+                                <!-- Comprehensive 45-Question Client Intake Diagnostic Survey -->
                 <form id="content-form" onsubmit="event.preventDefault(); generateSiteContent();">
-                    <div class="form-grid-3">
-                        <div class="field-group">
-                            <label class="field-label" for="cg-brand">Brand / Business Name</label>
-                            <input type="text" id="cg-brand" placeholder="e.g. Apex Health Clinic" value="InersiaMedical" required>
+                    
+                    <!-- Section 1: Business Identity & Legal DNA (Q1-Q6) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">1. Business Identity & Legal DNA (Q1-Q6)</div>
+                        <div class="form-grid-3">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-brand">Trade Brand Name (Q1)</label>
+                                <input type="text" id="cg-brand" placeholder="e.g. AuraDental Implant Center" value="AuraDental Implant & Surgical Center" required>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-legal-name">Full Legal Entity Name (Q1)</label>
+                                <input type="text" id="cg-legal-name" placeholder="e.g. Aura Surgical & Restorative PC" value="Aura Surgical & Restorative Dentistry PC">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-domain">Target Canonical Domain</label>
+                                <input type="text" id="cg-domain" placeholder="https://example.com" value="https://auradentalcare.com">
+                            </div>
                         </div>
-                        <div class="field-group">
-                            <label class="field-label" for="cg-domain">Target Domain</label>
-                            <input type="text" id="cg-domain" placeholder="https://example.com" value="https://example.com">
+
+                        <div class="form-grid-3" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-year-founded">Heritage Year Founded (Q2)</label>
+                                <input type="text" id="cg-year-founded" placeholder="e.g. 2008" value="2008">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-origin-location">Founding Location / City (Q2)</label>
+                                <input type="text" id="cg-origin-location" placeholder="e.g. New York, NY" value="New York, NY">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-lang">Content Language</label>
+                                <select id="cg-lang">
+                                    <option value="en" selected>English (Default)</option>
+                                    <option value="fr">French (Français)</option>
+                                    <option value="ar">Arabic (العربية - RTL)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="field-group">
-                            <label class="field-label" for="cg-lang">Content Language</label>
-                            <select id="cg-lang">
-                                <option value="en" selected>English (Default)</option>
-                                <option value="fr">French (Français)</option>
-                                <option value="ar">Arabic (العربية - RTL)</option>
-                            </select>
+
+                        <div class="form-grid-3" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-industry">Industry Archetype</label>
+                                <select id="cg-industry" onchange="onIndustryChange()">
+                                    <!-- Loaded dynamically -->
+                                </select>
+                                <div class="field-help" id="cg-industry-help">Tailored sitemaps & schemas.</div>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-tagline">Elevator Pitch / Tagline (Q4)</label>
+                                <input type="text" id="cg-tagline" placeholder="e.g. Advanced Digital Implantology" value="Advanced Digital Implantology & Aesthetic Restorations">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-tone">Brand Voice & Persona (Q5)</label>
+                                <input type="text" id="cg-tone" placeholder="e.g. authoritative, reassuring, empathetic" value="clinically authoritative, reassuring, transparent, uncompromising on precision">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-mission">Core Mission & Founding Purpose (Q3)</label>
+                                <input type="text" id="cg-mission" placeholder="The non-negotiable principle driving this firm..." value="To restore permanent, infection-free masticatory function and aesthetic dignity to patients through micro-surgical digital implantology without unnecessary bone grafts or prolonged agony.">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-banned-words">Banned Words & Negative Tone Constraints (Q6)</label>
+                                <input type="text" id="cg-banned-words" placeholder="Words/clichés strictly prohibited in copy..." value="cheap, bargain, budget dental, painless miracle, disrupt, synergy">
+                                <div class="field-help">Eliminates forbidden buzzwords from generated copy.</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-grid-2" style="margin-top: 10px;">
-                        <div class="field-group">
-                            <label class="field-label" for="cg-industry">Website Archetype / Industry</label>
-                            <select id="cg-industry" onchange="onIndustryChange()">
-                                <!-- Dynamically loaded from presets -->
-                            </select>
-                            <div class="field-help" id="cg-industry-help">Pre-configured pages tailored to this archetype.</div>
+                    <!-- Section 2: Leadership, Credentials & E-E-A-T Pedigree (Q7-Q12) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">2. Leadership, Credentials & E-E-A-T Pedigree (Q7-Q12)</div>
+                        <div class="form-grid-3">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-founder-name">Managing Director / Founder (Q7)</label>
+                                <input type="text" id="cg-founder-name" placeholder="e.g. Dr. Julian Vance, DDS" value="Dr. Julian Vance, DDS, FICOI">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-founder-title">Professional Role / Title (Q7)</label>
+                                <input type="text" id="cg-founder-title" placeholder="e.g. Chief Oral Surgeon" value="Chief Oral Surgeon & Fellow of ICOI">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-alma-maters">Alma Maters & Residencies (Q8)</label>
+                                <input type="text" id="cg-alma-maters" placeholder="e.g. Columbia University, Mount Sinai" value="Columbia University College of Dental Medicine, Mount Sinai Hospital Surgical Residency">
+                            </div>
                         </div>
+
+                        <div class="field-group" style="margin-top: 6px;">
+                            <label class="field-label" for="cg-founder-creds">Degrees, Fellowships & Board Certifications (Q8)</label>
+                            <input type="text" id="cg-founder-creds" value="DDS from Columbia University College of Dental Medicine, 18+ years surgical experience, 3,400+ successful dental implants, Fellow of the International Congress of Oral Implantologists">
+                        </div>
+
+                        <div class="form-grid-3" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-key-staff">Senior Staff Specialists & Roles (Q10)</label>
+                                <input type="text" id="cg-key-staff" placeholder="e.g. Dr. Elena Rostova, Board Anesthesiologist" value="Dr. Elena Rostova, Board-Certified Dental Anesthesiologist; Dr. Marcus Sterling, Master Prosthodontist & Digital Smile Designer">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-patents-pubs">Patents, Publications & Papers (Q11)</label>
+                                <input type="text" id="cg-patents-pubs" placeholder="e.g. Author in Journal of Oral Implantology" value="Author of 'Biomechanical Stress Distribution in Angled Multi-Unit Abutments' (Journal of Oral Implantology, 2019); US Patent for Dynamic 3D Surgical Guide Collar">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-awards">Honors, Awards & Recognitions (Q12)</label>
+                                <input type="text" id="cg-awards" placeholder="e.g. New York Top Oral Surgeon" value="New York Top Oral Surgeon (2021-2025), ICOI Master Clinician Honor, AACD Platinum Restorative Excellence Award">
+                            </div>
+                        </div>
+
+                        <div class="field-group" style="margin-top: 6px;">
+                            <label class="field-label" for="cg-origin-story">Founding Narrative & Breakthrough Catalyst (Q9)</label>
+                            <textarea id="cg-origin-story" rows="2">Founded in 2008 by Dr. Vance after seeing countless patients traumatized by ill-fitting dentures and multi-year bone graft failures. Dr. Vance pioneered computer-guided All-on-4 immediate loading to deliver fixed teeth in a single clinical day.</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Ideal Customer Persona (ICP) & Buyer Psychology (Q13-Q18) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">3. Ideal Customer Persona (ICP) & Buyer Psychology (Q13-Q18)</div>
+                        <div class="form-grid-2">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-target-icp">Primary Target Buyer Profile (Q13)</label>
+                                <input type="text" id="cg-target-icp" value="Adults aged 45-75 with failing dentition, terminal periodontal disease, or broken bridges seeking permanent, non-removable teeth with minimal downtime.">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-catalyst-event">Tipping-Point Emergency / Catalyst Event (Q15)</label>
+                                <input type="text" id="cg-catalyst-event" value="A broken front bridge before a family wedding or sudden acute periodontal abscess forcing an urgent decision.">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-pain-points">Top 3 Acute Pain Points (Q14, one per line)</label>
+                                <textarea id="cg-pain-points" rows="3">Debilitating embarrassment smiling or speaking in professional and social settings
+Inability to chew steak, apples, or firm foods causing gastrointestinal distress
+Severe anxiety regarding dental pain, needles, and prolonged surgical procedures</textarea>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-buyer-anxieties">Buyer Doubts, Fears & Hesitations (Q18, one per line)</label>
+                                <textarea id="cg-buyer-anxieties" rows="3">Fear of unbearable surgical pain during and after the procedure
+Fear of hidden costs inflating the initial quote
+Fear that implants will reject or fall out after a few years</textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-disqualifications">Disqualification Criteria ("Who We Are NOT For") (Q16)</label>
+                                <input type="text" id="cg-disqualifications" value="Patients seeking removable partial acrylic dentures, unverified bargain overseas tourism treatments, or patients refusing 3D diagnostic safety scans.">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-after-state">Desired Life Transformation / "After State" (Q17)</label>
+                                <input type="text" id="cg-after-state" value="Enjoying dinner with family without fear, laughing openly without covering the mouth, and possessing permanent, infection-free teeth guaranteed for life.">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Proprietary Methodology, Process & Tech Stack (Q19-Q25) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">4. Proprietary Methodology, Process & Tech Stack (Q19-Q25)</div>
+                        <div class="form-grid-2">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-framework-name">Branded Framework / Methodology Name (Q19)</label>
+                                <input type="text" id="cg-framework-name" value="The 4-D Guided Precision Restoration Protocol">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-technologies">Proprietary Equipment, Machinery & Tools (Q24)</label>
+                                <input type="text" id="cg-technologies" value="Planmeca ProMax 3D CBCT Scanner, Fotona LightWalker Dual Laser, 3Shape TRIOS 5 Scanner, SprintRay Pro55 3D Guide Printer, Pic Dental Camera">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-phase1">Phase 1: Diagnostic & Discovery (Q20)</label>
+                                <input type="text" id="cg-phase1" value="Comprehensive 3D CBCT Volumetric Scan & Digital Smile Aesthetic Simulation (Same-Day Assessment)">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-phase2">Phase 2: Tailored Blueprint Architecture (Q21)</label>
+                                <input type="text" id="cg-phase2" value="Computer-Guided Virtual Surgery Planning & Custom Titanium Multi-Unit Abutment CAD/CAM Milling">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-phase3">Phase 3: Precision Execution & Surgery (Q22)</label>
+                                <input type="text" id="cg-phase3" value="Twilight IV Sedation, Minimally Invasive Computer-Guided Fixture Placement & Immediate Fixed Provisional Delivery (Single Day)">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-phase4">Phase 4: Optimization & Lifetime Warranty (Q23)</label>
+                                <input type="text" id="cg-phase4" value="Permanent Monolithic Zirconia Final Bridge Delivery & Lifetime Bi-Annual Maintenance Care">
+                            </div>
+                        </div>
+
+                        <div class="field-group" style="margin-top: 8px;">
+                            <label class="field-label" for="cg-guarantees">Ironclad Guarantees, Warranties & SLAs (Q25)</label>
+                            <input type="text" id="cg-guarantees" value="Lifetime structural replacement warranty on all titanium implant fixtures; 10-year replacement warranty on final monolithic zirconia prosthetics; 100% itemized fee guarantee with zero surprise post-op bills.">
+                        </div>
+                    </div>
+
+                    <!-- Section 5: Flagship Services & Transparent Pricing (Q26-Q31) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">5. Flagship Services Portfolio & Transparent Pricing (Q26-Q31)</div>
+                        
+                        <!-- Service 1 -->
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; margin-bottom: 10px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px;">Flagship Service 1 (Q26) — Automatically renames sitemap checklist item & generates custom URL slug</div>
+                            <div class="form-grid-3">
+                                <div class="field-group">
+                                    <label class="field-label">Service Name</label>
+                                    <input type="text" id="cg-svc1-name" value="All-on-4 Same-Day Full Arch Dental Implants" oninput="updateServiceLabels()">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Target Audience</label>
+                                    <input type="text" id="cg-svc1-aud" value="Adults with failing dentition, severe bone loss, or uncomfortable dentures">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Pricing Range</label>
+                                    <input type="text" id="cg-svc1-pri" value="$18,500 per arch with zero-interest 24-month financing options">
+                                </div>
+                            </div>
+                            <div class="form-grid-2" style="margin-top: 6px;">
+                                <div class="field-group">
+                                    <label class="field-label">Core Benefit</label>
+                                    <input type="text" id="cg-svc1-ben" value="Full-arch permanent teeth restoration in a single appointment with zero bone grafting in 90% of cases">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Deliverables</label>
+                                    <input type="text" id="cg-svc1-del" value="Pre-op 3D CBCT scan, computer-guided titanium fixture placement, immediate provisional bridge, final zirconia restoration">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service 2 -->
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; margin-bottom: 10px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px;">Flagship Service 2 (Q27)</div>
+                            <div class="form-grid-3">
+                                <div class="field-group">
+                                    <label class="field-label">Service Name</label>
+                                    <input type="text" id="cg-svc2-name" value="Digital Smile Design Porcelain Veneers" oninput="updateServiceLabels()">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Target Audience</label>
+                                    <input type="text" id="cg-svc2-aud" value="Patients seeking aesthetic smile enhancement, correcting chipped, discolored, or misaligned teeth">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Pricing Range</label>
+                                    <input type="text" id="cg-svc2-pri" value="$1,800 - $2,400 per tooth with comprehensive 10-year aesthetic warranty">
+                                </div>
+                            </div>
+                            <div class="form-grid-2" style="margin-top: 6px;">
+                                <div class="field-group">
+                                    <label class="field-label">Core Benefit</label>
+                                    <input type="text" id="cg-svc2-ben" value="Handcrafted micro-thin ceramic veneers preserving 95% of natural tooth enamel with 3D digital simulation">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Deliverables</label>
+                                    <input type="text" id="cg-svc2-del" value="Digital facial scan, 3D wax-up try-in, microscope preparation, custom master ceramist porcelain fabrication">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service 3 -->
+                        <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px;">Flagship Service 3 (Q28)</div>
+                            <div class="form-grid-3">
+                                <div class="field-group">
+                                    <label class="field-label">Service Name</label>
+                                    <input type="text" id="cg-svc3-name" value="IV Sedation Dentistry & Laser Periodontics" oninput="updateServiceLabels()">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Target Audience</label>
+                                    <input type="text" id="cg-svc3-aud" value="Dental-phobic patients, complex surgical candidates, or advanced gum disease sufferers">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Pricing Range</label>
+                                    <input type="text" id="cg-svc3-pri" value="$850 per surgical sedation session; LANAP full mouth $4,200">
+                                </div>
+                            </div>
+                            <div class="form-grid-2" style="margin-top: 6px;">
+                                <div class="field-group">
+                                    <label class="field-label">Core Benefit</label>
+                                    <input type="text" id="cg-svc3-ben" value="Completely painless, anxiety-free surgical care with LANAP laser technology accelerating soft-tissue recovery">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Deliverables</label>
+                                    <input type="text" id="cg-svc3-del" value="Board-certified anesthesiologist monitoring, vitals tracking, LANAP biostimulation laser treatment, post-op recovery kit">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-3" style="margin-top: 10px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-secondary-offerings">Secondary Add-ons & Retainers (Q29)</label>
+                                <input type="text" id="cg-secondary-offerings" value="VIP Private Recovery Suite, Same-Day Emergency Surgical On-Call, Comprehensive Pre-Op Medical Clearance Coordination">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-pricing-model">Billing Structure & Financing (Q30)</label>
+                                <input type="text" id="cg-pricing-model" value="100% itemized transparent pricing; All-on-4 complete arch starting at $18,500; 0% APR 24-month healthcare financing via Proceed Finance & CareCredit">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-turnaround">Turnaround Speed / Delivery Time (Q31)</label>
+                                <input type="text" id="cg-turnaround" value="Same-Day Immediate Fixed Teeth (under 6 hours clinical time); final custom zirconia bridge seated at 12 weeks post-osseointegration">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 6: Local Geography, Micro-Anchors & Physical NAP (Q32-Q36) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">6. Local Geography, Micro-Anchors & Physical NAP (Q32-Q36)</div>
+                        <div class="form-grid-3">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-phone">Primary Phone (Q36)</label>
+                                <input type="text" id="cg-phone" value="+1 (212) 555-0198">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-email">Electronic Mail (Q36)</label>
+                                <input type="text" id="cg-email" value="concierge@auradentalcare.com">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-urgent-contact">24/7 Priority Emergency Channel (Q36)</label>
+                                <input type="text" id="cg-urgent-contact" value="+1 (212) 555-0199 (24/7 Dedicated Surgical Post-Op Emergency Line)">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-address">Physical Facility Address (Q32)</label>
+                                <input type="text" id="cg-address" value="450 Lexington Ave, Suite 1400, New York, NY 10017">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-service-areas">Target Municipalities, Suburbs & Radii (Q33)</label>
+                                <input type="text" id="cg-service-areas" value="Midtown Manhattan, Upper East Side, Upper West Side, Brooklyn Heights, Westchester County, Greenwich CT, Tri-State Area">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-local-landmarks">Local Proximity Landmarks & Cross-Streets (Q34)</label>
+                                <input type="text" id="cg-local-landmarks" value="Directly across from Grand Central Terminal, at the corner of Lexington Avenue and 45th Street, 3 blocks east of Bryant Park">
+                                <div class="field-help">Essential for Local SEO citations and AI engine geocoding.</div>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-facility-access">Facility Accessibility & Parking (Q35)</label>
+                                <input type="text" id="cg-facility-access" value="Private elevator bank directly to Suite 1400, covered subterranean valet parking on 45th St, fully ADA wheelchair accessible surgical operatory">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 7: Proof Metrics, Case Studies & Real Reviews (Q37-Q41) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div class="card-title">7. Proof Metrics, Case Studies & Real Reviews (Q37-Q41)</div>
+                        <div class="form-grid-2">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-proof-metrics">Top Quantified Proof Numbers (Q37, Pipe Separated)</label>
+                                <input type="text" id="cg-proof-metrics" value="Successful Implants Placed: 3,400+ | Clinical Success Rate: 98.6% | Years in Surgical Practice: 18 Years | Same-Day Full Arches Delivered: 1,250+">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-certifications">Accreditations & Regulatory Compliance (Q41)</label>
+                                <input type="text" id="cg-certifications" value="Fellow of the International Congress of Oral Implantologists (FICOI), American Academy of Cosmetic Dentistry (AACD), ADA Member, HIPAA Compliant & Hospital-Grade HEPA Filtration">
+                            </div>
+                        </div>
+
+                        <!-- Case Studies -->
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-case1">Case Study 1: Challenge -> Solution -> Result (Q38)</label>
+                                <textarea id="cg-case1" rows="3">Title: Terminal Periodontal Bone Loss to Permanent Full Arch in 6 Hours | Client: Thomas B., 58, Manhattan Corporate Executive | Challenge: Suffered from terminal generalized periodontitis with 80% bone loss on upper arch, unable to chew solids, facing conventional dentures. | Solution: Dr. Vance performed 3D guided computer surgery placing four angled Neodent fixtures utilizing dense zygomatic-adjacent bone, avoiding sinus lifts entirely. | Outcome: Fixed acrylic hybrid bridge delivered in 5.5 hours under IV sedation. Zero postoperative pain reported; transitioned to final monolithic zirconia at 12 weeks.</textarea>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-case2">Case Study 2: Challenge -> Solution -> Result (Q39)</label>
+                                <textarea id="cg-case2" rows="3">Title: Complex Traumatic Aesthetic Smile Reconstruction | Client: Sarah K., 42, Television Producer | Challenge: Traumatic incisor fracture and failing root canal with severe aesthetic discoloration and soft-tissue recession. | Solution: Immediate laser socket disinfection, placement of custom titanium zirconium implant, platelet-rich fibrin (PRF) soft-tissue graft, and custom shaded ceramic crown. | Outcome: Natural gingival emergence profile preserved. Restored full aesthetic symmetry matching adjacent natural teeth with 100% patient satisfaction.</textarea>
+                            </div>
+                        </div>
+
+                        <div class="field-group" style="margin-top: 8px;">
+                            <label class="field-label" for="cg-reviews">Authentic Attributed Client Testimonials (Q40, Author | Service | Quote)</label>
+                            <textarea id="cg-reviews" rows="3">Eleanor Vance, Retired Educator | All-on-4 Same-Day Implants | I spent 6 years hiding my smile behind my hand and dreading traditional dentures. Dr. Vance and his team replaced my failing upper teeth in a single morning. Woke up from twilight sedation with zero pain and a flawless smile. One year later, eating steak and apples feels completely natural.
+Marcus Sterling, Managing Director | Digital Smile Design Veneers | The 3D preview showed me exactly what my teeth would look like before Dr. Vance touched a single tooth. The ceramic work is so natural that even my business colleagues just assumed I took up whitening. Worth every single penny.
+Sophia Chen, Architect | IV Sedation Dentistry | As someone with debilitating dental panic, AuraDental changed everything. The anesthesiologist had me relaxed in minutes, and Dr. Vance completed my complex extractions and implant placement while I slept comfortably. Truly life-changing care.</textarea>
+                        </div>
+
+                        <div class="field-group" style="margin-top: 8px;">
+                            <label class="field-label" for="cg-faqs">Common Buyer Objections & Exact Rebuttals (Q: ... | A: ...)</label>
+                            <textarea id="cg-faqs" rows="3">Q: How painful is the dental implant surgery and recovery? | A: Thanks to computerized 3D-guided navigation and IV twilight sedation, patients feel zero pain during the procedure. Post-operative discomfort is comparable to a minor tooth extraction and is comfortably managed with standard over-the-counter anti-inflammatories within 48 to 72 hours.
+Q: How can you place teeth in a single day without waiting for healing? | A: Our All-on-4 protocol utilizes four strategically angled titanium implants anchored in dense basal bone. This achieves immediate mechanical stability (above 35 Ncm torque), allowing us to secure a rigid provisional bridge immediately while bone osseointegration occurs over the next 12 weeks.
+Q: What happens if a dental implant fails to integrate? | A: While our surgical success rate exceeds 98.6%, AuraDental provides a comprehensive lifetime implant warranty. In the rare event an implant fails to integrate, Dr. Vance removes, cleans, and replaces the implant fixture at zero surgical cost to you.</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Section 8: Active Competitor Web Research & Market Gap (Q42-Q45) -->
+                    <div class="card" style="margin-bottom: 14px; padding: 16px; border-left: 3px solid #b91c1c;">
+                        <div class="card-title" style="color: #b91c1c;">8. Active Competitor Web Research & Market Gap (Q42-Q45)</div>
+                        <p style="font-size: 12px; color: #4b5563; margin-bottom: 10px;">
+                            When you click generate, the engine actively crawls and benchmarks these competitor sites (or top field champions), extracting their semantic heading hierarchies, topical keyword entity clusters, and layout patterns to synthesize content engineered to outperform them.
+                        </p>
                         <div class="field-group">
-                            <label class="field-label" for="cg-keywords">Core Value Proposition / Focus Keywords</label>
-                            <input type="text" id="cg-keywords" placeholder="e.g. expert dental implants, cosmetic dentistry, gentle care">
-                            <div class="field-help">Injected into section copy, answer engine hooks, and metadata.</div>
+                            <label class="field-label" for="cg-competitor-urls">Competitor / Benchmark URLs to Inspect Live (Q42, comma separated)</label>
+                            <input type="text" id="cg-competitor-urls" value="https://www.clevelandclinic.org, https://www.mayoclinic.org" placeholder="https://competitor1.com, https://competitor2.com">
+                            <div class="field-help">Leave as-is or enter your client's top local or national competitors.</div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-competitor-shortcomings">What Competitors Do Wrong / Fail At (Q43)</label>
+                                <input type="text" id="cg-competitor-shortcomings" value="Traditional corporate dental clinics force patients through multiple outside referrals, months of uncomfortable removable healing dentures, and surprise bill add-ons for bone grafting and anesthesia.">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-uvp">The Client's Unfair Advantage / UVP (Q44)</label>
+                                <input type="text" id="cg-uvp" value="Everything—from 3D diagnostic imaging and surgical placement to master lab ceramic milling—is executed under one roof by a board-certified ICOI Fellow with zero referrals and zero delays.">
+                            </div>
+                        </div>
+
+                        <div class="form-grid-2" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label class="field-label" for="cg-cta">Primary Call-to-Action (CTA) (Q45)</label>
+                                <input type="text" id="cg-cta" value="Book Your 3D Surgical Implant Consultation">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label" for="cg-lead-magnet">Secondary Low-Friction Lead Magnet (Q45)</label>
+                                <input type="text" id="cg-lead-magnet" value="Download the Free 2026 Guide to Same-Day All-on-4 Implants (Pricing, Candidacy & Recovery)">
+                            </div>
                         </div>
                     </div>
 
                     <!-- Sitemap Page Selection Checklist -->
-                    <div style="margin-top: 18px; border-top: 1px solid #e5e7eb; padding-top: 14px;">
+                    <div class="card" style="margin-bottom: 16px; padding: 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <label class="field-label" style="margin-bottom: 0;">Select Pages to Generate Content For</label>
+                            <label class="field-label" style="margin-bottom: 0;">Sitemap Checklist: Select Pages to Synthesize</label>
                             <div style="display: flex; gap: 8px;">
                                 <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllContentPages(true)">Select All</button>
                                 <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="selectAllContentPages(false)">Clear Optional</button>
@@ -903,18 +1303,17 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                         </div>
 
                         <div id="content-pages-checklist" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; padding: 10px; border: 1px solid #e5e7eb; background: #f9fafb;">
-                            <!-- Checkboxes injected dynamically -->
+                            <!-- Injected dynamically -->
                         </div>
 
-                        <!-- Add Custom Page Row -->
                         <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
-                            <input type="text" id="cg-custom-title" placeholder="Add custom page title (e.g. Pediatric Care, London Office, VIP Concierge)" style="flex: 1; padding: 7px 10px; font-size: 12px;">
+                            <input type="text" id="cg-custom-title" placeholder="Add custom page title (e.g. VIP Concierge Recovery Suite, International Patients)" style="flex: 1; padding: 7px 10px; font-size: 12px;">
                             <button type="button" class="btn btn-outline" style="padding: 7px 14px; font-size: 12px;" onclick="addCustomContentPage()">+ Add Custom Page</button>
                         </div>
                     </div>
 
-                    <div class="btn-row" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                        <button type="submit" id="btn-generate-content" class="btn btn-accent">GENERATE SITE CONTENT</button>
+                    <div class="btn-row" style="margin-top: 16px;">
+                        <button type="submit" id="btn-generate-content" class="btn btn-accent" style="padding: 12px 28px; font-size: 13px;">GENERATE BESPOKE SITE CONTENT</button>
                         <button type="button" id="btn-open-content-folder" class="btn btn-outline" onclick="openContentFolder()" disabled>OPEN GENERATED FOLDER</button>
                         <button type="button" id="btn-copy-master-md" class="btn btn-outline" onclick="copyMasterMarkdown()" disabled>COPY MASTER MARKDOWN</button>
                     </div>
@@ -1330,7 +1729,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         // -------------------------------------------------------------
         // Tab 3: Content Architect Controller
         // -------------------------------------------------------------
+        // Tab 3: Content Architect Controller
+        // -------------------------------------------------------------
         let contentPresets = {};
+        let demoBriefs = {};
         let lastContentResults = null;
         let lastContentDir = null;
         let activeContentPageIndex = 0;
@@ -1340,74 +1742,219 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         async function loadContentPresets() {
             try {
                 const res = await fetch("/api/content/presets");
-                contentPresets = await res.json();
+                const data = await res.json();
+                if (data.presets) {
+                    contentPresets = data.presets;
+                    demoBriefs = data.demo_briefs || {};
+                } else {
+                    contentPresets = data;
+                }
                 window.contentPresetsLoaded = true;
 
                 const indSelect = document.getElementById("cg-industry");
                 indSelect.innerHTML = "";
-                for (const [key, data] of Object.entries(contentPresets)) {
+                for (const [key, pdata] of Object.entries(contentPresets)) {
                     const opt = document.createElement("option");
                     opt.value = key;
-                    opt.textContent = data.label;
+                    opt.textContent = pdata.label;
                     indSelect.appendChild(opt);
                 }
                 onIndustryChange();
+                updateServiceLabels();
             } catch (e) {
                 console.error("Failed to load content presets:", e);
             }
         }
 
+                function loadDemoProfile(profileKey) {
+            const p = demoBriefs[profileKey];
+            if (!p) {
+                alert("Demo profile not found: " + profileKey);
+                return;
+            }
+
+            // Section 1: Business Identity (Q1-Q6)
+            document.getElementById("cg-brand").value = p.brand_name || "";
+            document.getElementById("cg-legal-name").value = p.legal_entity_name || "";
+            document.getElementById("cg-domain").value = p.domain || "https://example.com";
+            document.getElementById("cg-year-founded").value = p.year_founded || "";
+            document.getElementById("cg-origin-location").value = p.origin_location || "";
+            document.getElementById("cg-lang").value = p.language || "en";
+            if (p.industry) document.getElementById("cg-industry").value = p.industry;
+            document.getElementById("cg-tagline").value = p.tagline || "";
+            document.getElementById("cg-tone").value = p.brand_tone || p.tone || "";
+            document.getElementById("cg-mission").value = p.mission_statement || "";
+            document.getElementById("cg-banned-words").value = (p.banned_words || []).join(", ");
+
+            // Section 2: Leadership & Credentials (Q7-Q12)
+            document.getElementById("cg-founder-name").value = p.founder_name || "";
+            document.getElementById("cg-founder-title").value = p.founder_title || "";
+            document.getElementById("cg-alma-maters").value = p.alma_maters || "";
+            document.getElementById("cg-founder-creds").value = p.founder_credentials || "";
+            document.getElementById("cg-key-staff").value = p.key_staff_specialists || "";
+            document.getElementById("cg-patents-pubs").value = p.patents_publications || "";
+            document.getElementById("cg-awards").value = p.industry_awards || "";
+            document.getElementById("cg-origin-story").value = p.origin_story || "";
+
+            // Section 3: ICP & Buyer Psychology (Q13-Q18)
+            document.getElementById("cg-target-icp").value = p.target_buyer_persona || "";
+            document.getElementById("cg-catalyst-event").value = p.catalyst_event || "";
+            document.getElementById("cg-pain-points").value = (p.pain_points || []).join("\n");
+            document.getElementById("cg-buyer-anxieties").value = (p.buyer_anxieties || []).join("\n");
+            document.getElementById("cg-disqualifications").value = p.disqualification_criteria || "";
+            document.getElementById("cg-after-state").value = p.desired_after_state || "";
+
+            // Section 4: Methodology & Process (Q19-Q25)
+            document.getElementById("cg-framework-name").value = p.framework_name || "";
+            document.getElementById("cg-technologies").value = (p.technologies || []).join(", ");
+            document.getElementById("cg-phase1").value = p.phase1_discovery || "";
+            document.getElementById("cg-phase2").value = p.phase2_blueprint || "";
+            document.getElementById("cg-phase3").value = p.phase3_execution || "";
+            document.getElementById("cg-phase4").value = p.phase4_optimization || "";
+            document.getElementById("cg-guarantees").value = p.guarantees || "";
+
+            // Section 5: Services & Pricing (Q26-Q31)
+            const svcs = p.services || [];
+            if (svcs[0]) {
+                document.getElementById("cg-svc1-name").value = svcs[0].name || "";
+                document.getElementById("cg-svc1-aud").value = svcs[0].target_audience || "";
+                document.getElementById("cg-svc1-pri").value = svcs[0].pricing || "";
+                document.getElementById("cg-svc1-ben").value = svcs[0].core_benefit || "";
+                document.getElementById("cg-svc1-del").value = svcs[0].deliverables || "";
+            }
+            if (svcs[1]) {
+                document.getElementById("cg-svc2-name").value = svcs[1].name || "";
+                document.getElementById("cg-svc2-aud").value = svcs[1].target_audience || "";
+                document.getElementById("cg-svc2-pri").value = svcs[1].pricing || "";
+                document.getElementById("cg-svc2-ben").value = svcs[1].core_benefit || "";
+                document.getElementById("cg-svc2-del").value = svcs[1].deliverables || "";
+            }
+            if (svcs[2]) {
+                document.getElementById("cg-svc3-name").value = svcs[2].name || "";
+                document.getElementById("cg-svc3-aud").value = svcs[2].target_audience || "";
+                document.getElementById("cg-svc3-pri").value = svcs[2].pricing || "";
+                document.getElementById("cg-svc3-ben").value = svcs[2].core_benefit || "";
+                document.getElementById("cg-svc3-del").value = svcs[2].deliverables || "";
+            }
+            document.getElementById("cg-secondary-offerings").value = p.secondary_offerings || "";
+            document.getElementById("cg-pricing-model").value = p.pricing_model || "";
+            document.getElementById("cg-turnaround").value = p.turnaround_speed || "";
+
+            // Section 6: Local Geography & NAP (Q32-Q36)
+            document.getElementById("cg-phone").value = p.phone || "";
+            document.getElementById("cg-email").value = p.email || "";
+            document.getElementById("cg-urgent-contact").value = p.urgent_contact || "";
+            document.getElementById("cg-address").value = p.address || "";
+            document.getElementById("cg-service-areas").value = (p.service_areas || []).join(", ");
+            document.getElementById("cg-local-landmarks").value = p.local_landmarks || "";
+            document.getElementById("cg-facility-access").value = p.facility_access || "";
+
+            // Section 7: Proof & Case Studies (Q37-Q41)
+            const proofStrs = (p.proof_metrics || []).map(m => `${m.label}: ${m.value}`).join(" | ");
+            document.getElementById("cg-proof-metrics").value = proofStrs;
+            document.getElementById("cg-certifications").value = (p.certifications || []).join(", ");
+
+            if (p.case_study_1) {
+                const c = p.case_study_1;
+                document.getElementById("cg-case1").value = `Title: ${c.title || ''} | Client: ${c.client || ''} | Challenge: ${c.challenge || ''} | Solution: ${c.solution || ''} | Outcome: ${c.outcome || ''}`;
+            }
+            if (p.case_study_2) {
+                const c = p.case_study_2;
+                document.getElementById("cg-case2").value = `Title: ${c.title || ''} | Client: ${c.client || ''} | Challenge: ${c.challenge || ''} | Solution: ${c.solution || ''} | Outcome: ${c.outcome || ''}`;
+            }
+
+            const revStrs = (p.real_reviews || []).map(r => `${r.author} | ${r.service} | ${r.quote}`).join("\n");
+            document.getElementById("cg-reviews").value = revStrs;
+
+            const faqStrs = (p.objections_faqs || []).map(f => `Q: ${f.question} | A: ${f.answer}`).join("\n");
+            document.getElementById("cg-faqs").value = faqStrs;
+
+            // Section 8: Competitor Benchmarks (Q42-Q45)
+            document.getElementById("cg-competitor-urls").value = (p.competitor_urls || []).join(", ");
+            document.getElementById("cg-competitor-shortcomings").value = p.competitor_shortcomings || "";
+            document.getElementById("cg-uvp").value = p.unfair_advantage_uvp || "";
+            document.getElementById("cg-cta").value = p.primary_cta || "";
+            document.getElementById("cg-lead-magnet").value = p.secondary_lead_magnet || "";
+
+            onIndustryChange();
+            updateServiceLabels();
+        }
+
+        function resetClientBriefForm() {
+            document.querySelectorAll("#content-form input[type='text'], #content-form textarea").forEach(el => {
+                if (el.id !== "cg-domain") el.value = "";
+            });
+            document.getElementById("cg-domain").value = "https://example.com";
+            updateServiceLabels();
+        }
+
         function onIndustryChange() {
-            const key = document.getElementById("cg-industry").value;
+            const indSelect = document.getElementById("cg-industry");
+            if (!indSelect) return;
+            const key = indSelect.value;
             const data = contentPresets[key];
             if (!data) return;
 
-            document.getElementById("cg-industry-help").textContent = "Tone: " + data.tone + " | Audience: " + data.audience;
-            if (!document.getElementById("cg-keywords").value) {
-                document.getElementById("cg-keywords").value = data.keywords_hint || "";
+            const helpEl = document.getElementById("cg-industry-help");
+            if (helpEl) {
+                helpEl.textContent = "Tone: " + (data.tone || "") + " | Audience: " + (data.audience || "");
             }
 
             const checklist = document.getElementById("content-pages-checklist");
+            if (!checklist) return;
             checklist.innerHTML = "";
 
-            data.default_pages.forEach(p => {
-                const item = document.createElement("div");
-                item.className = "checklist-item";
-                item.style.alignItems = "center";
-                const chk = document.createElement("input");
-                chk.type = "checkbox";
-                chk.id = "cg-chk-" + p.id;
-                chk.value = p.id;
-                chk.checked = true;
-                chk.dataset.title = p.title;
+            if (data.default_pages && Array.isArray(data.default_pages)) {
+                data.default_pages.forEach(p => {
+                    const item = document.createElement("div");
+                    item.className = "checklist-item";
+                    item.style.alignItems = "center";
+                    item.style.display = "flex";
+                    item.style.gap = "8px";
+                    item.style.padding = "6px 8px";
+                    item.style.background = "#ffffff";
+                    item.style.border = "1px solid #e5e7eb";
 
-                const lbl = document.createElement("label");
-                lbl.htmlFor = chk.id;
-                lbl.style.cursor = "pointer";
-                lbl.style.display = "flex";
-                lbl.style.alignItems = "center";
-                lbl.style.gap = "6px";
-                lbl.style.flex = "1";
+                    const chk = document.createElement("input");
+                    chk.type = "checkbox";
+                    chk.id = "cg-chk-" + p.id;
+                    chk.value = p.id;
+                    chk.checked = true;
+                    chk.dataset.title = p.title;
 
-                lbl.innerHTML = "<span>" + escapeHtml(p.title) + "</span>" + (p.required ? '<span class="tag-pill req">Required</span>' : '<span class="tag-pill">Standard</span>');
+                    const lbl = document.createElement("label");
+                    lbl.htmlFor = chk.id;
+                    lbl.style.cursor = "pointer";
+                    lbl.style.display = "flex";
+                    lbl.style.alignItems = "center";
+                    lbl.style.gap = "6px";
+                    lbl.style.flex = "1";
+                    lbl.style.marginBottom = "0";
 
-                item.appendChild(chk);
-                item.appendChild(lbl);
-                checklist.appendChild(item);
-            });
+                    lbl.innerHTML = "<span>" + escapeHtml(p.title) + "</span>" + (p.required ? ' <span class="tag-pill req" style="background:#fee2e2; color:#991b1b; border:1px solid #fecaca; font-size:10px; padding:1px 5px; border-radius:3px;">Required</span>' : ' <span class="tag-pill" style="background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; font-size:10px; padding:1px 5px; border-radius:3px;">Standard</span>');
+
+                    item.appendChild(chk);
+                    item.appendChild(lbl);
+                    checklist.appendChild(item);
+                });
+            }
 
             customContentPagesList.forEach((cp, idx) => {
                 renderCustomPageItem(cp, idx);
             });
+            updateServiceLabels();
         }
 
         function selectAllContentPages(selectAll) {
-            const key = document.getElementById("cg-industry").value;
+            const indSelect = document.getElementById("cg-industry");
+            const key = indSelect ? indSelect.value : "";
             const data = contentPresets[key];
-            const requiredIds = new Set(data ? data.default_pages.filter(p => p.required).map(p => p.id) : []);
+            const requiredIds = new Set(data && data.default_pages ? data.default_pages.filter(p => p.required).map(p => p.id) : []);
 
             document.querySelectorAll("#content-pages-checklist input[type='checkbox']").forEach(chk => {
-                if (selectAll) {
+                if (chk.dataset.isCustom === "true") {
+                    chk.checked = selectAll;
+                } else if (selectAll) {
                     chk.checked = true;
                 } else {
                     chk.checked = requiredIds.has(chk.value);
@@ -1417,6 +1964,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         function addCustomContentPage() {
             const input = document.getElementById("cg-custom-title");
+            if (!input) return;
             const title = input.value.trim();
             if (!title) return;
 
@@ -1428,9 +1976,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         function renderCustomPageItem(cp, idx) {
             const checklist = document.getElementById("content-pages-checklist");
+            if (!checklist) return;
             const item = document.createElement("div");
             item.className = "checklist-item";
             item.style.alignItems = "center";
+            item.style.display = "flex";
+            item.style.gap = "8px";
+            item.style.padding = "6px 8px";
+            item.style.background = "#ffffff";
+            item.style.border = "1px solid #e5e7eb";
             item.id = "cg-item-" + cp.id;
 
             const chk = document.createElement("input");
@@ -1448,7 +2002,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             lbl.style.alignItems = "center";
             lbl.style.gap = "6px";
             lbl.style.flex = "1";
-            lbl.innerHTML = "<span>" + escapeHtml(cp.title) + '</span> <span class="tag-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">Custom</span>';
+            lbl.style.marginBottom = "0";
+
+            lbl.innerHTML = "<span>" + escapeHtml(cp.title) + '</span> <span class="tag-pill" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size:10px; padding:1px 5px; border-radius:3px;">Custom</span>';
 
             const delBtn = document.createElement("button");
             delBtn.type = "button";
@@ -1456,9 +2012,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             delBtn.style.border = "none";
             delBtn.style.color = "#b91c1c";
             delBtn.style.cursor = "pointer";
-            delBtn.style.fontSize = "12px";
+            delBtn.style.fontSize = "13px";
             delBtn.style.fontWeight = "bold";
-            delBtn.innerText = "×";
+            delBtn.style.padding = "0 4px";
+            delBtn.title = "Delete Page";
+            delBtn.innerText = "✕";
             delBtn.onclick = () => {
                 customContentPagesList = customContentPagesList.filter(x => x.id !== cp.id);
                 item.remove();
@@ -1470,16 +2028,27 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             checklist.appendChild(item);
         }
 
+        function updateServiceLabels() {
+            const s1 = document.getElementById("cg-svc1-name") ? document.getElementById("cg-svc1-name").value.trim() : "";
+            const s2 = document.getElementById("cg-svc2-name") ? document.getElementById("cg-svc2-name").value.trim() : "";
+            const s3 = document.getElementById("cg-svc3-name") ? document.getElementById("cg-svc3-name").value.trim() : "";
+
+            const lbl1 = document.querySelector("#cg-chk-service_detail_1 + label span");
+            if (lbl1 && s1) lbl1.textContent = s1;
+
+            const lbl2 = document.querySelector("#cg-chk-service_detail_2 + label span");
+            if (lbl2 && s2) lbl2.textContent = s2;
+
+            const lbl3 = document.querySelector("#cg-chk-service_detail_3 + label span");
+            if (lbl3 && s3) lbl3.textContent = s3;
+        }
+
         async function generateSiteContent() {
             const brand = document.getElementById("cg-brand").value.trim();
             if (!brand) {
                 alert("Please enter a Brand Name.");
                 return;
             }
-            const domain = document.getElementById("cg-domain").value.trim() || "https://example.com";
-            const lang = document.getElementById("cg-lang").value;
-            const industry = document.getElementById("cg-industry").value;
-            const keywords = document.getElementById("cg-keywords").value.trim();
 
             const checkedBoxes = Array.from(document.querySelectorAll("#content-pages-checklist input[type='checkbox']:checked"));
             if (checkedBoxes.length === 0) {
@@ -1497,30 +2066,193 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 }
             });
 
+            // Parse proof metrics
+            const rawMetrics = document.getElementById("cg-proof-metrics").value;
+            const parsedProof = [];
+            rawMetrics.split("|").forEach(part => {
+                const sub = part.split(":");
+                if (sub.length >= 2) {
+                    parsedProof.push({ label: sub[0].trim(), value: sub.slice(1).join(":").trim() });
+                }
+            });
+
+            // Parse reviews
+            const rawRevs = document.getElementById("cg-reviews").value;
+            const parsedRevs = [];
+            rawRevs.split("\n").forEach(line => {
+                const parts = line.split("|");
+                if (parts.length >= 3) {
+                    parsedRevs.push({
+                        author: parts[0].trim(),
+                        service: parts[1].trim(),
+                        quote: parts[2].trim(),
+                        rating: 5
+                    });
+                }
+            });
+
+            // Parse FAQs
+            const rawFaqs = document.getElementById("cg-faqs").value;
+            const parsedFaqs = [];
+            rawFaqs.split("\n").forEach(line => {
+                const parts = line.split("|");
+                if (parts.length >= 2) {
+                    const q = parts[0].replace(/^Q:\\s*/i, "").trim();
+                    const a = parts[1].replace(/^A:\\s*/i, "").trim();
+                    if (q && a) {
+                        parsedFaqs.push({ question: q, answer: a });
+                    }
+                }
+            });
+
+            // Parse Case Study 1
+            const parseCase = (raw, defaultTitle) => {
+                const parts = raw.split("|");
+                const res = { title: defaultTitle, client: "", challenge: "", solution: "", outcome: "" };
+                parts.forEach(p => {
+                    const idx = p.indexOf(":");
+                    if (idx > -1) {
+                        const key = p.substring(0, idx).trim().toLowerCase();
+                        const val = p.substring(idx + 1).trim();
+                        if (key.includes("title")) res.title = val;
+                        else if (key.includes("client")) res.client = val;
+                        else if (key.includes("challenge")) res.challenge = val;
+                        else if (key.includes("solution")) res.solution = val;
+                        else if (key.includes("outcome") || key.includes("result")) res.outcome = val;
+                    }
+                });
+                return res;
+            };
+
+            const case1 = parseCase(document.getElementById("cg-case1").value, "Documented Clinical / Project Case Study 1");
+            const case2 = parseCase(document.getElementById("cg-case2").value, "Documented Clinical / Project Case Study 2");
+
+            const servicesList = [
+                {
+                    id: "service_detail_1",
+                    name: document.getElementById("cg-svc1-name").value.trim(),
+                    target_audience: document.getElementById("cg-svc1-aud").value.trim(),
+                    core_benefit: document.getElementById("cg-svc1-ben").value.trim(),
+                    deliverables: document.getElementById("cg-svc1-del").value.trim(),
+                    pricing: document.getElementById("cg-svc1-pri").value.trim(),
+                },
+                {
+                    id: "service_detail_2",
+                    name: document.getElementById("cg-svc2-name").value.trim(),
+                    target_audience: document.getElementById("cg-svc2-aud").value.trim(),
+                    core_benefit: document.getElementById("cg-svc2-ben").value.trim(),
+                    deliverables: document.getElementById("cg-svc2-del").value.trim(),
+                    pricing: document.getElementById("cg-svc2-pri").value.trim(),
+                },
+                {
+                    id: "service_detail_3",
+                    name: document.getElementById("cg-svc3-name").value.trim(),
+                    target_audience: document.getElementById("cg-svc3-aud").value.trim(),
+                    core_benefit: document.getElementById("cg-svc3-ben").value.trim(),
+                    deliverables: document.getElementById("cg-svc3-del").value.trim(),
+                    pricing: document.getElementById("cg-svc3-pri").value.trim(),
+                }
+            ].filter(s => s.name);
+
+            const payload = {
+                brand_name: brand,
+                legal_entity_name: document.getElementById("cg-legal-name").value.trim(),
+                year_founded: document.getElementById("cg-year-founded").value.trim(),
+                origin_location: document.getElementById("cg-origin-location").value.trim(),
+                mission_statement: document.getElementById("cg-mission").value.trim(),
+                tagline: document.getElementById("cg-tagline").value.trim(),
+                industry: document.getElementById("cg-industry").value,
+                domain: document.getElementById("cg-domain").value.trim() || "https://example.com",
+                language: document.getElementById("cg-lang").value,
+                brand_tone: document.getElementById("cg-tone").value.trim(),
+                tone: document.getElementById("cg-tone").value.trim(),
+                banned_words: document.getElementById("cg-banned-words").value.split(",").map(w => w.trim()).filter(Boolean),
+
+                founder_name: document.getElementById("cg-founder-name").value.trim(),
+                founder_title: document.getElementById("cg-founder-title").value.trim(),
+                alma_maters: document.getElementById("cg-alma-maters").value.trim(),
+                founder_credentials: document.getElementById("cg-founder-creds").value.trim(),
+                key_staff_specialists: document.getElementById("cg-key-staff").value.trim(),
+                patents_publications: document.getElementById("cg-patents-pubs").value.trim(),
+                industry_awards: document.getElementById("cg-awards").value.trim(),
+                origin_story: document.getElementById("cg-origin-story").value.trim(),
+
+                target_buyer_persona: document.getElementById("cg-target-icp").value.trim(),
+                catalyst_event: document.getElementById("cg-catalyst-event").value.trim(),
+                pain_points: document.getElementById("cg-pain-points").value.split("\n").map(p => p.trim()).filter(Boolean),
+                buyer_anxieties: document.getElementById("cg-buyer-anxieties").value.split("\n").map(p => p.trim()).filter(Boolean),
+                disqualification_criteria: document.getElementById("cg-disqualifications").value.trim(),
+                desired_after_state: document.getElementById("cg-after-state").value.trim(),
+
+                framework_name: document.getElementById("cg-framework-name").value.trim(),
+                technologies: document.getElementById("cg-technologies").value.split(",").map(s => s.trim()).filter(Boolean),
+                phase1_discovery: document.getElementById("cg-phase1").value.trim(),
+                phase2_blueprint: document.getElementById("cg-phase2").value.trim(),
+                phase3_execution: document.getElementById("cg-phase3").value.trim(),
+                phase4_optimization: document.getElementById("cg-phase4").value.trim(),
+                guarantees: document.getElementById("cg-guarantees").value.trim(),
+
+                services: servicesList,
+                secondary_offerings: document.getElementById("cg-secondary-offerings").value.trim(),
+                pricing_model: document.getElementById("cg-pricing-model").value.trim(),
+                turnaround_speed: document.getElementById("cg-turnaround").value.trim(),
+
+                phone: document.getElementById("cg-phone").value.trim(),
+                email: document.getElementById("cg-email").value.trim(),
+                urgent_contact: document.getElementById("cg-urgent-contact").value.trim(),
+                address: document.getElementById("cg-address").value.trim(),
+                service_areas: document.getElementById("cg-service-areas").value.split(",").map(s => s.trim()).filter(Boolean),
+                local_landmarks: document.getElementById("cg-local-landmarks").value.trim(),
+                facility_access: document.getElementById("cg-facility-access").value.trim(),
+
+                proof_metrics: parsedProof,
+                certifications: document.getElementById("cg-certifications").value.split(",").map(s => s.trim()).filter(Boolean),
+                case_study_1: case1,
+                case_study_2: case2,
+                real_reviews: parsedRevs,
+                objections_faqs: parsedFaqs,
+
+                competitor_urls: document.getElementById("cg-competitor-urls").value.split(",").map(u => u.trim()).filter(Boolean),
+                competitor_shortcomings: document.getElementById("cg-competitor-shortcomings").value.trim(),
+                unfair_advantage_uvp: document.getElementById("cg-uvp").value.trim(),
+                primary_cta: document.getElementById("cg-cta").value.trim(),
+                secondary_lead_magnet: document.getElementById("cg-lead-magnet").value.trim(),
+
+                pages: standardPages,
+                custom_pages: customPages,
+            };
+
             const btn = document.getElementById("btn-generate-content");
             btn.disabled = true;
             const sBox = document.getElementById("cg-status-box");
             sBox.style.display = "flex";
             const sBadge = document.getElementById("cg-status-badge");
             sBadge.className = "status-badge running";
-            sBadge.innerText = "GENERATING";
+            sBadge.innerText = "BENCHMARKING";
             const sText = document.getElementById("cg-status-text");
-            sText.innerText = `Synthesizing structured SEO/GEO content for ${checkedBoxes.length} pages...`;
+            
+            // Animated multi-phase status steps
+            sText.innerText = "[Step 1/5] Validating 45-point client diagnostic brief...";
+            const timer1 = setTimeout(() => {
+                if (btn.disabled) sText.innerText = "[Step 2/5] Crawling and benchmarking competitor websites in real-time...";
+            }, 800);
+            const timer2 = setTimeout(() => {
+                if (btn.disabled) sText.innerText = "[Step 3/5] Extracting competitor semantic entities & topological gaps...";
+            }, 2000);
+            const timer3 = setTimeout(() => {
+                if (btn.disabled) sText.innerText = `[Step 4/5] Synthesizing bespoke zero-placeholder content for ${checkedBoxes.length} pages...`;
+            }, 3200);
 
             try {
                 const res = await fetch("/api/content/generate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        brand_name: brand,
-                        domain: domain,
-                        language: lang,
-                        industry: industry,
-                        description: keywords,
-                        pages: standardPages,
-                        custom_pages: customPages,
-                    })
+                    body: JSON.stringify(payload)
                 });
+                clearTimeout(timer1);
+                clearTimeout(timer2);
+                clearTimeout(timer3);
+
                 const data = await res.json();
                 if (!data.success) {
                     throw new Error(data.error || "Generation failed.");
@@ -1531,7 +2263,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
                 sBadge.className = "status-badge success";
                 sBadge.innerText = "COMPLETED";
-                sText.innerText = `Successfully synthesized ${data.results.pages.length} pages (${data.export.total_words} words). Saved to Downloads!`;
+                sText.innerText = `Successfully synthesized ${data.results.pages.length} custom pages (${data.export.total_words} words). Benchmarking report saved!`;
 
                 document.getElementById("btn-open-content-folder").disabled = false;
                 document.getElementById("btn-copy-master-md").disabled = false;
@@ -1542,6 +2274,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
                 renderContentViewer(data.results);
             } catch (e) {
+                clearTimeout(timer1);
+                clearTimeout(timer2);
+                clearTimeout(timer3);
                 sBadge.className = "status-badge";
                 sBadge.innerText = "ERROR";
                 sText.innerText = "Content synthesis error: " + e.message;
@@ -1551,11 +2286,44 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
         }
 
-        function renderContentViewer(results) {
+                function renderContentViewer(results) {
             const wrapper = document.getElementById("cg-viewer-wrapper");
             wrapper.style.display = "block";
 
+            // Inject Benchmark Report Box if present
+            const bench = results.benchmark_report;
+            let benchHtml = "";
+            if (bench) {
+                const targets = (bench.targets_inspected || []).map(t => `<span class="tag-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">${t.domain || t.url}</span>`).join(" ");
+                const entities = (bench.top_benchmark_entities || []).slice(0, 6).map(e => `<span class="badge-metric badge-good" style="margin-right: 4px;">+ ${e}</span>`).join(" ");
+                benchHtml = `
+                    <div class="card" style="margin-bottom: 14px; padding: 12px 16px; background: #fdf2f2; border: 1px solid #fecaca; border-left: 3px solid #b91c1c;">
+                        <div style="font-size: 12px; font-weight: 700; color: #b91c1c; margin-bottom: 4px;">Active Competitor Benchmark Intelligence:</div>
+                        <div style="font-size: 12px; color: #374151; margin-bottom: 6px;">
+                            <strong>Competitors Inspected:</strong> ${targets || "Leading Archetype Champions"}
+                        </div>
+                        <div style="font-size: 12px; color: #374151; margin-bottom: 6px;">
+                            <strong>Top Discovered Topical Entities:</strong> ${entities}
+                        </div>
+                        <div style="font-size: 11px; color: #4b5563; font-style: italic;">
+                            ${bench.competitive_differentiator_strategy || ""}
+                        </div>
+                    </div>
+                `;
+            }
+
             const totalWords = results.pages.reduce((acc, p) => acc + p.total_word_count, 0);
+            document.getElementById("cg-summary-metrics").textContent = `${results.pages.length} Pages | ${totalWords} Words`;
+
+            let oldBench = document.getElementById("cg-bench-intelligence-card");
+            if (oldBench) oldBench.remove();
+
+            if (benchHtml) {
+                const bDiv = document.createElement("div");
+                bDiv.id = "cg-bench-intelligence-card";
+                bDiv.innerHTML = benchHtml;
+                wrapper.insertBefore(bDiv, wrapper.querySelector(".content-layout"));
+            }((acc, p) => acc + p.total_word_count, 0);
             document.getElementById("cg-summary-metrics").textContent = `${results.pages.length} Pages | ${totalWords} Words`;
 
             const sidebar = document.getElementById("cg-pages-list");
@@ -1906,7 +2674,11 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps(INDUSTRY_PRESETS, ensure_ascii=False).encode("utf-8"))
+            payload = {
+                "presets": INDUSTRY_PRESETS,
+                "demo_briefs": DEMO_CLIENT_BRIEFS,
+            }
+            self.wfile.write(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
 
         elif path == "/api/content/latest":
             self.send_response(200)
