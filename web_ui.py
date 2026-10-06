@@ -62,6 +62,18 @@ except ImportError:
     _render_page_html = None
     _render_master_document = None
 
+# Import optimizer module
+try:
+    from optimizer import optimize_content
+except ImportError:
+    optimize_content = None
+
+# Import security engine module
+try:
+    from security_engine import run_security_audit
+except ImportError:
+    run_security_audit = None
+
 # Global state for audit execution
 audit_state = {
     "is_running": False,
@@ -87,6 +99,20 @@ content_state = {
     "status": "Ready",
     "last_dir": None,
     "last_results": None,
+}
+
+# Global state for content optimizer
+optimizer_state = {
+    "last_result": None,
+}
+
+# Global state for cybersecurity & server hardening auditor
+security_state = {
+    "is_running": False,
+    "status": "Ready",
+    "logs": [],
+    "last_result": None,
+    "last_pdf": None,
 }
 
 log_subscribers = []
@@ -195,6 +221,38 @@ def run_blueprint_in_background(answers: dict):
         blueprint_state["status"] = f"Error: {str(e)}"
     finally:
         blueprint_state["is_generating"] = False
+
+
+def run_security_in_background(target_url: str):
+    global security_state
+    security_state["is_running"] = True
+    security_state["status"] = f"Auditing {target_url} cybersecurity posture..."
+    security_state["logs"] = []
+    security_state["last_result"] = None
+    security_state["last_pdf"] = None
+
+    def log_cb(msg):
+        security_state["logs"].append(msg + "\n")
+        if len(security_state["logs"]) > 2000:
+            security_state["logs"].pop(0)
+        for line in msg.split("\n"):
+            line_str = line.strip()
+            if line_str.startswith("[+]") or line_str.startswith("[*]") or line_str.startswith("[OK]"):
+                security_state["status"] = line_str
+
+    try:
+        if not run_security_audit:
+            raise RuntimeError("security_engine module could not be loaded.")
+        res = run_security_audit(target_url, log_callback=log_cb)
+        security_state["last_result"] = res
+        security_state["last_pdf"] = res.get("pdf_path")
+        security_state["status"] = "Security Audit Complete"
+    except Exception as e:
+        security_state["status"] = f"Error: {str(e)}"
+        security_state["logs"].append(f"\n[ERROR] Security audit failed: {str(e)}\n")
+    finally:
+        security_state["is_running"] = False
+
 
 
 HTML_TEMPLATE = r"""<!DOCTYPE html>
@@ -686,6 +744,421 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             color: #b91c1c;
             border-color: #fecaca;
         }
+        /* Optimizer Tab 4 Styles */
+        .opt-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 900px) {
+            .opt-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .opt-score-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .opt-score-badge {
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .opt-score-badge.good { color: #15803d; }
+        .opt-score-badge.warn { color: #b45309; }
+        .opt-score-badge.bad { color: #b91c1c; }
+        .opt-diff-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 14px;
+        }
+        @media (max-width: 900px) {
+            .opt-diff-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .opt-diff-panel {
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+        .opt-diff-panel.optimized {
+            border-color: #15803d;
+            background: #fdfdfd;
+        }
+        .opt-diff-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .opt-diff-text {
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            word-break: break-word;
+            flex: 1;
+            color: #111827;
+            padding: 8px 0;
+        }
+        .opt-issue-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px 12px;
+            border-left: 3px solid #9ca3af;
+            background: #f9fafb;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .opt-issue-item.sev-critical {
+            border-left-color: #b91c1c;
+            background: #fef2f2;
+        }
+        .opt-issue-item.sev-high {
+            border-left-color: #dc2626;
+            background: #fff5f5;
+        }
+        .opt-issue-item.sev-medium {
+            border-left-color: #d97706;
+            background: #fffbeb;
+        }
+        .opt-issue-item.sev-low {
+            border-left-color: #2563eb;
+            background: #eff6ff;
+        }
+        .opt-issue-item.sev-info {
+            border-left-color: #4b5563;
+            background: #f3f4f6;
+        }
+        .opt-pill-preset {
+            padding: 4px 10px;
+            font-size: 11px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .opt-pill-preset:hover {
+            border-color: #111827;
+            background: #f3f4f6;
+        }
+
+        /* Multi-Variant Selector Styles */
+        .opt-variant-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 900px) {
+            .opt-variant-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .opt-variant-card {
+            border: 2px solid #e5e7eb;
+            background: #ffffff;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        .opt-variant-card:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+        .opt-variant-card.active {
+            border-color: #15803d;
+            background: #f0fdf4;
+        }
+        .opt-variant-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .opt-variant-desc {
+            font-size: 11px;
+            color: #4b5563;
+            line-height: 1.4;
+        }
+        
+        /* Word Diff Styles */
+        .diff-del {
+            background-color: #fee2e2;
+            color: #991b1b;
+            text-decoration: line-through;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-weight: 500;
+        }
+        .diff-ins {
+            background-color: #dcfce7;
+            color: #166534;
+            text-decoration: none;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-weight: 700;
+        }
+        .opt-diff-view-box {
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #111827;
+        }
+
+        /* SERP Google Preview Card */
+        .serp-box {
+            border: 1px solid #dfe1e5;
+            background: #ffffff;
+            padding: 16px 18px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            max-width: 650px;
+        }
+        .serp-url-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #202124;
+            margin-bottom: 4px;
+        }
+        .serp-favicon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #111827;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .serp-title {
+            color: #1a0dab;
+            font-size: 20px;
+            line-height: 1.3;
+            cursor: pointer;
+            margin-bottom: 4px;
+            word-wrap: break-word;
+        }
+        .serp-title:hover {
+            text-decoration: underline;
+        }
+        .serp-snippet {
+            color: #4d5156;
+            font-size: 14px;
+            line-height: 1.58;
+            word-wrap: break-word;
+        }
+        .serp-pixel-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .serp-pixel-fill {
+            height: 100%;
+            background: #15803d;
+            transition: width 0.3s ease;
+        }
+        .serp-pixel-fill.warn {
+            background: #b91c1c;
+        }
+
+        /* AI Overview / Perplexity Citation Box */
+        .ai-preview-box {
+            border: 1px solid #e0e7ff;
+            background: #f8faff;
+            border-radius: 8px;
+            padding: 16px 18px;
+            position: relative;
+        }
+        .ai-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e7ff;
+        }
+        .ai-preview-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: #4338ca;
+            background: #e0e7ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-preview-quote {
+            font-size: 14px;
+            line-height: 1.65;
+            color: #1e1b4b;
+            margin-bottom: 12px;
+        }
+        .ai-sources-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .ai-source-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            background: #ffffff;
+            border: 1px solid #c7d2fe;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #3730a3;
+            font-weight: 600;
+        }
+
+        /* View Mode Tabs & Exporter Styles */
+        .opt-view-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 14px;
+            overflow-x: auto;
+        }
+        .opt-view-tab {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #4b5563;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .opt-view-tab:hover {
+            color: #111827;
+        }
+        .opt-view-tab.active {
+            color: #111827;
+            border-bottom-color: #111827;
+        }
+        .opt-code-box {
+            background: #0f172a;
+            color: #f1f5f9;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 12px;
+            line-height: 1.55;
+            padding: 14px;
+            border: 1px solid #1e293b;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .opt-export-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Security Badges & Cards */
+        .badge-crit {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-high {
+            background: #ffedd5;
+            color: #c2410c;
+            border: 1px solid #fb923c;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-med {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fbbf24;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-low {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #60a5fa;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .badge-pass {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #4ade80;
+            padding: 2px 7px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .finding-card {
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .finding-card:hover {
+            border-color: #111827;
+        }
+        .code-block {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px 14px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11px;
+            line-height: 1.45;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            border: 1px solid #0f172a;
+            max-height: 380px;
+        }
     </style>
 </head>
 <body>
@@ -694,7 +1167,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <header class="header">
             <div>
                 <div class="org-label">InersiaLab Software Department</div>
-                <h1 class="main-title">SEO Audit & Pre-Launch Architect</h1>
+                <h1 class="main-title">SEO Audit, Architect & Cybersecurity Suite</h1>
             </div>
             <div class="header-meta">
                 ENGINE V3.8<br>
@@ -707,6 +1180,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <button id="nav-btn-audit" class="tab-btn active" onclick="switchTab('audit')">1. Existing Website Audit</button>
             <button id="nav-btn-blueprint" class="tab-btn" onclick="switchTab('blueprint')">2. New Website Architect (Pre-Launch)</button>
             <button id="nav-btn-content" class="tab-btn" onclick="switchTab('content')">3. Page Content Architect</button>
+            <button id="nav-btn-optimizer" class="tab-btn" onclick="switchTab('optimizer')">4. SEO &amp; GEO Optimizer</button>
+            <button id="nav-btn-security" class="tab-btn" onclick="switchTab('security')">5. Cybersecurity &amp; Server Hardening</button>
         </nav>
 
         <!-- ============================================================= -->
@@ -1399,6 +1874,452 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                 </div>
             </div>
         </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 4: SEO & GEO CONTENT OPTIMIZER -->
+        <!-- ============================================================= -->
+        <section id="tab-optimizer" class="tab-content">
+            <!-- Optimizer Input Card -->
+            <div class="card">
+                <div class="card-title">Precision SEO &amp; Generative Engine (GEO) Content Optimizer</div>
+                <div class="field-help" style="margin-top: -6px; margin-bottom: 16px;">
+                    Input any draft heading, title tag, meta description, or text block. The engine scores it against InersiaLab's 8-factor technical SEO &amp; AI citability matrix, purges AI fluff, injects factual anchors, and delivers publication-grade copy.
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="field-group">
+                        <label class="field-label" for="opt-type">Content Element Type <span class="tag-pill req">Required</span></label>
+                        <select id="opt-type" onchange="onOptimizerTypeChange()">
+                            <option value="paragraph">Passage / Content Paragraph (GEO Quotability Focus)</option>
+                            <option value="title">SERP Page Title Tag (50-60 Chars)</option>
+                            <option value="meta_description">Meta Description Tag (120-155 Chars)</option>
+                            <option value="h1">H1 Primary Page Headline</option>
+                            <option value="h2">H2 Section Subheadline / FAQ Header</option>
+                        </select>
+                        <div class="field-help" id="opt-type-help">Evaluates declarative structure, factual density, and quotability for AI search engines.</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="opt-keywords">Target Keywords</label>
+                        <input type="text" id="opt-keywords" placeholder="e.g. enterprise seo audit, technical indexing">
+                        <div class="field-help">Comma-separated keywords to verify placement, prominence, and density.</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="opt-brand">Brand / Entity Name</label>
+                        <input type="text" id="opt-brand" placeholder="e.g. InersiaLab">
+                        <div class="field-help">Optional brand suffix or organization entity anchor.</div>
+                    </div>
+                </div>
+
+                <div class="form-grid-2" style="margin-top: -6px; margin-bottom: 12px;">
+                    <div class="field-group">
+                        <label class="field-label" for="opt-industry">Industry &amp; Entity Domain</label>
+                        <select id="opt-industry">
+                            <option value="tech">Technology, Cloud &amp; SaaS</option>
+                            <option value="finance">Finance, Banking &amp; FinTech</option>
+                            <option value="healthcare">Healthcare, Biotech &amp; Medical</option>
+                            <option value="ecommerce">E-Commerce, Retail &amp; DTC</option>
+                            <option value="legal">Legal, Compliance &amp; Corporate</option>
+                            <option value="general">General Business &amp; Professional Services</option>
+                        </select>
+                        <div class="field-help">Calibrates domain entities, vocabulary lexicons, and trust anchors.</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="opt-intent">Search Intent Focus</label>
+                        <select id="opt-intent">
+                            <option value="informational">Informational (Direct Answers &amp; GEO Quotation)</option>
+                            <option value="commercial">Commercial Investigation (Comparison &amp; Proof)</option>
+                            <option value="transactional">Transactional (Conversion &amp; Action CTA)</option>
+                            <option value="navigational">Navigational (Brand &amp; Entity Grounding)</option>
+                        </select>
+                        <div class="field-help">Fine-tunes action triggers, CTA density, and synthetic overview tone.</div>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div style="margin-bottom: 14px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; margin-right: 8px;">Load Test Presets:</span>
+                    <button type="button" class="opt-pill-preset" onclick="loadOptimizerPreset('fluffy_paragraph')">Fluffy AI Paragraph</button>
+                    <button type="button" class="opt-pill-preset" onclick="loadOptimizerPreset('weak_title')">Weak / Short Title</button>
+                    <button type="button" class="opt-pill-preset" onclick="loadOptimizerPreset('vague_meta')">Vague Meta Description</button>
+                    <button type="button" class="opt-pill-preset" onclick="loadOptimizerPreset('generic_h2')">Generic H2 Subhead</button>
+                </div>
+
+                <!-- Input Textarea -->
+                <div class="field-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="field-label" for="opt-input-text" style="margin-bottom: 0;">Draft Content Input <span class="tag-pill req">Required</span></label>
+                        <span id="opt-live-stats" style="font-size: 11px; font-weight: 600; color: #6b7280;">0 chars | 0 words</span>
+                    </div>
+                    <textarea id="opt-input-text" rows="6" placeholder="Paste your raw title tag, headline, meta description, or draft paragraph here..." oninput="updateOptimizerLiveStats()"></textarea>
+                </div>
+
+                <!-- Action Button -->
+                <div style="display: flex; gap: 10px; margin-top: 14px;">
+                    <button type="button" class="btn btn-accent" id="btn-run-optimizer" onclick="runContentOptimizer()" style="padding: 12px 28px; font-size: 13px;">
+                        OPTIMIZE CONTENT (SEO + GEO)
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="clearOptimizer()" style="padding: 12px 20px; font-size: 13px;">
+                        CLEAR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Optimizer Results Section -->
+            <div id="opt-results-wrapper" style="display: none; margin-top: 18px;">
+                <!-- Summary Metrics Bar -->
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Evaluation &amp; Optimization Audit</span>
+                        <span id="opt-element-tag" class="tag-pill" style="font-size: 11px; padding: 3px 8px;">PARAGRAPH</span>
+                    </div>
+
+                    <div class="form-grid-3" style="margin-top: 10px;">
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Overall Score</div>
+                                <div id="opt-score-overall-delta" style="font-size: 11px; font-weight: 600; color: #15803d; margin-top: 2px;">+0 pts improvement</div>
+                            </div>
+                            <div class="opt-score-badge good" id="opt-score-overall">0</div>
+                        </div>
+
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Technical SEO</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Length &amp; Keywords</div>
+                            </div>
+                            <div class="opt-score-badge" id="opt-score-seo">0</div>
+                        </div>
+
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">GEO Quotability</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">AI Engine Citability</div>
+                            </div>
+                            <div class="opt-score-badge" id="opt-score-geo">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Paragraph Extra Metrics (Quotability, Readability, E-E-A-T) -->
+                    <div id="opt-paragraph-metrics" class="form-grid-3" style="margin-top: 12px; display: none;">
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Direct Quotability</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Answer Engine Fitness</div>
+                            </div>
+                            <div class="opt-score-badge" id="opt-score-quotability">0</div>
+                        </div>
+
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Readability</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">FKGL &amp; Sentence Flow</div>
+                            </div>
+                            <div class="opt-score-badge" id="opt-score-readability">0</div>
+                        </div>
+
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">E-E-A-T Signals</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Authority &amp; Proof Anchors</div>
+                            </div>
+                            <div class="opt-score-badge" id="opt-score-eeat">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Variant Selector Grid -->
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Target Strategy Variants</span>
+                        <span style="font-size: 11px; color: #6b7280; font-weight: normal;">Select a model variant to inspect diff &amp; export</span>
+                    </div>
+                    <div class="opt-variant-grid" id="opt-variants-container" style="margin-top: 10px;">
+                        <!-- Rendered by JS: 3 clickable variant cards -->
+                    </div>
+                </div>
+
+                <!-- Inspection & Export Card -->
+                <div class="card" style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                        <div class="opt-view-tabs" style="margin-bottom: 0;">
+                            <button type="button" class="opt-view-tab active" id="tab-btn-sidebyside" onclick="switchOptViewMode('sidebyside')">Side-by-Side</button>
+                            <button type="button" class="opt-view-tab" id="tab-btn-diff" onclick="switchOptViewMode('diff')">Word Diff</button>
+                            <button type="button" class="opt-view-tab" id="tab-btn-serp" onclick="switchOptViewMode('serp')">SERP Preview</button>
+                            <button type="button" class="opt-view-tab" id="tab-btn-ai" onclick="switchOptViewMode('ai')">AI Citation</button>
+                            <button type="button" class="opt-view-tab" id="tab-btn-code" onclick="switchOptViewMode('code')">Schema &amp; HTML</button>
+                        </div>
+
+                        <div class="opt-export-bar" style="margin-bottom: 0;">
+                            <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11px;" onclick="copyOptimizedText()">
+                                Copy Text
+                            </button>
+                            <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11px;" onclick="copyOptimizedHtml()">
+                                Copy HTML
+                            </button>
+                            <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11px;" onclick="copyOptimizedSchema()">
+                                Copy Schema JSON-LD
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- View 1: Side by Side -->
+                    <div id="opt-view-sidebyside">
+                        <div class="opt-diff-container">
+                            <div class="opt-diff-panel">
+                                <div class="opt-diff-header">
+                                    <div>
+                                        <span style="font-size: 12px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.5px;">ORIGINAL DRAFT</span>
+                                        <span id="opt-orig-stats" style="font-size: 11px; color: #6b7280; margin-left: 8px;">(0 chars | 0 words)</span>
+                                    </div>
+                                    <span id="opt-orig-status" class="tag-pill req">Unoptimized</span>
+                                </div>
+                                <div class="opt-diff-text" id="opt-orig-text"></div>
+                            </div>
+                            <div class="opt-diff-panel optimized">
+                                <div class="opt-diff-header">
+                                    <div>
+                                        <span style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; letter-spacing: 0.5px;" id="opt-variant-active-label">OPTIMIZED (VARIANT 1)</span>
+                                        <span id="opt-optimized-stats" style="font-size: 11px; color: #6b7280; margin-left: 8px;">(0 chars | 0 words)</span>
+                                    </div>
+                                    <span class="tag-pill good" id="opt-active-variant-badge">Active</span>
+                                </div>
+                                <div class="opt-diff-text" id="opt-optimized-text" style="font-weight: 500;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- View 2: Word-Level Diff -->
+                    <div id="opt-view-diff" style="display: none;">
+                        <div class="field-help" style="margin-bottom: 10px;">
+                            Visual token comparison: <span class="diff-del">strikethrough red</span> indicates purged fluff / redundant words, while <span class="diff-ins">bold green</span> indicates factual anchors, entities, and high-impact keywords.
+                        </div>
+                        <div class="opt-diff-view-box" id="opt-diff-content"></div>
+                    </div>
+
+                    <!-- View 3: SERP Google Preview -->
+                    <div id="opt-view-serp" style="display: none;">
+                        <div class="field-help" style="margin-bottom: 12px;">
+                            Google Search Desktop &amp; Mobile simulation showing pixel boundary limits and keyword bolding.
+                        </div>
+                        <div id="opt-serp-preview-container"></div>
+                    </div>
+
+                    <!-- View 4: AI Citability Box -->
+                    <div id="opt-view-ai" style="display: none;">
+                        <div class="field-help" style="margin-bottom: 12px;">
+                            Synthetic evaluation of how Google AI Overviews and Perplexity Pro parse and quote this passage as an authority source.
+                        </div>
+                        <div id="opt-ai-preview-container"></div>
+                    </div>
+
+                    <!-- View 5: Schema & Semantic HTML -->
+                    <div id="opt-view-code" style="display: none;">
+                        <div style="margin-bottom: 14px;">
+                            <div style="font-size: 12px; font-weight: 700; color: #111827; text-transform: uppercase; margin-bottom: 6px;">Schema.org JSON-LD Structured Data</div>
+                            <pre class="opt-code-box" id="opt-schema-code"></pre>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; font-weight: 700; color: #111827; text-transform: uppercase; margin-bottom: 6px;">Semantic HTML Embed Snippet</div>
+                            <pre class="opt-code-box" id="opt-html-code"></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagnostics & Issues Detected -->
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card-title">Diagnostic Breakdown &amp; Detected Deficiencies</div>
+                    <div id="opt-issues-list" style="margin-top: 10px;">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Applied Improvements & Strategic Actions -->
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card-title">Engine Corrections Applied</div>
+                    <div id="opt-improvements-list" style="margin-top: 10px;">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Quotability Factor Breakdown (Only shown for paragraphs) -->
+                <div id="opt-quotability-analysis" class="card" style="margin-top: 16px; display: none;">
+                    <div class="card-title">AEO / GEO Engine Citability Signals</div>
+                    <div class="field-help" style="margin-top: -6px; margin-bottom: 12px;">
+                        Analysis of suitability for citation in Google AI Overviews, Perplexity Pro, and ChatGPT Search.
+                    </div>
+                    <div id="opt-quotability-signals-body">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 5: CYBERSECURITY & SERVER HARDENING -->
+        <!-- ============================================================= -->
+        <section id="tab-security" class="tab-content">
+            <!-- Security Audit Parameters -->
+            <div class="card">
+                <div class="card-title">Live Cybersecurity &amp; Server Hardening Parameters</div>
+                
+                <div class="field-group">
+                    <label class="field-label" for="sec-url">Target Website URL</label>
+                    <input type="text" id="sec-url" placeholder="https://example.com" value="https://example.com">
+                    <div class="field-help">Full website address including https://. Probes transport security, headers, REST API CORS, XML-RPC, user enumeration, and DNS anti-spoofing.</div>
+                </div>
+
+                <div class="btn-row">
+                    <button id="btn-start-security" class="btn btn-accent" onclick="startSecurityAudit()">START LIVE SECURITY AUDIT</button>
+                    <button id="btn-open-security-pdf" class="btn btn-outline" onclick="openLatestSecurityPdf()" disabled>OPEN GENERATED PDF</button>
+                    <button class="btn btn-outline" onclick="openDownloadsFolder()">OPEN DOWNLOADS FOLDER</button>
+                </div>
+            </div>
+
+            <!-- Execution Status & Real-Time Terminal -->
+            <div class="status-box">
+                <div>
+                    <span id="sec-status-badge" class="status-badge">READY</span>
+                    <span id="sec-status-text" style="margin-left: 10px;">Security audit engine idle</span>
+                </div>
+                <div id="sec-timer" style="font-size: 11px; color: #6b7280;"></div>
+            </div>
+
+            <div class="card" style="padding: 0;">
+                <div style="padding: 10px 14px; border-bottom: 1px solid #111827; background: #111827; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between;">
+                    <span>Security Audit Stream</span>
+                    <span id="sec-log-count" style="color: #9ca3af;">0 lines</span>
+                </div>
+                <div id="sec-terminal" class="terminal">Awaiting security execution command...</div>
+            </div>
+
+            <!-- Interactive Security Results Explorer -->
+            <div id="sec-results-wrapper" style="display: none; margin-top: 20px;">
+                <!-- Executive Score Banner -->
+                <div class="card" style="border: 2px solid #111827; background: #f9fafb;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                        <div>
+                            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #4b5563;">Overall Security Posture</div>
+                            <div id="sec-grade-badge" style="font-size: 22px; font-weight: 900; margin-top: 4px; color: #111827;">GRADE: C+</div>
+                            <div id="sec-host-meta" style="font-size: 12px; color: #4b5563; margin-top: 4px;">Host: inersialab.com | Server: LiteSpeed</div>
+                        </div>
+
+                        <!-- Severity Badges Breakdown -->
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="sec-counter-pills">
+                            <span class="badge-crit" id="sec-cnt-crit">0 CRITICAL</span>
+                            <span class="badge-high" id="sec-cnt-high">0 HIGH</span>
+                            <span class="badge-med" id="sec-cnt-med">0 MEDIUM</span>
+                            <span class="badge-low" id="sec-cnt-low">0 LOW</span>
+                            <span class="badge-pass" id="sec-cnt-pass">0 PASSED</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-accent" style="padding: 7px 14px; font-size: 11px;" onclick="openLatestSecurityPdf()">View Print-Ready PDF Report</button>
+                        <button class="btn btn-outline" style="padding: 7px 14px; font-size: 11px;" onclick="copySecuritySnippet('master')">Copy Master AI Fix Prompt</button>
+                        <button class="btn btn-outline" style="padding: 7px 14px; font-size: 11px;" onclick="copySecuritySnippet('htaccess')">Copy .htaccess Hardening</button>
+                        <button class="btn btn-outline" style="padding: 7px 14px; font-size: 11px;" onclick="copySecuritySnippet('functions')">Copy functions.php Security Patch</button>
+                    </div>
+                </div>
+
+                <!-- Sub-Navigation for Security Views -->
+                <div style="display: flex; gap: 6px; margin-top: 16px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; flex-wrap: wrap;">
+                    <button class="tab-btn active" id="sec-tab-findings" onclick="switchSecurityView('findings')">Findings &amp; Defect Matrix</button>
+                    <button class="tab-btn" id="sec-tab-patches" onclick="switchSecurityView('patches')">Turnkey Code Patches (.htaccess / PHP)</button>
+                    <button class="tab-btn" id="sec-tab-prompt" onclick="switchSecurityView('prompt')">Master AI Fix Prompt</button>
+                </div>
+
+                <!-- View 1: Findings Matrix -->
+                <div id="sec-view-findings">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase;">Filter Findings:</span>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="filterSecurityFindings('all')">All</button>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="filterSecurityFindings('critical')">Critical Only</button>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="filterSecurityFindings('high')">High Only</button>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="filterSecurityFindings('medium')">Medium Only</button>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="filterSecurityFindings('passed')">Passed Only</button>
+                        </div>
+                    </div>
+                    <div id="sec-findings-container">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- View 2: Code Patches -->
+                <div id="sec-view-patches" style="display: none;">
+                    <div class="card" style="margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="card-title" style="margin-bottom: 0;">1. Server Hardening Directive (.htaccess)</span>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copySecuritySnippet('htaccess')">Copy .htaccess</button>
+                        </div>
+                        <div class="field-help" style="margin-bottom: 8px;">Paste at the top of root .htaccess to block XML-RPC, user scanning, readme files, and enforce security headers.</div>
+                        <pre class="code-block" id="sec-code-htaccess"></pre>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="card-title" style="margin-bottom: 0;">2. WordPress Security &amp; CORS Patch (functions.php)</span>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copySecuritySnippet('functions')">Copy functions.php</button>
+                        </div>
+                        <div class="field-help" style="margin-bottom: 8px;">Paste in child theme's functions.php to eliminate the REST API credential reflection flaw and block public user enumeration.</div>
+                        <pre class="code-block" id="sec-code-functions"></pre>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="card-title" style="margin-bottom: 0;">3. Contact Form POST &amp; AJAX Security</span>
+                            <button class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copySecuritySnippet('form')">Copy Form Code</button>
+                        </div>
+                        <div class="field-help" style="margin-bottom: 8px;">Ensures form submissions use POST method with nonces and asynchronous AJAX to eliminate PII URL leakage.</div>
+                        <pre class="code-block" id="sec-code-form"></pre>
+                    </div>
+
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="card-title" style="margin-bottom: 0;">4. Email Anti-Spoofing &amp; DNS Records (DMARC / CAA)</span>
+                        </div>
+                        <div class="field-help" style="margin-bottom: 8px;">Add these records in your Hostinger / Cloudflare DNS zone management to enforce email authentication.</div>
+                        <div id="sec-dns-table-container"></div>
+                    </div>
+                </div>
+
+                <!-- View 3: Master AI Prompt -->
+                <div id="sec-view-prompt" style="display: none;">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span class="card-title" style="margin-bottom: 0;">Master AI Remediation Prompt</span>
+                            <button class="btn btn-accent" style="padding: 6px 14px; font-size: 11px;" onclick="copySecuritySnippet('master')">Copy Master Prompt</button>
+                        </div>
+                        <div class="field-help" style="margin-bottom: 10px;">Copy this self-contained prompt directly into Antigravity, Claude, or ChatGPT to automatically patch all detected defects.</div>
+                        <pre class="code-block" id="sec-code-master" style="max-height: 500px;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Security Reports Table -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-title">Recent Security Audit Reports in Downloads</div>
+                <div id="sec-reports-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Security Report PDF</th>
+                                <th>Generated Time</th>
+                                <th>File Size</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sec-reports-tbody">
+                            <tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 20px;">Scanning Downloads folder...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </div>
 
     <!-- JavaScript Controller -->
@@ -1424,6 +2345,9 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
             }
             if (tabId === "content" && !window.contentPresetsLoaded) {
                 loadContentPresets();
+            }
+            if (tabId === "security" && !window.securityReportsLoaded) {
+                loadSecurityReports();
             }
         }
 
@@ -2588,14 +3512,870 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
             });
         }
 
+        // =============================================================
+        // TAB 4: SEO & GEO CONTENT OPTIMIZER JAVASCRIPT CONTROLLER
+        // =============================================================
+        let lastOptimizerResult = null;
+
+        function escapeOptHtml(text) {
+            if (!text) return "";
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function onOptimizerTypeChange() {
+            const type = document.getElementById("opt-type").value;
+            const help = document.getElementById("opt-type-help");
+            const textarea = document.getElementById("opt-input-text");
+
+            if (type === "title") {
+                help.textContent = "Google SERP standard: 50-60 characters. First keyword positioned prominently, brand suffix optional.";
+                textarea.placeholder = "e.g. Enterprise SEO Audit & Architecture Suite | InersiaLab";
+            } else if (type === "meta_description") {
+                help.textContent = "SERP snippet optimal: 120-155 characters. Includes high-intent CTA, factual proof, and primary keyword.";
+                textarea.placeholder = "e.g. Accelerate organic pipeline with InersiaLab's automated 8-factor technical SEO audit engine. Crawl 200+ pages and generate executive PDF reports instantly.";
+            } else if (type === "h1") {
+                help.textContent = "Primary page headline: 30-70 characters. Must contain target keyword naturally, declarative and authoritative.";
+                textarea.placeholder = "e.g. High-Performance Enterprise Technical SEO Audit Engine";
+            } else if (type === "h2") {
+                help.textContent = "Section subhead: 30-80 characters. Formats as problem-solving question or direct entity-rich phrase.";
+                textarea.placeholder = "e.g. How Does Generative Engine Optimization (GEO) Affect AI Citations?";
+            } else {
+                help.textContent = "Evaluates declarative structure, factual density, and quotability for AI search engines (Perplexity, ChatGPT, SGE).";
+                textarea.placeholder = "Paste your raw draft paragraph here. The engine will detect AI filler, vague modifiers, and weak declarative structure, transforming it into an authority quotation passage.";
+            }
+            updateOptimizerLiveStats();
+        }
+
+        function updateOptimizerLiveStats() {
+            const text = document.getElementById("opt-input-text").value;
+            const chars = text.length;
+            const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+            const el = document.getElementById("opt-live-stats");
+            if (el) {
+                el.textContent = chars + " chars | " + words + " words";
+            }
+        }
+
+        function loadOptimizerPreset(presetKey) {
+            const typeSelect = document.getElementById("opt-type");
+            const kwInput = document.getElementById("opt-keywords");
+            const brandInput = document.getElementById("opt-brand");
+            const industrySelect = document.getElementById("opt-industry");
+            const intentSelect = document.getElementById("opt-intent");
+            const textInput = document.getElementById("opt-input-text");
+
+            if (presetKey === "fluffy_paragraph") {
+                typeSelect.value = "paragraph";
+                kwInput.value = "enterprise zero-trust security, identity verification";
+                brandInput.value = "InersiaLab";
+                if (industrySelect) industrySelect.value = "tech";
+                if (intentSelect) intentSelect.value = "informational";
+                textInput.value = "In today's fast-paced digital world, it goes without saying that cybersecurity is a crucial role for many organizations. When it comes to protecting various things in the cloud, basically a lot of companies might struggle with navigating the complexities of modern threats. It is important to note that our state-of-the-art solution seamlessly leverages cutting-edge technology to streamline your workflow.";
+            } else if (presetKey === "weak_title") {
+                typeSelect.value = "title";
+                kwInput.value = "enterprise seo audit, technical indexing";
+                brandInput.value = "InersiaLab";
+                if (industrySelect) industrySelect.value = "tech";
+                if (intentSelect) intentSelect.value = "commercial";
+                textInput.value = "Home | Best SEO Services";
+            } else if (presetKey === "vague_meta") {
+                typeSelect.value = "meta_description";
+                kwInput.value = "saas data analytics platform";
+                brandInput.value = "InersiaLab";
+                if (industrySelect) industrySelect.value = "tech";
+                if (intentSelect) intentSelect.value = "commercial";
+                textInput.value = "We do data analytics for companies. Our software has many features that can help various businesses see their data and make things better.";
+            } else if (presetKey === "generic_h2") {
+                typeSelect.value = "h2";
+                kwInput.value = "core web vitals optimization";
+                brandInput.value = "";
+                if (industrySelect) industrySelect.value = "tech";
+                if (intentSelect) intentSelect.value = "informational";
+                textInput.value = "Our Solutions";
+            }
+
+            onOptimizerTypeChange();
+            updateOptimizerLiveStats();
+        }
+
+        function clearOptimizer() {
+            document.getElementById("opt-input-text").value = "";
+            document.getElementById("opt-keywords").value = "";
+            document.getElementById("opt-brand").value = "";
+            document.getElementById("opt-results-wrapper").style.display = "none";
+            lastOptimizerResult = null;
+            activeVariantIndex = 0;
+            updateOptimizerLiveStats();
+        }
+
+        async function runContentOptimizer() {
+            const text = document.getElementById("opt-input-text").value.trim();
+            if (!text) {
+                alert("Please enter draft text to optimize.");
+                document.getElementById("opt-input-text").focus();
+                return;
+            }
+
+            const contentType = document.getElementById("opt-type").value;
+            const keywordsRaw = document.getElementById("opt-keywords").value.trim();
+            const keywords = keywordsRaw ? keywordsRaw.split(",").map(k => k.trim()).filter(Boolean) : [];
+            const brand = document.getElementById("opt-brand").value.trim();
+            const industry = document.getElementById("opt-industry") ? document.getElementById("opt-industry").value : "tech";
+            const intent = document.getElementById("opt-intent") ? document.getElementById("opt-intent").value : "informational";
+
+            const btn = document.getElementById("btn-run-optimizer");
+            const originalBtnText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "EVALUATING & OPTIMIZING...";
+
+            try {
+                const response = await fetch("/api/optimizer/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        content_type: contentType,
+                        text: text,
+                        keywords: keywords,
+                        brand: brand,
+                        industry: industry,
+                        intent: intent
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Optimization failed.");
+                }
+
+                lastOptimizerResult = data.result;
+                activeVariantIndex = 0;
+                renderOptimizerResults(data.result);
+
+                const resWrapper = document.getElementById("opt-results-wrapper");
+                resWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+            } catch (err) {
+                alert("Optimizer Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
+            }
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return "good";
+            if (score >= 60) return "warn";
+            return "bad";
+        }
+
+        let activeVariantIndex = 0;
+        let activeOptViewMode = "sidebyside";
+
+        function renderSerpBox(serp) {
+            if (!serp) return '<div style="color: #6b7280; font-size: 13px;">SERP preview unavailable.</div>';
+            const pct = Math.min(100, Math.round((serp.pixel_width / serp.max_pixels) * 100));
+            const isWarn = serp.is_truncated || pct > 95;
+            return `
+                <div class="serp-box">
+                    <div class="serp-url-row">
+                        <span class="serp-favicon">S</span>
+                        <span>${escapeOptHtml(serp.display_url || 'https://example.com')}</span>
+                    </div>
+                    <div class="serp-title">${escapeOptHtml(serp.title)}</div>
+                    <div class="serp-snippet">${escapeOptHtml(serp.description)}</div>
+                    <div class="serp-pixel-bar" title="Calculated SERP pixel width: ${serp.pixel_width}px / ${serp.max_pixels}px">
+                        <div class="serp-pixel-fill ${isWarn ? 'warn' : ''}" style="width: ${pct}%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; margin-top: 6px;">
+                        <span>SERP Pixel Width: <strong>${serp.pixel_width}px</strong> / ${serp.max_pixels}px (${pct}%)</span>
+                        <span>${isWarn ? '<span style="color: #b91c1c; font-weight: 700;">Truncation Risk</span>' : '<span style="color: #15803d; font-weight: 700;">Within Pixel Boundary</span>'}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAiOverviewBox(ai) {
+            if (!ai) return '<div style="color: #6b7280; font-size: 13px;">AI citability overview unavailable.</div>';
+            const anchors = (ai.entity_anchors || []).map(a => `<span class="ai-source-chip">${escapeOptHtml(a)}</span>`).join(' ');
+            return `
+                <div class="ai-preview-box">
+                    <div class="ai-preview-header">
+                        <span class="ai-preview-badge">Google AI Overview / Perplexity Grounding</span>
+                        <span style="font-size: 11px; font-weight: 700; color: #4338ca;">Quotability Index: ${ai.quotability_score || 0}/100</span>
+                    </div>
+                    <div class="ai-preview-quote">
+                        &ldquo;${escapeOptHtml(ai.citation_quote || ai.synthesized_answer)}&rdquo;
+                    </div>
+                    <div class="ai-sources-row">
+                        <span style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Cited Grounding Anchors:</span>
+                        ${anchors || '<span class="ai-source-chip">Primary Domain Entity</span>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOptimizerResults(res) {
+            const wrapper = document.getElementById("opt-results-wrapper");
+            wrapper.style.display = "block";
+
+            // Element tag
+            document.getElementById("opt-element-tag").textContent = (res.content_type || "content").toUpperCase();
+
+            // Overall score
+            const overallEl = document.getElementById("opt-score-overall");
+            overallEl.textContent = res.overall_score;
+            overallEl.className = "opt-score-badge " + getScoreClass(res.overall_score);
+
+            // Technical SEO score
+            const seoEl = document.getElementById("opt-score-seo");
+            seoEl.textContent = res.seo_score;
+            seoEl.className = "opt-score-badge " + getScoreClass(res.seo_score);
+
+            // GEO Quotability score
+            const geoEl = document.getElementById("opt-score-geo");
+            geoEl.textContent = res.geo_score;
+            geoEl.className = "opt-score-badge " + getScoreClass(res.geo_score);
+
+            // Delta
+            const deltaEl = document.getElementById("opt-score-overall-delta");
+            const origEstimate = Math.max(25, res.overall_score - (res.issues.length * 8));
+            const delta = Math.max(0, res.overall_score - origEstimate);
+            deltaEl.textContent = (res.has_changes ? "+" + delta + " pts improvement" : "Baseline score optimal");
+
+            // Extra metrics for paragraph
+            const paraMetrics = document.getElementById("opt-paragraph-metrics");
+            const quotAnalysis = document.getElementById("opt-quotability-analysis");
+
+            if (res.content_type === "paragraph") {
+                paraMetrics.style.display = "grid";
+                quotAnalysis.style.display = "block";
+
+                const quotEl = document.getElementById("opt-score-quotability");
+                quotEl.textContent = res.quotability_score || 0;
+                quotEl.className = "opt-score-badge " + getScoreClass(res.quotability_score || 0);
+
+                const readEl = document.getElementById("opt-score-readability");
+                readEl.textContent = res.readability_score || 0;
+                readEl.className = "opt-score-badge " + getScoreClass(res.readability_score || 0);
+
+                const eeatEl = document.getElementById("opt-score-eeat");
+                eeatEl.textContent = res.eeat_score || 0;
+                eeatEl.className = "opt-score-badge " + getScoreClass(res.eeat_score || 0);
+
+                renderQuotabilitySignals(res);
+            } else {
+                paraMetrics.style.display = "none";
+                quotAnalysis.style.display = "none";
+            }
+
+            // Render Multi-Variants Selector Grid
+            renderVariantsGrid(res);
+
+            // Update Active Variant View
+            updateActiveVariantView();
+
+            // Issues list
+            const issuesContainer = document.getElementById("opt-issues-list");
+            issuesContainer.innerHTML = "";
+
+            if (!res.issues || res.issues.length === 0) {
+                issuesContainer.innerHTML = '<div style="color: #15803d; font-size: 13px; font-weight: 600; padding: 10px; background: #f0fdf4; border: 1px solid #bbf7d0;">Zero structural defects detected. Content satisfies all search and quotation criteria.</div>';
+            } else {
+                res.issues.forEach(iss => {
+                    const sev = (iss.severity || "info").toLowerCase();
+                    const item = document.createElement("div");
+                    item.className = "opt-issue-item sev-" + sev;
+                    item.innerHTML = `
+                        <div style="flex-shrink: 0;">
+                            <span class="tag-pill ${sev === 'critical' || sev === 'high' ? 'req' : ''}" style="font-size: 10px;">${iss.area || 'AUDIT'}: ${sev.toUpperCase()}</span>
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; color: #111827; margin-bottom: 2px;">${escapeOptHtml(iss.issue)}</div>
+                            <div style="color: #4b5563; font-size: 12px; line-height: 1.5;">${escapeOptHtml(iss.detail)}</div>
+                        </div>
+                    `;
+                    issuesContainer.appendChild(item);
+                });
+            }
+
+            // Improvements list
+            const impContainer = document.getElementById("opt-improvements-list");
+            impContainer.innerHTML = "";
+
+            if (!res.improvements || res.improvements.length === 0) {
+                impContainer.innerHTML = '<div style="color: #4b5563; font-size: 13px; padding: 8px;">No structural changes required.</div>';
+            } else {
+                const ul = document.createElement("ul");
+                ul.style.listStyle = "none";
+                ul.style.padding = "0";
+                ul.style.margin = "0";
+
+                res.improvements.forEach(imp => {
+                    const li = document.createElement("li");
+                    li.style.display = "flex";
+                    li.style.gap = "8px";
+                    li.style.alignItems = "flex-start";
+                    li.style.padding = "6px 0";
+                    li.style.fontSize = "13px";
+                    li.style.color = "#111827";
+                    li.style.borderBottom = "1px solid #f3f4f6";
+
+                    li.innerHTML = `
+                        <span style="color: #15803d; font-weight: 900; line-height: 1.3;">✓</span>
+                        <span>${escapeOptHtml(imp)}</span>
+                    `;
+                    ul.appendChild(li);
+                });
+                impContainer.appendChild(ul);
+            }
+        }
+
+        function renderVariantsGrid(res) {
+            const container = document.getElementById("opt-variants-container");
+            container.innerHTML = "";
+
+            const variants = (res.variants && res.variants.length > 0) ? res.variants : [
+                {
+                    label: "Recommended Optimization",
+                    strategy: "Balanced SEO & Citability",
+                    text: res.optimized,
+                    diff: res.diff,
+                    serp_preview: res.serp_preview,
+                    ai_overview_preview: res.ai_overview_preview,
+                    schema_jsonld: res.schema_jsonld,
+                    semantic_html: res.semantic_html
+                }
+            ];
+
+            variants.forEach((v, idx) => {
+                const card = document.createElement("div");
+                card.className = "opt-variant-card" + (idx === activeVariantIndex ? " active" : "");
+                card.onclick = () => selectOptimizerVariant(idx);
+
+                const previewSnippet = v.text ? (v.text.length > 85 ? v.text.substring(0, 85) + "..." : v.text) : "";
+
+                card.innerHTML = `
+                    <div class="opt-variant-title">
+                        <span>Variant ${idx + 1}: ${escapeOptHtml(v.label)}</span>
+                        ${idx === activeVariantIndex ? '<span class="tag-pill good" style="font-size: 10px; padding: 2px 6px;">Selected</span>' : ''}
+                    </div>
+                    <div class="opt-variant-desc" style="margin-bottom: 6px;">${escapeOptHtml(v.strategy)}</div>
+                    <div style="font-size: 11px; color: #111827; background: #ffffff; border: 1px solid #e5e7eb; padding: 6px 8px; font-style: italic;">
+                        &ldquo;${escapeOptHtml(previewSnippet)}&rdquo;
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectOptimizerVariant(index) {
+            activeVariantIndex = index;
+            if (lastOptimizerResult) {
+                renderVariantsGrid(lastOptimizerResult);
+                updateActiveVariantView();
+            }
+        }
+
+        function getActiveVariant() {
+            if (!lastOptimizerResult) return null;
+            const variants = lastOptimizerResult.variants || [];
+            if (variants[activeVariantIndex]) {
+                return variants[activeVariantIndex];
+            }
+            return {
+                label: "Recommended Optimization",
+                strategy: "Balanced SEO & Citability",
+                text: lastOptimizerResult.optimized,
+                diff: lastOptimizerResult.diff,
+                serp_preview: lastOptimizerResult.serp_preview,
+                ai_overview_preview: lastOptimizerResult.ai_overview_preview,
+                schema_jsonld: lastOptimizerResult.schema_jsonld,
+                semantic_html: lastOptimizerResult.semantic_html
+            };
+        }
+
+        function updateActiveVariantView() {
+            const v = getActiveVariant();
+            if (!v || !lastOptimizerResult) return;
+
+            // Side by Side
+            const origStats = document.getElementById("opt-orig-stats");
+            const optStats = document.getElementById("opt-optimized-stats");
+            const origWords = lastOptimizerResult.original.trim() ? lastOptimizerResult.original.trim().split(/\s+/).filter(Boolean).length : 0;
+            const optWords = (v.text || "").trim() ? v.text.trim().split(/\s+/).filter(Boolean).length : 0;
+
+            if (origStats) origStats.textContent = "(" + lastOptimizerResult.original.length + " chars | " + origWords + " words)";
+            if (optStats) optStats.textContent = "(" + (v.text || "").length + " chars | " + optWords + " words)";
+
+            const origTextEl = document.getElementById("opt-orig-text");
+            const optTextEl = document.getElementById("opt-optimized-text");
+            const labelEl = document.getElementById("opt-variant-active-label");
+
+            if (origTextEl) origTextEl.textContent = lastOptimizerResult.original;
+            if (optTextEl) optTextEl.textContent = v.text || "";
+            if (labelEl) labelEl.textContent = "OPTIMIZED (" + (v.label || "VARIANT " + (activeVariantIndex + 1)).toUpperCase() + ")";
+
+            // Word Diff
+            const diffBox = document.getElementById("opt-diff-content");
+            if (diffBox) {
+                diffBox.innerHTML = v.diff || v.text || "";
+            }
+
+            // SERP Preview
+            const serpContainer = document.getElementById("opt-serp-preview-container");
+            if (serpContainer) {
+                serpContainer.innerHTML = renderSerpBox(v.serp_preview || lastOptimizerResult.serp_preview);
+            }
+
+            // AI Preview
+            const aiContainer = document.getElementById("opt-ai-preview-container");
+            if (aiContainer) {
+                aiContainer.innerHTML = renderAiOverviewBox(v.ai_overview_preview || lastOptimizerResult.ai_overview_preview);
+            }
+
+            // Schema & HTML Code
+            const schemaCode = document.getElementById("opt-schema-code");
+            const htmlCode = document.getElementById("opt-html-code");
+            if (schemaCode) {
+                schemaCode.textContent = JSON.stringify(v.schema_jsonld || lastOptimizerResult.schema_jsonld || {}, null, 2);
+            }
+            if (htmlCode) {
+                htmlCode.textContent = v.semantic_html || lastOptimizerResult.semantic_html || "";
+            }
+        }
+
+        function switchOptViewMode(mode) {
+            activeOptViewMode = mode;
+            const views = ["sidebyside", "diff", "serp", "ai", "code"];
+            views.forEach(v => {
+                const el = document.getElementById("opt-view-" + v);
+                const btn = document.getElementById("tab-btn-" + v);
+                if (el) el.style.display = (v === mode ? "block" : "none");
+                if (btn) {
+                    if (v === mode) btn.classList.add("active");
+                    else btn.classList.remove("active");
+                }
+            });
+        }
+
+        function renderQuotabilitySignals(res) {
+            const body = document.getElementById("opt-quotability-signals-body");
+            const q = res.quotability_detail || {};
+
+            body.innerHTML = `
+                <div class="form-grid-3" style="gap: 12px;">
+                    <div style="padding: 12px; border: 1px solid #e5e7eb; background: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Declarative Syntax</div>
+                        <div style="font-size: 14px; font-weight: 700; margin-top: 4px; color: ${q.has_declarative_opener ? '#15803d' : '#b91c1c'};">
+                            ${q.has_declarative_opener ? 'Direct Subject-Predicate Match' : 'Indirect / Weak Sentence Start'}
+                        </div>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Answers queries without conversational throat-clearing.</div>
+                    </div>
+
+                    <div style="padding: 12px; border: 1px solid #e5e7eb; background: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Factual &amp; Data Anchors</div>
+                        <div style="font-size: 14px; font-weight: 700; margin-top: 4px; color: ${res.fact_count > 0 ? '#15803d' : '#b45309'};">
+                            ${res.fact_count} verifiable datapoints detected
+                        </div>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Percentages, numeric metrics, years, or benchmarked stats.</div>
+                    </div>
+
+                    <div style="padding: 12px; border: 1px solid #e5e7eb; background: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Named Entity Prominence</div>
+                        <div style="font-size: 14px; font-weight: 700; margin-top: 4px; color: ${res.entity_count >= 2 ? '#15803d' : '#4b5563'};">
+                            ${res.entity_count} named entities identified
+                        </div>
+                        <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Knowledge graph anchors and recognized industry terms.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+                    <div style="padding: 8px 12px; border: 1px solid #e5e7eb; background: #fafafa; font-size: 12px;">
+                        <strong>Vague Modifiers Purged:</strong> ${res.vague_count || 0}
+                    </div>
+                    <div style="padding: 8px 12px; border: 1px solid #e5e7eb; background: #fafafa; font-size: 12px;">
+                        <strong>AI Buzzwords Removed:</strong> ${res.filler_count || 0}
+                    </div>
+                    <div style="padding: 8px 12px; border: 1px solid #e5e7eb; background: #fafafa; font-size: 12px;">
+                        <strong>Readability Grade:</strong> FKGL Grade ${q.flesch_grade != null ? q.flesch_grade : 'N/A'} (Score: ${res.readability_score}/100)
+                    </div>
+                </div>
+            `;
+        }
+
+        function copyOptimizedText() {
+            const v = getActiveVariant();
+            if (!v || !v.text) {
+                alert("No optimized content available to copy.");
+                return;
+            }
+            navigator.clipboard.writeText(v.text).then(() => {
+                alert("Optimized text copied to clipboard!");
+            }).catch(() => {
+                const ta = document.createElement("textarea");
+                ta.value = v.text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                alert("Optimized text copied to clipboard!");
+            });
+        }
+
+        function copyOptimizedHtml() {
+            const v = getActiveVariant();
+            const html = v && v.semantic_html ? v.semantic_html : (lastOptimizerResult ? lastOptimizerResult.semantic_html : "");
+            if (!html) {
+                alert("No HTML snippet available to copy.");
+                return;
+            }
+            navigator.clipboard.writeText(html).then(() => {
+                alert("Semantic HTML copied to clipboard!");
+            });
+        }
+
+        function copyOptimizedSchema() {
+            const v = getActiveVariant();
+            const schema = v && v.schema_jsonld ? v.schema_jsonld : (lastOptimizerResult ? lastOptimizerResult.schema_jsonld : {});
+            if (!schema || Object.keys(schema).length === 0) {
+                alert("No JSON-LD schema available to copy.");
+                return;
+            }
+            navigator.clipboard.writeText(JSON.stringify(schema, null, 2)).then(() => {
+                alert("Schema.org JSON-LD copied to clipboard!");
+            });
+        }
+
+        // =========================================================================
+        // CYBERSECURITY & SERVER HARDENING CONTROLLER (TAB 5)
+        // =========================================================================
+        let isAuditingSecurity = false;
+        let lastSecurityPdf = null;
+        let lastSecurityResult = null;
+        let currentSecurityFindingsFilter = "all";
+        let currentSecurityView = "findings";
+        window.securityReportsLoaded = false;
+
+        async function startSecurityAudit() {
+            const urlInput = document.getElementById("sec-url").value.trim();
+            if (!urlInput) {
+                alert("Please enter a valid website URL.");
+                return;
+            }
+
+            document.getElementById("btn-start-security").disabled = true;
+            document.getElementById("sec-status-badge").className = "status-badge running";
+            document.getElementById("sec-status-badge").innerText = "RUNNING";
+            document.getElementById("sec-status-text").innerText = "Probing cybersecurity posture for " + urlInput + "...";
+            document.getElementById("sec-terminal").innerText = "Initializing security auditor for " + urlInput + "...\n";
+            document.getElementById("sec-results-wrapper").style.display = "none";
+
+            try {
+                const res = await fetch("/api/security/start", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({url: urlInput})
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    document.getElementById("btn-start-security").disabled = false;
+                }
+            } catch (e) {
+                alert("Failed to reach audit server: " + e);
+                document.getElementById("btn-start-security").disabled = false;
+            }
+        }
+
+        async function pollSecurityStatus() {
+            try {
+                const res = await fetch("/api/security/status");
+                const data = await res.json();
+
+                isAuditingSecurity = data.is_running;
+                const startBtn = document.getElementById("btn-start-security");
+                if (startBtn) startBtn.disabled = isAuditingSecurity;
+
+                const badge = document.getElementById("sec-status-badge");
+                const statusTxt = document.getElementById("sec-status-text");
+
+                if (isAuditingSecurity) {
+                    if (badge) {
+                        badge.className = "status-badge running";
+                        badge.innerText = "RUNNING";
+                    }
+                    if (statusTxt) statusTxt.innerText = data.status || "Auditing security...";
+                } else if (data.status === "Security Audit Complete") {
+                    if (badge) {
+                        badge.className = "status-badge success";
+                        badge.innerText = "COMPLETED";
+                    }
+                    if (statusTxt) statusTxt.innerText = "Security audit completed successfully";
+                } else if (data.status && data.status.startsWith("Error")) {
+                    if (badge) {
+                        badge.className = "status-badge running";
+                        badge.innerText = "ERROR";
+                    }
+                    if (statusTxt) statusTxt.innerText = data.status;
+                } else {
+                    if (badge) {
+                        badge.className = "status-badge";
+                        badge.innerText = "READY";
+                    }
+                    if (statusTxt) statusTxt.innerText = data.status || "Ready";
+                }
+
+                // Update logs terminal
+                const term = document.getElementById("sec-terminal");
+                if (term && data.logs && data.logs.length > 0) {
+                    term.innerText = data.logs.join("");
+                    term.scrollTop = term.scrollHeight;
+                    const logCount = document.getElementById("sec-log-count");
+                    if (logCount) logCount.innerText = data.logs.length + " lines";
+                }
+
+                // Last PDF
+                if (data.last_pdf) {
+                    lastSecurityPdf = data.last_pdf;
+                    const openPdfBtn = document.getElementById("btn-open-security-pdf");
+                    if (openPdfBtn) openPdfBtn.disabled = false;
+                }
+
+                // Render Results if available
+                if (data.last_result && (!lastSecurityResult || lastSecurityResult.timestamp !== data.last_result.timestamp)) {
+                    renderSecurityResults(data.last_result);
+                }
+            } catch (e) {
+                // Background poll fail ignored
+            }
+        }
+
+        function renderSecurityResults(res) {
+            lastSecurityResult = res;
+            const wrapper = document.getElementById("sec-results-wrapper");
+            if (!wrapper) return;
+            wrapper.style.display = "block";
+
+            // Grade Badge
+            const gradeEl = document.getElementById("sec-grade-badge");
+            if (gradeEl) {
+                let color = "#111827";
+                if (res.score >= 80) color = "#15803d";
+                else if (res.score >= 70) color = "#b45309";
+                else color = "#b91c1c";
+                gradeEl.innerHTML = `<span style="color: ${color};">GRADE: ${res.grade} (${res.score}/100)</span>`;
+            }
+
+            // Host meta
+            const hostMeta = document.getElementById("sec-host-meta");
+            if (hostMeta) {
+                hostMeta.innerText = `Target: ${res.domain} (${res.ip_address}) | Inspected: ${res.timestamp}`;
+            }
+
+            // Counters
+            const c = res.counts || {critical: 0, high: 0, medium: 0, low: 0, passed: 0};
+            const cCrit = document.getElementById("sec-cnt-crit");
+            const cHigh = document.getElementById("sec-cnt-high");
+            const cMed = document.getElementById("sec-cnt-med");
+            const cLow = document.getElementById("sec-cnt-low");
+            const cPass = document.getElementById("sec-cnt-pass");
+
+            if (cCrit) cCrit.innerText = `${c.critical} CRITICAL`;
+            if (cHigh) cHigh.innerText = `${c.high} HIGH`;
+            if (cMed) cMed.innerText = `${c.medium} MEDIUM`;
+            if (cLow) cLow.innerText = `${c.low} LOW`;
+            if (cPass) cPass.innerText = `${c.passed} PASSED`;
+
+            // Code Patches
+            if (res.patches) {
+                const codeHt = document.getElementById("sec-code-htaccess");
+                if (codeHt) codeHt.textContent = res.patches.htaccess || "";
+
+                const codeFn = document.getElementById("sec-code-functions");
+                if (codeFn) codeFn.textContent = res.patches.functions_php || "";
+
+                const codeFm = document.getElementById("sec-code-form");
+                if (codeFm) codeFm.textContent = res.patches.contact_form || "";
+
+                const codePrm = document.getElementById("sec-code-master");
+                if (codePrm) codePrm.textContent = res.patches.master_prompt || "";
+
+                // DNS Table
+                const dnsContainer = document.getElementById("sec-dns-table-container");
+                if (dnsContainer && res.patches.dns) {
+                    let html = `<table class="data-table"><thead><tr><th>Record Type</th><th>Host / Name</th><th>Target / Value</th><th>Protection Purpose</th></tr></thead><tbody>`;
+                    res.patches.dns.forEach(d => {
+                        html += `<tr><td><strong>${escapeOptHtml(d.type)}</strong></td><td><code>${escapeOptHtml(d.host)}</code></td><td><code style="word-break:break-all;">${escapeOptHtml(d.value)}</code></td><td style="color:#4b5563;">${escapeOptHtml(d.purpose)}</td></tr>`;
+                    });
+                    html += `</tbody></table>`;
+                    dnsContainer.innerHTML = html;
+                }
+            }
+
+            // Render Findings
+            renderSecurityFindings();
+        }
+
+        function renderSecurityFindings() {
+            if (!lastSecurityResult || !lastSecurityResult.findings) return;
+            const container = document.getElementById("sec-findings-container");
+            if (!container) return;
+            container.innerHTML = "";
+
+            const filter = currentSecurityFindingsFilter;
+            const list = lastSecurityResult.findings.filter(f => {
+                if (filter === "all") return true;
+                return f.severity === filter;
+            });
+
+            if (list.length === 0) {
+                container.innerHTML = `<div style="padding: 20px; text-align: center; color: #6b7280; border: 1px dashed #d1d5db; background: #fafafa;">No findings match the selected filter "${filter.toUpperCase()}".</div>`;
+                return;
+            }
+
+            const badgeClassMap = {
+                critical: "badge-crit",
+                high: "badge-high",
+                medium: "badge-med",
+                low: "badge-low",
+                passed: "badge-pass"
+            };
+
+            list.forEach(f => {
+                const bClass = badgeClassMap[f.severity] || "badge-low";
+                const card = document.createElement("div");
+                card.className = "finding-card";
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="${bClass}">${f.severity.toUpperCase()}</span>
+                            <strong style="font-size: 13px; color: #111827;">${escapeOptHtml(f.title)}</strong>
+                        </div>
+                        <code style="font-size: 11px; background: #f3f4f6; padding: 2px 6px; border: 1px solid #e5e7eb;">${escapeOptHtml(f.location)}</code>
+                    </div>
+                    <div style="font-size: 12px; color: #374151; margin-bottom: 6px; line-height: 1.5;">
+                        <strong>Technical Impact:</strong> ${escapeOptHtml(f.impact)}
+                    </div>
+                    <div style="font-size: 12px; color: #15803d; line-height: 1.5; background: #f0fdf4; padding: 6px 10px; border-left: 3px solid #15803d;">
+                        <strong>Remediation:</strong> ${escapeOptHtml(f.recommendation)}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterSecurityFindings(sev) {
+            currentSecurityFindingsFilter = sev;
+            renderSecurityFindings();
+        }
+
+        function switchSecurityView(view) {
+            currentSecurityView = view;
+            ["findings", "patches", "prompt"].forEach(v => {
+                const el = document.getElementById("sec-view-" + v);
+                const btn = document.getElementById("sec-tab-" + v);
+                if (el) el.style.display = (v === view) ? "block" : "none";
+                if (btn) {
+                    if (v === view) btn.classList.add("active");
+                    else btn.classList.remove("active");
+                }
+            });
+        }
+
+        async function openLatestSecurityPdf() {
+            try {
+                const res = await fetch("/api/security/open-latest", {method: "POST"});
+                const data = await res.json();
+                if (!data.success) {
+                    alert("Could not open Security PDF: " + (data.error || "File not found"));
+                }
+            } catch (e) {
+                alert("Failed to open PDF: " + e);
+            }
+        }
+
+        async function loadSecurityReports() {
+            try {
+                const res = await fetch("/api/security/reports");
+                const reports = await res.json();
+                const tbody = document.getElementById("sec-reports-tbody");
+                if (!tbody) return;
+
+                if (!reports || reports.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 20px;">No security audit reports found in Downloads yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = reports.map(r => `
+                    <tr>
+                        <td style="font-weight: 600; font-family: monospace; font-size: 11px;">${r.filename}</td>
+                        <td style="color: #4b5563;">${r.time}</td>
+                        <td style="color: #6b7280;">${r.size}</td>
+                        <td>
+                            <button class="btn btn-outline" style="padding: 3px 8px; font-size: 10px;" onclick="openSpecificFile('${r.filename}')">Open PDF</button>
+                        </td>
+                    </tr>
+                `).join("");
+                window.securityReportsLoaded = true;
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        function copySecuritySnippet(type) {
+            if (!lastSecurityResult || !lastSecurityResult.patches) {
+                alert("No security patches generated yet. Run a security audit first.");
+                return;
+            }
+            let text = "";
+            let name = "";
+            if (type === "htaccess") {
+                text = lastSecurityResult.patches.htaccess;
+                name = ".htaccess Hardening";
+            } else if (type === "functions") {
+                text = lastSecurityResult.patches.functions_php;
+                name = "functions.php Security Patch";
+            } else if (type === "form") {
+                text = lastSecurityResult.patches.contact_form;
+                name = "Contact Form Secure Code";
+            } else if (type === "master") {
+                text = lastSecurityResult.patches.master_prompt;
+                name = "Master AI Fix Prompt";
+            }
+
+            if (!text) {
+                alert("Snippet is empty.");
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                alert(name + " copied to clipboard!");
+            }).catch(() => {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                alert(name + " copied to clipboard!");
+            });
+        }
+
         // Intervals
         setInterval(pollAuditStatus, 1500);
+        setInterval(pollSecurityStatus, 1500);
         setInterval(loadReportsList, 5000);
+        setInterval(loadSecurityReports, 5000);
 
         // Init
         window.addEventListener("DOMContentLoaded", () => {
             pollAuditStatus();
+            pollSecurityStatus();
             loadReportsList();
+            loadSecurityReports();
             loadContentPresets();
         });
     </script>
@@ -2632,11 +4412,43 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
             }
             self.wfile.write(json.dumps(resp).encode("utf-8"))
 
+        elif path == "/api/security/status":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            resp = {
+                "is_running": security_state["is_running"],
+                "status": security_state["status"],
+                "logs": security_state["logs"],
+                "last_result": security_state["last_result"],
+                "last_pdf": security_state["last_pdf"],
+            }
+            self.wfile.write(json.dumps(resp).encode("utf-8"))
+
         elif path == "/api/reports":
             reports = []
             if os.path.exists(DOWNLOADS_DIR):
                 for fn in os.listdir(DOWNLOADS_DIR):
-                    if (fn.startswith("SEO_Audit_") or fn.startswith("Architecture_Blueprint_")) and fn.endswith(".pdf"):
+                    if (fn.startswith("SEO_Audit_") or fn.startswith("Architecture_Blueprint_") or fn.startswith("Security_Audit_") or "_Security_Audit_Report" in fn) and fn.endswith(".pdf"):
+                        full_p = os.path.join(DOWNLOADS_DIR, fn)
+                        stat = os.stat(full_p)
+                        reports.append({
+                            "filename": fn,
+                            "time": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                            "size": f"{stat.st_size / 1024:.1f} KB",
+                            "mtime": stat.st_mtime
+                        })
+            reports.sort(key=lambda x: x["mtime"], reverse=True)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(reports[:25]).encode("utf-8"))
+
+        elif path == "/api/security/reports":
+            reports = []
+            if os.path.exists(DOWNLOADS_DIR):
+                for fn in os.listdir(DOWNLOADS_DIR):
+                    if (fn.startswith("Security_Audit_") or "_Security_Audit_Report" in fn) and fn.endswith(".pdf"):
                         full_p = os.path.join(DOWNLOADS_DIR, fn)
                         stat = os.stat(full_p)
                         reports.append({
@@ -2691,6 +4503,12 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                 "results": content_state["last_results"],
             }
             self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))
+
+        elif path == "/api/optimizer/latest":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(json.dumps(optimizer_state.get("last_result") or {}, ensure_ascii=False).encode("utf-8"))
 
         else:
             self.send_response(404)
@@ -2750,6 +4568,53 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False, "error": "No PDF report file found."}).encode("utf-8"))
+
+        elif path == "/api/security/start":
+            if security_state["is_running"]:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "A security audit is already running."}).encode("utf-8"))
+                return
+
+            try:
+                data = json.loads(body) if body else {}
+                url = data.get("url", "").strip()
+                if not url:
+                    raise ValueError("URL required")
+
+                t = threading.Thread(target=run_security_in_background, args=(url,), daemon=True)
+                t.start()
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "started"}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/security/open-latest":
+            pdf_p = security_state.get("last_pdf")
+            if pdf_p and os.path.exists(pdf_p):
+                try:
+                    os.startfile(pdf_p)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            else:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "No Security PDF report file found."}).encode("utf-8"))
 
         elif path == "/api/open-file":
             try:
@@ -2926,6 +4791,50 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps({"success": False, "error": "Folder not found."}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/optimizer/analyze":
+            try:
+                data = json.loads(body) if body else {}
+                content_type = data.get("content_type", "paragraph")
+                text = data.get("text", "").strip()
+                keywords = data.get("keywords", [])
+                brand = data.get("brand", "")
+                industry = data.get("industry", "tech")
+                intent = data.get("intent", "informational")
+
+                if not text:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": "No draft content provided."}).encode("utf-8"))
+                    return
+
+                if optimize_content is None:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": "Content optimizer engine module is unavailable."}).encode("utf-8"))
+                    return
+
+                result = optimize_content(
+                    content_type=content_type,
+                    text=text,
+                    keywords=keywords,
+                    brand=brand,
+                    industry=industry,
+                    intent=intent,
+                )
+                optimizer_state["last_result"] = result
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True, "result": result}, ensure_ascii=False).encode("utf-8"))
             except Exception as e:
                 self.send_response(500)
                 self.send_header("Content-Type", "application/json")
