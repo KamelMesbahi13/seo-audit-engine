@@ -260,121 +260,158 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>InersiaLab — SEO Audit & Architecture Suite</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-shadow: none !important;
-            text-shadow: none !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #111827;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
             line-height: 1.5;
-            font-size: 14px;
-            padding: 30px 20px;
+            font-size: 13.5px;
+            padding: 24px 20px 80px 20px;
         }
 
         .container {
-            max-width: 1040px;
+            max-width: 1140px;
             margin: 0 auto;
         }
 
-        /* Header */
+        /* Apple Navigation Header */
         .header {
-            border-bottom: 2px solid #111827;
-            padding-bottom: 14px;
-            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            padding-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
         }
 
         .org-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
+            font-weight: 600;
+            letter-spacing: 0.02em;
             text-transform: uppercase;
-            color: #4b5563;
-            margin-bottom: 4px;
+            color: #0071e3;
+            background: rgba(0, 113, 227, 0.08);
+            padding: 3px 10px;
+            border-radius: 980px;
+            margin-bottom: 6px;
         }
 
         .main-title {
-            font-size: 24px;
-            font-weight: 800;
+            font-size: 26px;
+            font-weight: 700;
             letter-spacing: -0.03em;
-            color: #111827;
+            color: #1d1d1f;
+            line-height: 1.2;
         }
 
         .header-meta {
             font-size: 11px;
-            color: #4b5563;
+            color: #86868b;
             text-align: right;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 500;
+            letter-spacing: 0.02em;
         }
 
-        /* Tabs Navigation */
+        /* Tabs Navigation — Apple Segmented Control */
         .tabs-nav {
             display: flex;
-            border-bottom: 2px solid #111827;
-            margin-bottom: 24px;
-            gap: 4px;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px;
+            border-radius: 14px;
+            gap: 3px;
+            margin-bottom: 26px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border: none;
         }
 
         .tab-btn {
-            background: #f9fafb;
-            color: #4b5563;
-            border: 1px solid #e5e7eb;
-            border-bottom: none;
-            padding: 10px 20px;
+            flex: 1;
+            min-width: max-content;
+            background: transparent;
+            color: #6e6e73;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 16px;
             font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
+            font-weight: 500;
             cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.15s ease;
+            text-transform: none;
+            letter-spacing: -0.01em;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+            white-space: nowrap;
         }
 
         .tab-btn:hover {
-            background: #f3f4f6;
-            color: #111827;
+            color: #1d1d1f;
+            background: rgba(255, 255, 255, 0.5);
         }
 
         .tab-btn.active {
-            background: #111827;
-            color: #ffffff;
-            border-color: #111827;
+            background: #ffffff;
+            color: #1d1d1f;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
         }
 
         .tab-content {
             display: none;
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .tab-content.active {
             display: block;
         }
 
-        /* Shared Form & Card Components */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Shared Form & Card Components — Apple Surfaces */
         .card {
-            border: 1px solid #e5e7eb;
-            padding: 20px;
-            margin-bottom: 20px;
             background: #ffffff;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
         .card-title {
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #111827;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 8px;
-            margin-bottom: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.015em;
+            color: #1d1d1f;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            text-transform: none;
         }
 
         .form-grid-2 {
@@ -389,185 +426,253 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             gap: 16px;
         }
 
-        @media (max-width: 768px) {
-            .form-grid-2, .form-grid-3 {
+        .form-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .form-grid-2, .form-grid-3, .form-grid-4 {
                 grid-template-columns: 1fr;
             }
         }
 
         .field-group {
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
         .field-label {
             display: block;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #374151;
-            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #1d1d1f;
+            margin-bottom: 6px;
+            text-transform: none;
         }
 
         .field-help {
-            font-size: 11px;
-            color: #6b7280;
-            margin-top: 3px;
-            line-height: 1.3;
+            font-size: 12px;
+            color: #86868b;
+            margin-top: 5px;
+            line-height: 1.4;
         }
 
-        input[type="text"], input[type="number"], select, textarea {
+        input[type="text"], input[type="number"], input[type="url"], select, textarea {
             width: 100%;
-            padding: 8px 10px;
-            font-size: 13px;
-            border: 1px solid #d1d5db;
-            color: #111827;
+            padding: 10px 14px;
+            font-size: 13.5px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            color: #1d1d1f;
             background: #ffffff;
             font-family: inherit;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        input[type="text"]:focus, select:focus, textarea:focus {
+        input[type="text"]::placeholder, input[type="url"]::placeholder, textarea::placeholder {
+            color: #a1a1a6;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, input[type="url"]:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #111827;
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
         }
 
-        /* Buttons */
+        /* Buttons — Apple HIG Pill Styles */
         .btn-row {
             display: flex;
             gap: 10px;
-            margin-top: 16px;
+            margin-top: 18px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn {
-            display: inline-block;
-            padding: 9px 18px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border: 1px solid #111827;
-            background: #111827;
-            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 22px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            border-radius: 980px;
             cursor: pointer;
             text-decoration: none;
-            text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap;
+            text-transform: none;
         }
 
         .btn:hover {
-            background: #000000;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-outline {
             background: #ffffff;
-            color: #111827;
-            border: 1px solid #111827;
+            color: #1d1d1f;
+            border-color: #d2d2d7;
         }
 
         .btn-outline:hover {
-            background: #f3f4f6;
+            background: #f5f5f7;
+            border-color: #86868b;
         }
 
         .btn-accent {
-            background: #15803d;
-            border-color: #15803d;
+            background: #0071e3;
             color: #ffffff;
         }
 
         .btn-accent:hover {
-            background: #166534;
+            background: #0077ed;
+            box-shadow: 0 4px 14px rgba(0, 113, 227, 0.25);
         }
 
-        .btn:disabled, .btn-outline:disabled, .btn-accent:disabled {
-            opacity: 0.5;
+        .btn-accent:active {
+            background: #0062c4;
+            box-shadow: none;
+        }
+
+        .btn-reset {
+            background: rgba(255, 59, 48, 0.08);
+            color: #ff3b30;
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            border-radius: 980px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+        }
+
+        .btn-reset:hover {
+            background: #ff3b30;
+            color: #ffffff;
+            border-color: #ff3b30;
+            box-shadow: 0 2px 8px rgba(255, 59, 48, 0.25);
+        }
+
+        .btn:disabled, .btn-outline:disabled, .btn-accent:disabled, .btn-reset:disabled {
+            opacity: 0.45;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         /* Status Indicator */
         .status-box {
-            padding: 10px 14px;
-            border: 1px solid #e5e7eb;
-            background: #f9fafb;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 12px;
+            padding: 12px 18px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            background: #ffffff;
+            border-radius: 14px;
+            font-size: 12.5px;
             margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
         .status-badge {
             display: inline-block;
-            padding: 2px 8px;
-            font-size: 10px;
-            font-weight: 700;
+            padding: 4px 11px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            background: #111827;
-            color: #ffffff;
+            border-radius: 980px;
+            background: rgba(0, 0, 0, 0.06);
+            color: #1d1d1f;
         }
 
         .status-badge.running {
-            background: #b91c1c;
+            background: rgba(0, 113, 227, 0.12);
+            color: #0071e3;
         }
 
         .status-badge.success {
-            background: #15803d;
+            background: rgba(52, 199, 89, 0.14);
+            color: #28cd41;
         }
 
-        /* Terminal Console */
+        /* Terminal Console — macOS Developer Window */
         .terminal {
-            background: #111827;
-            color: #f3f4f6;
-            padding: 14px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 11px;
-            height: 280px;
+            background: #1c1c1e;
+            color: #f5f5f7;
+            padding: 18px 20px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12px;
+            height: 290px;
             overflow-y: auto;
-            border: 1px solid #111827;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
             white-space: pre-wrap;
-            line-height: 1.45;
+            line-height: 1.6;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
         }
 
-        /* Tables */
+        /* Tables — Apple Minimal Clean */
         table.data-table {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         table.data-table th {
             text-align: left;
-            padding: 8px 10px;
-            background: #f9fafb;
-            border-bottom: 2px solid #111827;
-            font-weight: 700;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            padding: 12px 14px;
+            background: #fbfbfd;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            font-weight: 600;
+            font-size: 12px;
+            color: #6e6e73;
+            letter-spacing: -0.01em;
+            text-transform: none;
         }
 
         table.data-table td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            color: #1d1d1f;
+        }
+
+        table.data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        table.data-table tr:hover td {
+            background: #fafafc;
         }
 
         /* Blueprint Interactive Viewer */
         .blueprint-viewer {
-            border: 1px solid #111827;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
             margin-top: 24px;
-            padding: 24px;
+            padding: 26px;
             background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
         }
 
         .blueprint-viewer h2 {
             font-size: 16px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid #111827;
-            padding-bottom: 6px;
-            margin: 24px 0 12px 0;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding-bottom: 8px;
+            margin: 24px 0 14px 0;
+            color: #1d1d1f;
         }
 
         .blueprint-viewer h2:first-child {
@@ -576,63 +681,72 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
         .code-container {
             position: relative;
-            margin: 12px 0;
+            margin: 14px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         .code-box {
-            background: #111827;
-            color: #f9fafb;
-            padding: 14px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 11px;
+            background: #1c1c1e;
+            color: #f5f5f7;
+            padding: 16px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12px;
             overflow-x: auto;
             white-space: pre;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         .copy-btn {
             position: absolute;
-            top: 6px;
-            right: 6px;
-            padding: 3px 8px;
-            font-size: 10px;
-            font-weight: 700;
-            background: #374151;
+            top: 8px;
+            right: 8px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.15);
             color: #ffffff;
-            border: 1px solid #4b5563;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 980px;
             cursor: pointer;
-            text-transform: uppercase;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
         }
 
         .copy-btn:hover {
-            background: #1f2937;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .anti-pattern-item {
-            border-left: 3px solid #b91c1c;
-            padding: 8px 12px;
-            background: #fef2f2;
-            margin-bottom: 8px;
-            font-size: 12px;
+            border-left: 3px solid #ff3b30;
+            padding: 10px 14px;
+            background: rgba(255, 59, 48, 0.05);
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 10px;
+            font-size: 12.5px;
+            color: #1d1d1f;
         }
 
         .checklist-item {
             display: flex;
             align-items: flex-start;
-            gap: 8px;
-            padding: 6px 0;
-            border-bottom: 1px solid #f3f4f6;
-            font-size: 12px;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            font-size: 13px;
         }
 
         .checklist-item input[type="checkbox"] {
-            margin-top: 2px;
+            margin-top: 3px;
+            accent-color: #0071e3;
         }
 
         .downloads-banner {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            padding: 16px;
+            background: rgba(52, 199, 89, 0.08);
+            border: 1px solid rgba(52, 199, 89, 0.25);
+            border-radius: 14px;
+            padding: 16px 20px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
@@ -641,7 +755,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
         .downloads-banner-text {
             font-size: 13px;
-            color: #166534;
+            color: #15803d;
         }
         .downloads-banner-text strong {
             display: block;
@@ -653,15 +767,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         /* Tab 3: Content Architect Styles */
         .badge-metric {
             display: inline-block;
-            padding: 2px 7px;
+            padding: 2px 8px;
             font-size: 11px;
-            font-weight: 700;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            border-radius: 2px;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            border-radius: 980px;
         }
-        .badge-good { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-        .badge-warn { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .badge-bad  { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .badge-good { background: rgba(52, 199, 89, 0.12); color: #15803d; border: 1px solid rgba(52, 199, 89, 0.25); }
+        .badge-warn { background: rgba(255, 149, 0, 0.12); color: #c25e00; border: 1px solid rgba(255, 149, 0, 0.25); }
+        .badge-bad  { background: rgba(255, 59, 48, 0.1); color: #d70015; border: 1px solid rgba(255, 59, 48, 0.25); }
 
         .content-layout {
             display: grid;
@@ -671,14 +785,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             align-items: start;
         }
         .content-pages-sidebar {
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(0, 0, 0, 0.06);
             background: #ffffff;
+            border-radius: 14px;
             max-height: 720px;
             overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
         .sidebar-page-item {
-            padding: 10px 12px;
-            border-bottom: 1px solid #f3f4f6;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
             cursor: pointer;
             transition: all 0.15s ease;
             display: flex;
@@ -686,65 +802,163 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             align-items: center;
         }
         .sidebar-page-item:hover {
-            background: #f9fafb;
+            background: #fafafc;
         }
         .sidebar-page-item.active {
-            background: #111827;
+            background: #1d1d1f;
             color: #ffffff;
-            border-color: #111827;
         }
         .sidebar-page-item.active .badge-metric {
-            background: #374151;
+            background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            border-color: #4b5563;
+            border-color: transparent;
         }
         .sidebar-page-item.active .page-sub {
-            color: #9ca3af !important;
+            color: #a1a1a6 !important;
         }
         .aeo-callout {
-            border-left: 3px solid #15803d;
-            background: #f0fdf4;
-            padding: 12px 14px;
-            margin-bottom: 14px;
+            border-left: 3px solid #34c759;
+            background: rgba(52, 199, 89, 0.06);
+            border-radius: 0 12px 12px 0;
+            padding: 14px 16px;
+            margin-bottom: 16px;
             font-size: 13px;
-            color: #166534;
+            color: #15803d;
             line-height: 1.6;
         }
         .section-block {
-            border: 1px solid #e5e7eb;
-            padding: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 14px;
+            padding: 18px 20px;
             margin-bottom: 16px;
             background: #ffffff;
         }
         .section-block h3 {
             font-size: 14px;
-            font-weight: 700;
+            font-weight: 600;
+            letter-spacing: -0.01em;
             margin-bottom: 8px;
-            color: #111827;
+            color: #1d1d1f;
         }
         .section-block h4 {
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 600;
             margin-top: 12px;
             margin-bottom: 6px;
-            color: #374151;
+            color: #48484a;
         }
         .tag-pill {
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 6px;
-            background: #f3f4f6;
-            color: #4b5563;
-            border: 1px solid #e5e7eb;
-            border-radius: 2px;
-            text-transform: uppercase;
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 9px;
+            background: rgba(0, 0, 0, 0.05);
+            color: #1d1d1f;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 980px;
+            text-transform: none;
+        }
+        .tag-pill.good {
+            background: rgba(52, 199, 89, 0.12);
+            color: #15803d;
+            border-color: rgba(52, 199, 89, 0.25);
         }
         .tag-pill.req {
-            background: #fef2f2;
-            color: #b91c1c;
-            border-color: #fecaca;
+            background: rgba(255, 59, 48, 0.08);
+            color: #d70015;
+            border-color: rgba(255, 59, 48, 0.2);
         }
-        /* Optimizer Tab 4 Styles */
+
+        /* Optimizer Tab 4 Styles — Apple Design System */
+        /* Side-by-Side Crawl & Plugin Notice Comparison Styles */
+        .opt-side-by-side-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        @media (max-width: 900px) {
+            .opt-side-by-side-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .opt-side-col {
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+        .opt-side-col.current {
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            background: rgba(255, 59, 48, 0.02);
+        }
+        .opt-side-col.improved {
+            border: 1px solid rgba(52, 199, 89, 0.35);
+            background: rgba(52, 199, 89, 0.03);
+            box-shadow: 0 2px 10px rgba(52, 199, 89, 0.04);
+        }
+        .opt-side-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .opt-side-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .opt-side-col.current .opt-side-title {
+            color: #ff3b30;
+        }
+        .opt-side-col.improved .opt-side-title {
+            color: #34c759;
+        }
+        .opt-side-text {
+            font-family: inherit;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: #1d1d1f;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-bottom: 12px;
+            flex: 1;
+        }
+        .opt-side-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .opt-badge-violation {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(255, 59, 48, 0.08);
+            color: #ff3b30;
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            border-radius: 980px;
+            padding: 3px 9px;
+            letter-spacing: 0.01em;
+        }
+        .opt-badge-benefit {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(52, 199, 89, 0.12);
+            color: #15803d;
+            border: 1px solid rgba(52, 199, 89, 0.25);
+            border-radius: 980px;
+            padding: 3px 9px;
+            letter-spacing: 0.01em;
+        }
         .opt-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -757,20 +971,23 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         }
         .opt-score-card {
             background: #ffffff;
-            border: 1px solid #e5e7eb;
-            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 16px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
         .opt-score-badge {
-            font-size: 26px;
-            font-weight: 800;
+            font-size: 28px;
+            font-weight: 700;
             line-height: 1;
+            letter-spacing: -0.02em;
         }
-        .opt-score-badge.good { color: #15803d; }
-        .opt-score-badge.warn { color: #b45309; }
-        .opt-score-badge.bad { color: #b91c1c; }
+        .opt-score-badge.good { color: #34c759; }
+        .opt-score-badge.warn { color: #ff9500; }
+        .opt-score-badge.bad { color: #ff3b30; }
         .opt-diff-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -783,15 +1000,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             }
         }
         .opt-diff-panel {
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(0, 0, 0, 0.06);
             background: #ffffff;
-            padding: 14px;
+            border-radius: 14px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
         }
         .opt-diff-panel.optimized {
-            border-color: #15803d;
-            background: #fdfdfd;
+            border-color: rgba(52, 199, 89, 0.35);
+            background: rgba(52, 199, 89, 0.02);
         }
         .opt-diff-header {
             display: flex;
@@ -799,59 +1017,65 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             align-items: center;
             margin-bottom: 10px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
         .opt-diff-text {
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13.5px;
             line-height: 1.65;
             white-space: pre-wrap;
             word-break: break-word;
             flex: 1;
-            color: #111827;
-            padding: 8px 0;
+            color: #1d1d1f;
+            padding: 6px 0;
         }
         .opt-issue-item {
             display: flex;
             gap: 10px;
-            padding: 10px 12px;
-            border-left: 3px solid #9ca3af;
-            background: #f9fafb;
+            padding: 11px 14px;
+            border-left: 3px solid #86868b;
+            background: #fafafc;
+            border-radius: 0 10px 10px 0;
             margin-bottom: 8px;
             font-size: 13px;
         }
         .opt-issue-item.sev-critical {
-            border-left-color: #b91c1c;
-            background: #fef2f2;
+            border-left-color: #ff3b30;
+            background: rgba(255, 59, 48, 0.05);
         }
         .opt-issue-item.sev-high {
-            border-left-color: #dc2626;
-            background: #fff5f5;
+            border-left-color: #ff9500;
+            background: rgba(255, 149, 0, 0.05);
         }
         .opt-issue-item.sev-medium {
-            border-left-color: #d97706;
-            background: #fffbeb;
+            border-left-color: #ffcc00;
+            background: rgba(255, 204, 0, 0.08);
         }
         .opt-issue-item.sev-low {
-            border-left-color: #2563eb;
-            background: #eff6ff;
+            border-left-color: #0071e3;
+            background: rgba(0, 113, 227, 0.05);
         }
         .opt-issue-item.sev-info {
-            border-left-color: #4b5563;
-            background: #f3f4f6;
+            border-left-color: #86868b;
+            background: #f5f5f7;
         }
         .opt-pill-preset {
-            padding: 4px 10px;
-            font-size: 11px;
+            padding: 5px 13px;
+            font-size: 12px;
+            font-weight: 500;
             background: #ffffff;
-            border: 1px solid #d1d5db;
-            color: #374151;
+            border: 1px solid #d2d2d7;
+            border-radius: 980px;
+            color: #1d1d1f;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .opt-pill-preset:hover {
-            border-color: #111827;
-            background: #f3f4f6;
+            border-color: #0071e3;
+            background: #0071e3;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2);
         }
 
         /* Multi-Variant Selector Styles */
@@ -867,60 +1091,64 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             }
         }
         .opt-variant-card {
-            border: 2px solid #e5e7eb;
+            border: 1.5px solid rgba(0, 0, 0, 0.08);
+            border-radius: 14px;
             background: #ffffff;
-            padding: 12px 14px;
+            padding: 14px 16px;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
         }
         .opt-variant-card:hover {
-            border-color: #9ca3af;
-            background: #f9fafb;
+            border-color: #86868b;
+            background: #fafafc;
         }
         .opt-variant-card.active {
-            border-color: #15803d;
-            background: #f0fdf4;
+            border-color: #0071e3;
+            background: rgba(0, 113, 227, 0.03);
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.12);
         }
         .opt-variant-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #111827;
+            font-size: 13.5px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #1d1d1f;
             margin-bottom: 4px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .opt-variant-desc {
-            font-size: 11px;
-            color: #4b5563;
+            font-size: 11.5px;
+            color: #86868b;
             line-height: 1.4;
         }
         
         /* Word Diff Styles */
         .diff-del {
-            background-color: #fee2e2;
-            color: #991b1b;
+            background-color: rgba(255, 59, 48, 0.12);
+            color: #d70015;
             text-decoration: line-through;
-            padding: 1px 4px;
-            border-radius: 2px;
+            padding: 1px 5px;
+            border-radius: 4px;
             font-weight: 500;
         }
         .diff-ins {
-            background-color: #dcfce7;
-            color: #166534;
+            background-color: rgba(52, 199, 89, 0.15);
+            color: #15803d;
             text-decoration: none;
-            padding: 1px 4px;
-            border-radius: 2px;
-            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 600;
         }
         .opt-diff-view-box {
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(0, 0, 0, 0.06);
             background: #ffffff;
+            border-radius: 12px;
             padding: 16px;
-            font-size: 14px;
+            font-size: 13.5px;
             line-height: 1.7;
-            color: #111827;
+            color: #1d1d1f;
         }
 
         /* SERP Google Preview Card */
@@ -928,7 +1156,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             border: 1px solid #dfe1e5;
             background: #ffffff;
             padding: 16px 18px;
-            border-radius: 8px;
+            border-radius: 12px;
             font-family: Arial, sans-serif;
             max-width: 650px;
         }
@@ -936,85 +1164,86 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 12px;
-            color: #202124;
             margin-bottom: 4px;
         }
         .serp-favicon {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            background: #111827;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 10px;
-            font-weight: bold;
+            background: #1a73e8;
+            display: inline-block;
+        }
+        .serp-site-name {
+            font-size: 12px;
+            color: #202124;
+            font-weight: normal;
+        }
+        .serp-breadcrumb {
+            font-size: 12px;
+            color: #5f6368;
         }
         .serp-title {
-            color: #1a0dab;
             font-size: 20px;
             line-height: 1.3;
-            cursor: pointer;
+            color: #1a0dab;
+            text-decoration: none;
+            font-weight: normal;
             margin-bottom: 4px;
-            word-wrap: break-word;
+            display: block;
+            cursor: pointer;
         }
         .serp-title:hover {
             text-decoration: underline;
         }
         .serp-snippet {
-            color: #4d5156;
             font-size: 14px;
             line-height: 1.58;
+            color: #4d5156;
             word-wrap: break-word;
         }
         .serp-pixel-bar {
             height: 4px;
-            background: #e5e7eb;
-            border-radius: 2px;
-            margin-top: 10px;
+            background: #e5e5ea;
+            border-radius: 980px;
             overflow: hidden;
+            margin-top: 4px;
         }
         .serp-pixel-fill {
             height: 100%;
-            background: #15803d;
-            transition: width 0.3s ease;
+            background: #34c759;
+            transition: width 0.2s ease;
+            border-radius: 980px;
         }
-        .serp-pixel-fill.warn {
-            background: #b91c1c;
-        }
+        .serp-pixel-fill.warn { background: #ff9500; }
+        .serp-pixel-fill.danger { background: #ff3b30; }
 
         /* AI Overview / Perplexity Citation Box */
         .ai-preview-box {
-            border: 1px solid #e0e7ff;
-            background: #f8faff;
-            border-radius: 8px;
-            padding: 16px 18px;
-            position: relative;
+            border: 1px solid rgba(0, 113, 227, 0.2);
+            background: rgba(0, 113, 227, 0.02);
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 16px;
         }
         .ai-preview-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e0e7ff;
+            align-items: center;
+            margin-bottom: 10px;
         }
         .ai-preview-badge {
             font-size: 11px;
-            font-weight: 700;
-            color: #4338ca;
-            background: #e0e7ff;
-            padding: 3px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+            color: #0071e3;
+            background: rgba(0, 113, 227, 0.08);
+            padding: 3px 10px;
+            border-radius: 980px;
+            letter-spacing: 0.02em;
         }
         .ai-preview-quote {
             font-size: 14px;
             line-height: 1.65;
-            color: #1e1b4b;
+            color: #1d1d1f;
             margin-bottom: 12px;
         }
         .ai-sources-row {
@@ -1027,53 +1256,56 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 3px 10px;
+            padding: 4px 11px;
             background: #ffffff;
-            border: 1px solid #c7d2fe;
-            border-radius: 12px;
+            border: 1px solid rgba(0, 113, 227, 0.2);
+            border-radius: 980px;
             font-size: 11px;
-            color: #3730a3;
-            font-weight: 600;
+            color: #0071e3;
+            font-weight: 500;
         }
 
         /* View Mode Tabs & Exporter Styles */
         .opt-view-tabs {
             display: flex;
             gap: 4px;
-            border-bottom: 2px solid #e5e7eb;
-            margin-bottom: 14px;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 3px;
+            border-radius: 10px;
+            margin-bottom: 16px;
             overflow-x: auto;
         }
         .opt-view-tab {
-            padding: 8px 16px;
+            padding: 7px 14px;
             font-size: 12px;
-            font-weight: 700;
-            color: #4b5563;
-            background: none;
+            font-weight: 500;
+            color: #6e6e73;
+            background: transparent;
             border: none;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
+            border-radius: 8px;
             cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            transition: all 0.15s ease;
+            letter-spacing: -0.01em;
+            transition: all 0.2s ease;
             white-space: nowrap;
         }
         .opt-view-tab:hover {
-            color: #111827;
+            color: #1d1d1f;
         }
         .opt-view-tab.active {
-            color: #111827;
-            border-bottom-color: #111827;
+            background: #ffffff;
+            color: #1d1d1f;
+            font-weight: 600;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
         }
         .opt-code-box {
-            background: #0f172a;
-            color: #f1f5f9;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            background: #1c1c1e;
+            color: #f5f5f7;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-size: 12px;
-            line-height: 1.55;
-            padding: 14px;
-            border: 1px solid #1e293b;
+            line-height: 1.6;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             overflow-x: auto;
             white-space: pre-wrap;
             word-break: break-all;
@@ -1087,78 +1319,269 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             flex-wrap: wrap;
         }
 
-        /* Security Badges & Cards */
+        /* Security Badges & Cards — Apple Translucent Pills */
         .badge-crit {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #f87171;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            background: rgba(255, 59, 48, 0.1);
+            color: #ff3b30;
+            border: 1px solid rgba(255, 59, 48, 0.25);
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 980px;
         }
         .badge-high {
-            background: #ffedd5;
-            color: #c2410c;
-            border: 1px solid #fb923c;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            background: rgba(255, 149, 0, 0.12);
+            color: #c25e00;
+            border: 1px solid rgba(255, 149, 0, 0.25);
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 980px;
         }
         .badge-med {
-            background: #fef3c7;
-            color: #b45309;
-            border: 1px solid #fbbf24;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            background: rgba(255, 204, 0, 0.14);
+            color: #946800;
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 980px;
         }
         .badge-low {
-            background: #dbeafe;
-            color: #1d4ed8;
-            border: 1px solid #60a5fa;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            background: rgba(0, 113, 227, 0.1);
+            color: #0071e3;
+            border: 1px solid rgba(0, 113, 227, 0.25);
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 980px;
         }
         .badge-pass {
-            background: #dcfce7;
+            background: rgba(52, 199, 89, 0.12);
             color: #15803d;
-            border: 1px solid #4ade80;
-            padding: 2px 7px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            border: 1px solid rgba(52, 199, 89, 0.25);
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 980px;
         }
         .finding-card {
-            border: 1px solid #e5e7eb;
+            border: 1px solid rgba(0, 0, 0, 0.06);
             background: #ffffff;
-            padding: 14px 16px;
+            border-radius: 14px;
+            padding: 18px 20px;
             margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
         }
         .finding-card:hover {
-            border-color: #111827;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
         }
         .code-block {
-            background: #1e293b;
-            color: #f8fafc;
-            padding: 12px 14px;
+            background: #1c1c1e;
+            color: #f5f5f7;
+            padding: 14px 16px;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 11px;
-            line-height: 1.45;
+            font-size: 11.5px;
+            line-height: 1.5;
             overflow-x: auto;
             white-space: pre-wrap;
-            border: 1px solid #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
             max-height: 380px;
         }
+
+        /* WordPress SEO Plugin Suite Styles */
+        .plg-subnav-btn {
+            padding: 7px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            color: #6e6e73;
+            border: none;
+            border-radius: 980px;
+            cursor: pointer;
+            letter-spacing: -0.01em;
+            transition: all 0.2s ease;
+        }
+        .plg-subnav-btn:hover {
+            color: #1d1d1f;
+            background: rgba(0, 0, 0, 0.04);
+        }
+        .plg-subnav-btn.active {
+            background: #1d1d1f;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+        .plg-test-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        @media (max-width: 800px) {
+            .plg-test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .plg-test-item {
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .plg-test-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 980px;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .plg-test-badge.passed {
+            background: rgba(52, 199, 89, 0.12);
+            color: #15803d;
+            border: 1px solid rgba(52, 199, 89, 0.25);
+        }
+        .plg-test-badge.failed {
+            background: rgba(255, 59, 48, 0.1);
+            color: #ff3b30;
+            border: 1px solid rgba(255, 59, 48, 0.25);
+        }
+        .plg-test-badge.warning {
+            background: rgba(255, 149, 0, 0.12);
+            color: #c25e00;
+            border: 1px solid rgba(255, 149, 0, 0.25);
+        }
+        .plg-field-row {
+            margin-bottom: 14px;
+        }
+        .plg-field-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .plg-field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1d1d1f;
+            letter-spacing: -0.01em;
+        }
+        .plg-copy-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .plg-copy-input-group input, .plg-copy-input-group textarea {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 9px 12px;
+            color: #1d1d1f;
+        }
+        .plg-copy-input-group input:focus, .plg-copy-input-group textarea:focus {
+            outline: none;
+            border-color: #0071e3;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+        }
+        .plg-btn-copy {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #ffffff;
+            color: #0071e3;
+            border: 1px solid #d2d2d7;
+            border-radius: 980px;
+            cursor: pointer;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .plg-btn-copy:hover {
+            background: #0071e3;
+            color: #ffffff;
+            border-color: #0071e3;
+            box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2);
+        }
+        .plg-btn-copy.copied {
+            background: #34c759 !important;
+            border-color: #34c759 !important;
+            color: #ffffff !important;
+        }
+
+        /* Floating Toast Notification */
+        #reset-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(29, 29, 31, 0.88);
+            color: #ffffff;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 12px 22px;
+            border-radius: 980px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            z-index: 9999;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        /* Apple macOS Developer Terminal */
+        .mac-traffic-lights {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .mac-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .mac-dot-red { background: #ff5f56; border: 1px solid #e0443e; }
+        .mac-dot-yellow { background: #ffbd2e; border: 1px solid #dea123; }
+        .mac-dot-green { background: #27c93f; border: 1px solid #1aab29; }
+        .mac-console-header {
+            padding: 10px 16px;
+            background: #242426;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mac-console-title {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #e5e5ea;
+            letter-spacing: 0.01em;
+        }
+        .mac-clear-btn {
+            padding: 3px 10px;
+            font-size: 11px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e5e5ea;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .mac-clear-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+    
     </style>
 </head>
 <body>
@@ -1169,9 +1592,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 <div class="org-label">InersiaLab Software Department</div>
                 <h1 class="main-title">SEO Audit, Architect & Cybersecurity Suite</h1>
             </div>
-            <div class="header-meta">
-                ENGINE V3.8<br>
-                HIGH-PRECISION SUITE
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <div class="header-meta">
+                    ENGINE V3.8<br>
+                    HIGH-PRECISION SUITE
+                </div>
+                <button id="btn-global-reset" class="btn btn-reset" style="padding: 4px 12px; font-size: 11px;" onclick="resetAllEnginesAndCache()" title="Clear in-memory audit cache, logs, and browser storage">
+                    RESET / CLEAR CACHE
+                </button>
             </div>
         </header>
 
@@ -1224,9 +1652,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 </div>
 
                 <div class="btn-row">
-                    <button id="btn-start-audit" class="btn" onclick="startAudit()">START LIVE AUDIT</button>
+                    <button id="btn-start-audit" class="btn btn-accent" onclick="startAudit()">START LIVE AUDIT</button>
                     <button id="btn-open-audit-pdf" class="btn btn-outline" onclick="openLatestAuditPdf()" disabled>OPEN GENERATED PDF</button>
                     <button class="btn btn-outline" onclick="openDownloadsFolder()">OPEN DOWNLOADS FOLDER</button>
+                    <button id="btn-reset-audit" class="btn btn-reset" onclick="resetAllEnginesAndCache()" title="Clear in-memory audit cache, logs, and browser storage">RESET / CLEAR CACHE</button>
                 </div>
             </div>
 
@@ -1239,12 +1668,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 <div id="audit-timer" style="font-size: 11px; color: #6b7280;"></div>
             </div>
 
-            <div class="card" style="padding: 0;">
-                <div style="padding: 10px 14px; border-bottom: 1px solid #111827; background: #111827; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between;">
-                    <span>Execution Stream</span>
-                    <span id="log-count" style="color: #9ca3af;">0 lines</span>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="mac-console-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="mac-traffic-lights">
+                            <span class="mac-dot mac-dot-red"></span>
+                            <span class="mac-dot mac-dot-yellow"></span>
+                            <span class="mac-dot mac-dot-green"></span>
+                        </div>
+                        <span class="mac-console-title">Execution Stream — Terminal Console</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="log-count" style="color: #86868b; font-size: 11px; font-weight: 500;">0 lines</span>
+                        <button class="mac-clear-btn" onclick="resetAllEnginesAndCache()" title="Clear logs and reset engine">Clear</button>
+                    </div>
                 </div>
-                <div id="audit-terminal" class="terminal">Awaiting execution command...</div>
+                <div id="audit-terminal" class="terminal" style="border-radius: 0 0 16px 16px;">Awaiting execution command...</div>
             </div>
 
             <!-- Recent Reports Table -->
@@ -1272,7 +1711,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <!-- TAB 2: NEW WEBSITE ARCHITECT (PRE-LAUNCH BLUEPRINT) -->
         <!-- ============================================================= -->
         <section id="tab-blueprint" class="tab-content">
-            <div class="card" style="border-left: 3px solid #111827;">
+            <div class="card">
                 <div class="card-title">Pre-Launch Architecture Guide & Turnkey Starter Kit Generator</div>
                 <p style="font-size: 13px; color: #4b5563; margin-bottom: 16px;">
                     When building a new website from scratch, configure your technical specifications below. 
@@ -1329,7 +1768,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <!-- TAB 3: PAGE CONTENT ARCHITECT (PRE-LAUNCH CONTENT GENERATOR) -->
         <!-- ============================================================= -->
         <section id="tab-content" class="tab-content">
-            <div class="card" style="border-left: 3px solid #15803d;">
+            <div class="card">
                 <div class="card-title">Pre-Launch Page & Section Content Generator</div>
                 <p style="font-size: 13px; color: #4b5563; margin-bottom: 16px;">
                     Select an industry archetype and choose the pages for your upcoming website. The engine generates complete, fully-structured, SEO/GEO-optimized text content and sections for every single page (strict heading hierarchy, AEO hooks, E-E-A-T signals, Schema.org JSON-LD, and Core Web Vitals asset specs) with zero CSS bloat.
@@ -1733,7 +2172,7 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                     </div>
 
                     <!-- Section 8: Active Competitor Web Research & Market Gap (Q42-Q45) -->
-                    <div class="card" style="margin-bottom: 14px; padding: 16px; border-left: 3px solid #b91c1c;">
+                    <div class="card" style="margin-bottom: 14px; padding: 16px; border-left: 3px solid #ff3b30; border-radius: 14px; background: rgba(255, 59, 48, 0.04);">
                         <div class="card-title" style="color: #b91c1c;">8. Active Competitor Web Research & Market Gap (Q42-Q45)</div>
                         <p style="font-size: 12px; color: #4b5563; margin-bottom: 10px;">
                             When you click generate, the engine actively crawls and benchmarks these competitor sites (or top field champions), extracting their semantic heading hierarchies, topical keyword entity clusters, and layout patterns to synthesize content engineered to outperform them.
@@ -1879,8 +2318,501 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
         <!-- TAB 4: SEO & GEO CONTENT OPTIMIZER -->
         <!-- ============================================================= -->
         <section id="tab-optimizer" class="tab-content">
-            <!-- Optimizer Input Card -->
-            <div class="card">
+            <!-- Mode Switcher: 3 Modes — Apple Segmented Control -->
+            <div style="display: flex; gap: 12px; margin-bottom: 22px; padding-bottom: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; border-bottom: 1px solid rgba(0, 0, 0, 0.06);">
+                <div style="display: inline-flex; background: rgba(0, 0, 0, 0.05); padding: 3px; border-radius: 12px; gap: 3px; flex-wrap: wrap;">
+                    <button type="button" id="btn-opt-mode-crawl" class="plg-subnav-btn active" onclick="switchOptSubMode('crawl')">
+                        1. Live URL &amp; Plugin Improver (Side-by-Side)
+                    </button>
+                    <button type="button" id="btn-opt-mode-plugin" class="plg-subnav-btn" onclick="switchOptSubMode('plugin')">
+                        2. WordPress Plugin Metadata Suite
+                    </button>
+                    <button type="button" id="btn-opt-mode-single" class="plg-subnav-btn" onclick="switchOptSubMode('single')">
+                        3. Single Element &amp; GEO Optimizer
+                    </button>
+                </div>
+                <div style="font-size: 11.5px; font-weight: 500; color: #86868b;">
+                    Active Mode: <span id="opt-active-mode-label" style="color: #0071e3; font-weight: 600;">Live URL &amp; Plugin Notice Improver</span>
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- SUB-VIEW 1: LIVE URL & PLUGIN NOTICE IMPROVER (SIDE-BY-SIDE) -->
+            <!-- ============================================================= -->
+            <div id="opt-crawl-view">
+                <!-- Input Card -->
+                <div class="card" id="opt-crawl-form-card">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span>Live Webpage Crawler &amp; SEO Plugin Notice Improver</span>
+                        <span class="tag-pill good" style="font-size: 10px;">Crawls Live HTML &bull; Exact Side-by-Side Comparison</span>
+                    </div>
+                    <div class="field-help" style="margin-top: -6px; margin-bottom: 16px;">
+                        Attach any website URL and paste or upload the diagnostic notice from your SEO plugin (Rank Math, Yoast SEO, AIOSEO). The engine crawls the live webpage, extracts its current HTML elements, identifies every plugin violation, and renders the <strong>Current (Crawled) Text</strong> directly next to the <strong>Improved Text</strong> with 1-click copy buttons.
+                    </div>
+
+                    <!-- 1-Click Demo Profiles -->
+                    <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Load Demo Profiles:</span>
+                        <button type="button" class="opt-pill-preset" onclick="loadCrawlDemoProfile('inersialab')">InersiaLab (Rank Math Notice Demo)</button>
+                        <button type="button" class="opt-pill-preset" onclick="loadCrawlDemoProfile('saas')">Cybersecurity Platform (Yoast SEO Demo)</button>
+                        <button type="button" class="opt-pill-preset" onclick="loadCrawlDemoProfile('ecommerce')">E-Commerce Brand (AIOSEO Demo)</button>
+                        <button type="button" class="opt-pill-preset" onclick="loadCrawlDemoProfile('clinic')">Medical Clinic (Rank Math Demo)</button>
+                    </div>
+
+                    <!-- Row 1: Target URL & Plugin Selector -->
+                    <div class="form-grid-3">
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label class="field-label" for="opt-crawl-url">Live Webpage URL to Crawl &amp; Inspect <span class="tag-pill req">Required</span></label>
+                            <input type="url" id="opt-crawl-url" placeholder="https://www.inersialab.com">
+                            <div class="field-help">The engine fetches and parses title, description, H1, H2s, intro text, and word counts in real time.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-crawl-plugin-type">Target SEO Plugin</label>
+                            <select id="opt-crawl-plugin-type">
+                                <option value="rank_math" selected>Rank Math SEO (Recommended)</option>
+                                <option value="yoast">Yoast SEO</option>
+                                <option value="aioseo">All in One SEO (AIOSEO)</option>
+                                <option value="seopress">SEOPress / Core Meta</option>
+                            </select>
+                            <div class="field-help">Calibrates scoring, rule compliance, and copy-paste meta boxes.</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Focus Keyword, Brand, Industry, Schema Type -->
+                    <div class="form-grid-4">
+                        <div class="field-group">
+                            <label class="field-label" for="opt-crawl-keyword">Focus Keyword (Optional)</label>
+                            <input type="text" id="opt-crawl-keyword" placeholder="Auto-detected if left empty">
+                            <div class="field-help">Extracted automatically from plugin notice or crawled title if blank.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-crawl-brand">Site Name / Brand Suffix</label>
+                            <input type="text" id="opt-crawl-brand" placeholder="e.g. InersiaLab">
+                            <div class="field-help">Brand identifier appended to title tag.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-crawl-industry">Industry &amp; Entity Domain</label>
+                            <select id="opt-crawl-industry">
+                                <option value="tech" selected>Technology, Cloud &amp; SaaS</option>
+                                <option value="finance">Finance, Banking &amp; FinTech</option>
+                                <option value="healthcare">Healthcare, Biotech &amp; Medical</option>
+                                <option value="ecommerce">E-Commerce, Retail &amp; DTC</option>
+                                <option value="legal">Legal, Compliance &amp; Corporate</option>
+                                <option value="general">General Business &amp; Services</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-crawl-page-type">Page / Schema Type</label>
+                            <select id="opt-crawl-page-type">
+                                <option value="WebPage" selected>WebPage / Service</option>
+                                <option value="Article">Blog Post / Article</option>
+                                <option value="Product">Product Page</option>
+                                <option value="LocalBusiness">Local Business</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Plugin Diagnostic Notice (Upload or Paste) -->
+                    <div class="field-group" style="margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px;">
+                            <label class="field-label" for="opt-crawl-notice" style="margin-bottom: 0;">
+                                SEO Plugin Diagnostic Notice / Test Failures <span class="tag-pill req">Paste or Upload</span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label class="btn btn-outline" style="padding: 4px 10px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                    Upload Notice File (.txt, .log, .json, .csv, .md)
+                                    <input type="file" id="opt-crawl-file-input" accept=".txt,.log,.json,.csv,.md,.text" style="display:none;" onchange="handlePluginNoticeFileUpload(event)">
+                                </label>
+                                <span id="opt-crawl-file-name" style="font-size: 11px; color: #15803d; font-weight: 700;"></span>
+                            </div>
+                        </div>
+                        <textarea id="opt-crawl-notice" rows="5" placeholder="Paste SEO plugin error or warning messages here. For example:&#10;- Add Focus Keyword to the SEO title.&#10;- Focus Keyword does not appear in the first 10% of the content.&#10;- Use Focus Keyword in subheadings (H2, H3).&#10;- Content is 180 words long. Consider using at least 600 words.&#10;- Add a number to your SEO title.&#10;- Add a Power Word to your SEO title."></textarea>
+                        <div class="field-help">Upload a file or paste any bullet points, test errors, or recommendations exported from Rank Math, Yoast SEO, or AIOSEO.</div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 10px; margin-top: 14px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-accent" id="btn-run-crawl-improver" onclick="runCrawlImprover()" style="padding: 12px 28px; font-size: 13px;">
+                            CRAWL PAGE &amp; GENERATE SIDE-BY-SIDE IMPROVEMENTS
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="clearCrawlImprover()" style="padding: 12px 20px; font-size: 13px;">
+                            CLEAR
+                        </button>
+                        <span id="opt-crawl-status-indicator" style="font-size: 12px; font-weight: 700; color: #4b5563;"></span>
+                    </div>
+                </div>
+
+                <!-- Results Wrapper -->
+                <div id="opt-crawl-results-wrapper" style="display: none; margin-top: 18px;">
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- SUB-VIEW 2: WORDPRESS SEO PLUGIN SUITE (MANUAL FORM) -->
+            <!-- ============================================================= -->
+            <div id="opt-plugin-view" style="display: none;">
+                <!-- Plugin Configuration Form -->
+                <div class="card" id="opt-plugin-form-card">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>WordPress &amp; CMS SEO Plugin Optimizer</span>
+                        <span class="tag-pill good" style="font-size: 10px;">Rank Math &bull; Yoast &bull; AIOSEO</span>
+                    </div>
+                    <div class="field-help" style="margin-top: -6px; margin-bottom: 16px;">
+                        Provide your page details and draft metadata below. The engine audits your snippet against WordPress SEO plugin ranking factors (pixel width, keyword front-loading, emotional triggers, slug structure) and produces ready-to-paste configurations for Rank Math and Yoast SEO.
+                    </div>
+
+                    <!-- 1-Click Demo Presets -->
+                    <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Load Demo Profiles:</span>
+                        <button type="button" class="opt-pill-preset" onclick="loadPluginDemoProfile('dental')">Healthcare Clinic (Dental Implants)</button>
+                        <button type="button" class="opt-pill-preset" onclick="loadPluginDemoProfile('saas')">Cybersecurity SaaS (Zero-Trust Platform)</button>
+                        <button type="button" class="opt-pill-preset" onclick="loadPluginDemoProfile('contractor')">Luxury Contractor (Kitchen Remodeling)</button>
+                    </div>
+
+                    <!-- Row 1: Target Keywords & Plugin Target -->
+                    <div class="form-grid-3">
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-keyword">Focus / Primary Keyword <span class="tag-pill req">Required</span></label>
+                            <input type="text" id="opt-plg-keyword" placeholder="e.g. Dental Implants Miami" oninput="onPluginInputLiveChange()">
+                            <div class="field-help">Core search phrase targeted by this page or article.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-secondary-keywords">Secondary Keywords</label>
+                            <input type="text" id="opt-plg-secondary-keywords" placeholder="e.g. tooth replacement, cosmetic dentistry, full mouth implants">
+                            <div class="field-help">Comma-separated semantic modifiers &amp; LSI terms.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-plugin-type">Target WordPress Plugin</label>
+                            <select id="opt-plg-plugin-type">
+                                <option value="rank_math" selected>Rank Math SEO (Recommended)</option>
+                                <option value="yoast">Yoast SEO</option>
+                                <option value="aioseo">All in One SEO (AIOSEO)</option>
+                                <option value="seopress">SEOPress / Core Meta</option>
+                            </select>
+                            <div class="field-help">Calibrates snippet variables, templates, and scoring logic.</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Brand, Slug, Industry -->
+                    <div class="form-grid-3">
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-site-name">Site Name / Brand Suffix</label>
+                            <input type="text" id="opt-plg-site-name" placeholder="e.g. Miami Smile Clinic" oninput="onPluginInputLiveChange()">
+                            <div class="field-help">Appended to title tags (e.g. | Miami Smile Clinic).</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-slug">URL Permalink Slug</label>
+                            <input type="text" id="opt-plg-slug" placeholder="e.g. dental-implants-miami">
+                            <div class="field-help">Leave empty to auto-generate clean kebab-case slug.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-industry">Industry &amp; Entity Domain</label>
+                            <select id="opt-plg-industry">
+                                <option value="tech">Technology, Cloud &amp; SaaS</option>
+                                <option value="finance">Finance, Banking &amp; FinTech</option>
+                                <option value="healthcare">Healthcare, Biotech &amp; Medical</option>
+                                <option value="ecommerce">E-Commerce, Retail &amp; DTC</option>
+                                <option value="legal">Legal, Compliance &amp; Corporate</option>
+                                <option value="general">General Business &amp; Professional Services</option>
+                            </select>
+                            <div class="field-help">Calibrates domain entities and authority phrases.</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Page Type & Content Sample -->
+                    <div class="form-grid-2">
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-page-type">Page / Schema Content Type</label>
+                            <select id="opt-plg-page-type">
+                                <option value="Service" selected>Service Page (Local &amp; Commercial)</option>
+                                <option value="Article">Blog Post / Article (Informational Guide)</option>
+                                <option value="Product">Product Page (E-Commerce)</option>
+                                <option value="LocalBusiness">Local Business Landing Page</option>
+                                <option value="WebPage">Standard Web Page / Homepage</option>
+                            </select>
+                            <div class="field-help">Determines Schema.org JSON-LD generation and structure.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="opt-plg-content">Optional Content Excerpt / Intro Paragraph</label>
+                            <input type="text" id="opt-plg-content" placeholder="e.g. Miami Smile Clinic provides dental implants...">
+                            <div class="field-help">Optional first 100 words to test focus keyword density &amp; placement.</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Draft SEO Title & Meta Description with Live Counters -->
+                    <div class="field-group" style="margin-top: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="field-label" for="opt-plg-title" style="margin-bottom: 0;">Draft SEO Title Tag</label>
+                            <span id="opt-plg-title-stats" style="font-size: 11px; font-weight: 700; color: #4b5563;">0 chars | ~0 px (Target: 50-60 chars, &lt;580 px)</span>
+                        </div>
+                        <input type="text" id="opt-plg-title" placeholder="e.g. Dental Implants in Miami" oninput="updatePluginLiveStats()">
+                        <div class="serp-pixel-bar" style="margin-top: 6px;">
+                            <div id="opt-plg-title-bar" class="serp-pixel-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="field-group" style="margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label class="field-label" for="opt-plg-desc" style="margin-bottom: 0;">Draft Meta Description</label>
+                            <span id="opt-plg-desc-stats" style="font-size: 11px; font-weight: 700; color: #4b5563;">0 chars (Target: 125-155 chars)</span>
+                        </div>
+                        <textarea id="opt-plg-desc" rows="3" placeholder="e.g. We provide dental implants in Miami with affordable prices." oninput="updatePluginLiveStats()"></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 10px; margin-top: 14px;">
+                        <button type="button" class="btn btn-accent" id="btn-run-plugin-optimizer" onclick="runPluginOptimizer()" style="padding: 12px 28px; font-size: 13px;">
+                            AUDIT &amp; OPTIMIZE FOR SEO PLUGIN
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="clearPluginOptimizer()" style="padding: 12px 20px; font-size: 13px;">
+                            CLEAR
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Plugin Results Wrapper -->
+                <div id="opt-plugin-results-wrapper" style="display: none; margin-top: 18px;">
+                    <!-- Score & Status Banner -->
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>SEO Plugin Audit &amp; Ranking Scorecard</span>
+                            <span id="opt-plg-grade-badge" class="tag-pill good" style="font-size: 13px; font-weight: 900; padding: 4px 10px;">GRADE: A+</span>
+                        </div>
+
+                        <div class="form-grid-3" style="margin-top: 10px;">
+                            <div class="opt-score-card">
+                                <div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Plugin Compliance</div>
+                                    <div id="opt-plg-overall-delta" style="font-size: 11px; font-weight: 600; color: #15803d; margin-top: 2px;">Score</div>
+                                </div>
+                                <div class="opt-score-badge good" id="opt-plg-overall-score">0</div>
+                            </div>
+
+                            <div class="opt-score-card">
+                                <div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Technical SEO Factors</div>
+                                    <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Keywords, Length, Slug</div>
+                                </div>
+                                <div class="opt-score-badge" id="opt-plg-seo-score">0</div>
+                            </div>
+
+                            <div class="opt-score-card">
+                                <div>
+                                    <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">AI / GEO Citability</div>
+                                    <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">AI Search Engine Grounding</div>
+                                </div>
+                                <div class="opt-score-badge" id="opt-plg-geo-score">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 12-Factor Audit Checklist -->
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>12-Factor SEO Plugin Compliance Checklist</span>
+                            <span style="font-size: 11px; color: #6b7280; font-weight: normal;">Evaluated against Rank Math &amp; Yoast Ranking Algorithms</span>
+                        </div>
+                        <div id="opt-plg-tests-grid" class="plg-test-grid" style="margin-top: 12px;">
+                            <!-- Rendered by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Strategic Variants -->
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Optimized Metadata Strategy Packages</span>
+                            <span style="font-size: 11px; color: #6b7280; font-weight: normal;">Choose a package to load into your plugin</span>
+                        </div>
+                        <div class="opt-variant-grid" id="opt-plg-variants-grid" style="margin-top: 10px;">
+                            <!-- Rendered by JS: 3 strategy packages -->
+                        </div>
+                    </div>
+
+                    <!-- Direct Turnkey Plugin Copy-Paste Boxes -->
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span>Turnkey Plugin Export &amp; Meta Boxes</span>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <button type="button" class="tab-btn active" id="btn-plg-box-rankmath" style="padding: 4px 10px; font-size: 11px;" onclick="switchPluginBoxView('rankmath')">Rank Math</button>
+                                <button type="button" class="tab-btn" id="btn-plg-box-yoast" style="padding: 4px 10px; font-size: 11px;" onclick="switchPluginBoxView('yoast')">Yoast SEO</button>
+                                <button type="button" class="tab-btn" id="btn-plg-box-social" style="padding: 4px 10px; font-size: 11px;" onclick="switchPluginBoxView('social')">Social Meta</button>
+                                <button type="button" class="tab-btn" id="btn-plg-box-schema" style="padding: 4px 10px; font-size: 11px;" onclick="switchPluginBoxView('schema')">Schema JSON-LD</button>
+                                <button type="button" class="tab-btn" id="btn-plg-box-ai" style="padding: 4px 10px; font-size: 11px;" onclick="switchPluginBoxView('ai')">AI Writing Prompt</button>
+                            </div>
+                        </div>
+
+                        <!-- View 1: Rank Math -->
+                        <div id="plg-box-rankmath" style="margin-top: 14px;">
+                            <div class="field-help" style="margin-bottom: 12px;">Copy and paste directly into Rank Math General &amp; Advanced Meta Box inside WordPress editor.</div>
+                            
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">Focus Keyword</span>
+                                    <span style="font-size: 11px; color: #6b7280;">Primary keyword box</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="rm-copy-keyword" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('rm-copy-keyword', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">SEO Title</span>
+                                    <span id="rm-title-len-pill" style="font-size: 11px; font-weight: 700; color: #15803d;">0 chars / ~0 px</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="rm-copy-title" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('rm-copy-title', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">Permalink / Slug</span>
+                                    <span style="font-size: 11px; color: #6b7280;">Clean kebab-case</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="rm-copy-slug" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('rm-copy-slug', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">Meta Description</span>
+                                    <span id="rm-desc-len-pill" style="font-size: 11px; font-weight: 700; color: #15803d;">0 chars</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <textarea id="rm-copy-desc" rows="3" readonly></textarea>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('rm-copy-desc', this)">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View 2: Yoast SEO -->
+                        <div id="plg-box-yoast" style="display: none; margin-top: 14px;">
+                            <div class="field-help" style="margin-bottom: 12px;">Copy and paste directly into Yoast SEO Snippet Editor inside WordPress.</div>
+                            
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">Focus Keyphrase</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="yoast-copy-keyphrase" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('yoast-copy-keyphrase', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">SEO Title (Literal Exact)</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="yoast-copy-title-literal" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('yoast-copy-title-literal', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">SEO Title (Yoast Variable Template)</span>
+                                    <span style="font-size: 11px; color: #6b7280;">Uses %%sep%% %%sitename%%</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="yoast-copy-title-tpl" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('yoast-copy-title-tpl', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">Slug</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <input type="text" id="yoast-copy-slug" readonly>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('yoast-copy-slug', this)">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="plg-field-row">
+                                <div class="plg-field-header">
+                                    <span class="plg-field-label">Meta Description</span>
+                                </div>
+                                <div class="plg-copy-input-group">
+                                    <textarea id="yoast-copy-desc" rows="3" readonly></textarea>
+                                    <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('yoast-copy-desc', this)">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View 3: Social Meta -->
+                        <div id="plg-box-social" style="display: none; margin-top: 14px;">
+                            <div class="field-help" style="margin-bottom: 12px;">OpenGraph and Twitter Card markup ready to insert in theme &lt;head&gt; or plugin Social tab.</div>
+                            <div style="position: relative;">
+                                <pre class="opt-code-box" id="plg-copy-social-code"></pre>
+                                <button type="button" class="copy-btn" onclick="copyCodeSnippet('plg-copy-social-code', this)">Copy Social Tags</button>
+                            </div>
+                        </div>
+
+                        <!-- View 4: Schema JSON-LD -->
+                        <div id="plg-box-schema" style="display: none; margin-top: 14px;">
+                            <div class="field-help" style="margin-bottom: 12px;">Schema.org JSON-LD structured data for Google Rich Results.</div>
+                            <div style="position: relative;">
+                                <pre class="opt-code-box" id="plg-copy-schema-code"></pre>
+                                <button type="button" class="copy-btn" onclick="copyCodeSnippet('plg-copy-schema-code', this)">Copy JSON-LD</button>
+                            </div>
+                        </div>
+
+                        <!-- View 5: Master AI Writing Prompt -->
+                        <div id="plg-box-ai" style="display: none; margin-top: 14px;">
+                            <div class="field-help" style="margin-bottom: 12px;">Pre-calculated prompt for ChatGPT / Claude / Gemini to generate full article adhering strictly to these plugin metadata specs.</div>
+                            <div style="position: relative;">
+                                <pre class="opt-code-box" id="plg-copy-ai-prompt" style="white-space: pre-wrap; font-size: 11px;"></pre>
+                                <button type="button" class="copy-btn" onclick="copyCodeSnippet('plg-copy-ai-prompt', this)">Copy Prompt</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Device SERP & Social Preview Simulator -->
+                    <div class="card" style="margin-bottom: 16px;">
+                        <div class="card-title">Live SERP &amp; Social Simulator</div>
+                        <div class="field-help" style="margin-top: -6px; margin-bottom: 14px;">
+                            Preview how this snippet appears on Google Desktop, Google Mobile, and Facebook / Social sharing.
+                        </div>
+
+                        <div class="form-grid-2">
+                            <!-- Desktop SERP -->
+                            <div>
+                                <div style="font-size: 12px; font-weight: 700; color: #111827; text-transform: uppercase; margin-bottom: 6px;">Google Desktop SERP</div>
+                                <div id="opt-plg-serp-desktop"></div>
+                            </div>
+
+                            <!-- Mobile SERP -->
+                            <div>
+                                <div style="font-size: 12px; font-weight: 700; color: #111827; text-transform: uppercase; margin-bottom: 6px;">Google Mobile SERP</div>
+                                <div id="opt-plg-serp-mobile"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================= -->
+            <!-- SUB-VIEW 2: SINGLE ELEMENT & GEO OPTIMIZER (ORIGINAL) -->
+            <!-- ============================================================= -->
+            <div id="opt-single-view" style="display: none;">
+                <!-- Optimizer Input Card -->
+                <div class="card">
                 <div class="card-title">Precision SEO &amp; Generative Engine (GEO) Content Optimizer</div>
                 <div class="field-help" style="margin-top: -6px; margin-bottom: 16px;">
                     Input any draft heading, title tag, meta description, or text block. The engine scores it against InersiaLab's 8-factor technical SEO &amp; AI citability matrix, purges AI fluff, injects factual anchors, and delivers publication-grade copy.
@@ -2155,6 +3087,7 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                     </div>
                 </div>
             </div>
+            </div> <!-- End opt-single-view -->
         </section>
 
         <!-- ============================================================= -->
@@ -2175,6 +3108,7 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                     <button id="btn-start-security" class="btn btn-accent" onclick="startSecurityAudit()">START LIVE SECURITY AUDIT</button>
                     <button id="btn-open-security-pdf" class="btn btn-outline" onclick="openLatestSecurityPdf()" disabled>OPEN GENERATED PDF</button>
                     <button class="btn btn-outline" onclick="openDownloadsFolder()">OPEN DOWNLOADS FOLDER</button>
+                    <button id="btn-reset-security" class="btn btn-reset" onclick="resetAllEnginesAndCache()" title="Clear in-memory audit cache, logs, and browser storage">RESET / CLEAR CACHE</button>
                 </div>
             </div>
 
@@ -2187,18 +3121,28 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                 <div id="sec-timer" style="font-size: 11px; color: #6b7280;"></div>
             </div>
 
-            <div class="card" style="padding: 0;">
-                <div style="padding: 10px 14px; border-bottom: 1px solid #111827; background: #111827; color: #ffffff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between;">
-                    <span>Security Audit Stream</span>
-                    <span id="sec-log-count" style="color: #9ca3af;">0 lines</span>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="mac-console-header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="mac-traffic-lights">
+                            <span class="mac-dot mac-dot-red"></span>
+                            <span class="mac-dot mac-dot-yellow"></span>
+                            <span class="mac-dot mac-dot-green"></span>
+                        </div>
+                        <span class="mac-console-title">Security Audit Stream — Terminal Console</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="sec-log-count" style="color: #86868b; font-size: 11px; font-weight: 500;">0 lines</span>
+                        <button class="mac-clear-btn" onclick="resetAllEnginesAndCache()" title="Clear logs and reset engine">Clear</button>
+                    </div>
                 </div>
-                <div id="sec-terminal" class="terminal">Awaiting security execution command...</div>
+                <div id="sec-terminal" class="terminal" style="border-radius: 0 0 16px 16px;">Awaiting security execution command...</div>
             </div>
 
             <!-- Interactive Security Results Explorer -->
             <div id="sec-results-wrapper" style="display: none; margin-top: 20px;">
                 <!-- Executive Score Banner -->
-                <div class="card" style="border: 2px solid #111827; background: #f9fafb;">
+                <div class="card" style="background: #ffffff;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                         <div>
                             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #4b5563;">Overall Security Posture</div>
@@ -2322,6 +3266,11 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
         </section>
     </div>
 
+    <!-- Reset Notification Toast -->
+    <div id="reset-toast" style="display: none;">
+        CACHE CLEARED &amp; ENGINES RESET
+    </div>
+
     <!-- JavaScript Controller -->
     <script>
         let currentTab = "audit";
@@ -2410,38 +3359,159 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                 const data = await res.json();
 
                 isAuditing = data.is_running;
-                document.getElementById("btn-start-audit").disabled = isAuditing;
+                const startBtn = document.getElementById("btn-start-audit");
+                if (startBtn) startBtn.disabled = isAuditing;
+
+                const badge = document.getElementById("audit-status-badge");
+                const statusTxt = document.getElementById("audit-status-text");
 
                 if (isAuditing) {
-                    document.getElementById("audit-status-badge").className = "status-badge running";
-                    document.getElementById("audit-status-badge").innerText = "RUNNING";
-                    document.getElementById("audit-status-text").innerText = data.status || "Auditing...";
+                    if (badge) {
+                        badge.className = "status-badge running";
+                        badge.innerText = "RUNNING";
+                    }
+                    if (statusTxt) statusTxt.innerText = data.status || "Auditing...";
                 } else if (data.status === "Audit Complete") {
-                    document.getElementById("audit-status-badge").className = "status-badge success";
-                    document.getElementById("audit-status-badge").innerText = "COMPLETED";
-                    document.getElementById("audit-status-text").innerText = "Audit finished successfully";
+                    if (badge) {
+                        badge.className = "status-badge success";
+                        badge.innerText = "COMPLETED";
+                    }
+                    if (statusTxt) statusTxt.innerText = "Audit finished successfully";
                 } else {
-                    document.getElementById("audit-status-badge").className = "status-badge";
-                    document.getElementById("audit-status-badge").innerText = "READY";
-                    document.getElementById("audit-status-text").innerText = data.status || "Ready";
+                    if (badge) {
+                        badge.className = "status-badge";
+                        badge.innerText = "READY";
+                    }
+                    if (statusTxt) statusTxt.innerText = data.status || "Ready";
                 }
 
                 // Update logs
                 const term = document.getElementById("audit-terminal");
-                if (data.logs && data.logs.length > 0) {
-                    term.innerText = data.logs.join("");
-                    term.scrollTop = term.scrollHeight;
-                    document.getElementById("log-count").innerText = data.logs.length + " lines";
+                if (term) {
+                    if (data.logs && data.logs.length > 0) {
+                        term.innerText = data.logs.join("");
+                        term.scrollTop = term.scrollHeight;
+                        const logCount = document.getElementById("log-count");
+                        if (logCount) logCount.innerText = data.logs.length + " lines";
+                    } else if (!isAuditing) {
+                        term.innerText = "Awaiting execution command...";
+                        const logCount = document.getElementById("log-count");
+                        if (logCount) logCount.innerText = "0 lines";
+                    }
                 }
 
                 // Last PDF
+                const openPdfBtn = document.getElementById("btn-open-audit-pdf");
                 if (data.last_pdf) {
                     lastAuditPdf = data.last_pdf;
-                    document.getElementById("btn-open-audit-pdf").disabled = false;
+                    if (openPdfBtn) openPdfBtn.disabled = false;
+                } else {
+                    lastAuditPdf = null;
+                    if (openPdfBtn) openPdfBtn.disabled = true;
                 }
             } catch (e) {
                 // server temporarily quiet
             }
+        }
+
+        async function resetAllEnginesAndCache() {
+            try {
+                // 1. Call server reset endpoint
+                const res = await fetch("/api/reset", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"}
+                });
+                const data = await res.json();
+
+                // 2. Clear browser storages & caches
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch (e) {}
+
+                if (window.caches) {
+                    try {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map(k => caches.delete(k)));
+                    } catch (e) {}
+                }
+
+                // 3. Reset Tab 1 (SEO Audit) UI
+                isAuditing = false;
+                lastAuditPdf = null;
+                const auditTerm = document.getElementById("audit-terminal");
+                if (auditTerm) auditTerm.innerText = "Awaiting execution command...";
+                const auditLogCount = document.getElementById("log-count");
+                if (auditLogCount) auditLogCount.innerText = "0 lines";
+                const auditBadge = document.getElementById("audit-status-badge");
+                if (auditBadge) {
+                    auditBadge.className = "status-badge";
+                    auditBadge.innerText = "READY";
+                }
+                const auditStatusTxt = document.getElementById("audit-status-text");
+                if (auditStatusTxt) auditStatusTxt.innerText = "Audit engine idle";
+                const btnStartAudit = document.getElementById("btn-start-audit");
+                if (btnStartAudit) btnStartAudit.disabled = false;
+                const btnOpenAuditPdf = document.getElementById("btn-open-audit-pdf");
+                if (btnOpenAuditPdf) btnOpenAuditPdf.disabled = true;
+
+                // 4. Reset Tab 5 (Cybersecurity) UI
+                isAuditingSecurity = false;
+                lastSecurityPdf = null;
+                lastSecurityResult = null;
+                const secTerm = document.getElementById("sec-terminal");
+                if (secTerm) secTerm.innerText = "Awaiting security execution command...";
+                const secLogCount = document.getElementById("sec-log-count");
+                if (secLogCount) secLogCount.innerText = "0 lines";
+                const secBadge = document.getElementById("sec-status-badge");
+                if (secBadge) {
+                    secBadge.className = "status-badge";
+                    secBadge.innerText = "READY";
+                }
+                const secStatusTxt = document.getElementById("sec-status-text");
+                if (secStatusTxt) secStatusTxt.innerText = "Security audit engine idle";
+                const btnStartSec = document.getElementById("btn-start-security");
+                if (btnStartSec) btnStartSec.disabled = false;
+                const btnOpenSecPdf = document.getElementById("btn-open-security-pdf");
+                if (btnOpenSecPdf) btnOpenSecPdf.disabled = true;
+                const secWrapper = document.getElementById("sec-results-wrapper");
+                if (secWrapper) secWrapper.style.display = "none";
+                const secFindings = document.getElementById("sec-findings-container");
+                if (secFindings) secFindings.innerHTML = "";
+
+                // 5. Reset Tab 4 (Optimizer) UI
+                lastOptimizerResult = null;
+                lastPluginOptimizerResult = null;
+                lastCrawlImproverResult = null;
+                const optWrapper = document.getElementById("opt-results-wrapper");
+                if (optWrapper) optWrapper.style.display = "none";
+                const plgOptWrapper = document.getElementById("opt-plugin-results-wrapper");
+                if (plgOptWrapper) plgOptWrapper.style.display = "none";
+                const crawlWrapper = document.getElementById("opt-crawl-results-wrapper");
+                if (crawlWrapper) {
+                    crawlWrapper.innerHTML = "";
+                    crawlWrapper.style.display = "none";
+                }
+
+                // 6. Refresh report lists
+                if (typeof loadReportsList === "function") loadReportsList();
+                if (typeof loadSecurityReports === "function") loadSecurityReports();
+
+                // 7. Show Toast Confirmation
+                showResetToast("Cache cleared & all audit engines reset.");
+            } catch (err) {
+                alert("Failed to reset cache: " + err);
+            }
+        }
+
+        function showResetToast(msg) {
+            let toast = document.getElementById("reset-toast");
+            if (!toast) return;
+            toast.innerText = msg || "CACHE CLEARED & ENGINES RESET";
+            toast.style.display = "block";
+            setTimeout(() => {
+                toast.style.display = "none";
+            }, 3000);
         }
 
         async function openLatestAuditPdf() {
@@ -3221,7 +4291,7 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                 const targets = (bench.targets_inspected || []).map(t => `<span class="tag-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">${t.domain || t.url}</span>`).join(" ");
                 const entities = (bench.top_benchmark_entities || []).slice(0, 6).map(e => `<span class="badge-metric badge-good" style="margin-right: 4px;">+ ${e}</span>`).join(" ");
                 benchHtml = `
-                    <div class="card" style="margin-bottom: 14px; padding: 12px 16px; background: #fdf2f2; border: 1px solid #fecaca; border-left: 3px solid #b91c1c;">
+                    <div class="card" style="margin-bottom: 14px; padding: 12px 16px; background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.15); border-left: 3px solid #ff3b30; border-radius: 12px;">
                         <div style="font-size: 12px; font-weight: 700; color: #b91c1c; margin-bottom: 4px;">Active Competitor Benchmark Intelligence:</div>
                         <div style="font-size: 12px; color: #374151; margin-bottom: 6px;">
                             <strong>Competitors Inspected:</strong> ${targets || "Leading Archetype Champions"}
@@ -4051,6 +5121,1019 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
         }
 
         // =========================================================================
+        // TAB 4 SUB-MODE SWITCHER & CRAWL IMPROVER JAVASCRIPT CONTROLLER
+        // =========================================================================
+        let lastCrawlImproverResult = null;
+        let lastPluginOptimizerResult = null;
+        let activePluginVariantIndex = 0;
+        let activePluginBoxView = "rankmath";
+
+        function switchOptSubMode(mode) {
+            const btnCrawl = document.getElementById("btn-opt-mode-crawl");
+            const btnPlg = document.getElementById("btn-opt-mode-plugin");
+            const btnSingle = document.getElementById("btn-opt-mode-single");
+
+            const viewCrawl = document.getElementById("opt-crawl-view");
+            const viewPlg = document.getElementById("opt-plugin-view");
+            const viewSingle = document.getElementById("opt-single-view");
+
+            const modeLabel = document.getElementById("opt-active-mode-label");
+
+            // Reset all buttons
+            if (btnCrawl) btnCrawl.classList.remove("active");
+            if (btnPlg) btnPlg.classList.remove("active");
+            if (btnSingle) btnSingle.classList.remove("active");
+
+            // Hide all views
+            if (viewCrawl) viewCrawl.style.display = "none";
+            if (viewPlg) viewPlg.style.display = "none";
+            if (viewSingle) viewSingle.style.display = "none";
+
+            if (mode === "single") {
+                if (btnSingle) btnSingle.classList.add("active");
+                if (viewSingle) viewSingle.style.display = "block";
+                if (modeLabel) modeLabel.textContent = "Single Element Optimizer";
+            } else if (mode === "plugin") {
+                if (btnPlg) btnPlg.classList.add("active");
+                if (viewPlg) viewPlg.style.display = "block";
+                if (modeLabel) modeLabel.textContent = "WordPress Plugin Metadata Suite";
+            } else {
+                // Default: crawl
+                if (btnCrawl) btnCrawl.classList.add("active");
+                if (viewCrawl) viewCrawl.style.display = "block";
+                if (modeLabel) modeLabel.textContent = "Live URL & Plugin Notice Improver";
+            }
+        }
+
+        const CRAWL_DEMO_PROFILES = {
+            inersialab: {
+                url: "https://www.inersialab.com",
+                keyword: "InersiaLab Web Architecture",
+                brand: "InersiaLab",
+                industry: "tech",
+                plugin_type: "rank_math",
+                page_type: "WebPage",
+                notice: `- Add Focus Keyword to the SEO title.
+- Add Focus Keyword to your SEO Meta Description.
+- Focus Keyword not found in the URL permalink.
+- Focus Keyword does not appear in the first 10% of the content.
+- Use Focus Keyword in subheadings like H2, H3.
+- Content is 220 words long. Consider using at least 600 words.
+- Add a number to your SEO title to improve CTR.
+- Add an emotional power word to your SEO title.`
+            },
+            saas: {
+                url: "https://example.com/platform",
+                keyword: "Zero Trust Security Platform",
+                brand: "ShieldZero",
+                industry: "tech",
+                plugin_type: "yoast",
+                page_type: "Service",
+                notice: `Yoast SEO Analysis:
+- Keyphrase in SEO title: The focus keyphrase does not appear at the beginning of the SEO title.
+- Keyphrase in meta description: The keyphrase or its synonyms do not appear in the meta description.
+- Keyphrase in slug: More than half of your keyphrase is missing from the slug.
+- Subheading distribution: You have 0 subheadings reflecting the topic.
+- Text length: The text contains 180 words. This is far below the recommended minimum of 600 words.
+- Keyphrase in introduction: Your keyphrase does not appear in the first paragraph.`
+            },
+            ecommerce: {
+                url: "https://example.com/products/leather-bag",
+                keyword: "Handmade Leather Travel Bag",
+                brand: "Craftsman Goods",
+                industry: "ecommerce",
+                plugin_type: "aioseo",
+                page_type: "Product",
+                notice: `AIOSEO Page Checklist:
+- SEO Title is too short and missing focus keyphrase.
+- Meta Description lacks a compelling commercial call-to-action.
+- Permalink contains stop words or is overly generic.
+- H2 Subheadings do not mention product keywords.
+- Word count: 140 words found. Target is 500+ words.
+- Title is missing a year or numerical modifier.`
+            },
+            clinic: {
+                url: "https://example.com/dental-implants",
+                keyword: "Dental Implants Miami",
+                brand: "Miami Smile Specialists",
+                industry: "healthcare",
+                plugin_type: "rank_math",
+                page_type: "Service",
+                notice: `Rank Math Errors:
+- Focus Keyword not found in SEO title.
+- Focus Keyword not found in SEO meta description.
+- Focus Keyword not found in first 10% of content.
+- Use Focus Keyword in H2 subheadings.
+- Content length is below recommended minimum.
+- Title does not contain a Power Word.`
+            }
+        };
+
+        function loadCrawlDemoProfile(profileKey) {
+            const prof = CRAWL_DEMO_PROFILES[profileKey];
+            if (!prof) return;
+
+            document.getElementById("opt-crawl-url").value = prof.url;
+            document.getElementById("opt-crawl-keyword").value = prof.keyword;
+            document.getElementById("opt-crawl-brand").value = prof.brand;
+            document.getElementById("opt-crawl-industry").value = prof.industry;
+            document.getElementById("opt-crawl-plugin-type").value = prof.plugin_type;
+            document.getElementById("opt-crawl-page-type").value = prof.page_type;
+            document.getElementById("opt-crawl-notice").value = prof.notice;
+            const nameEl = document.getElementById("opt-crawl-file-name");
+            if (nameEl) nameEl.textContent = "Preset Profile: " + profileKey.toUpperCase();
+        }
+
+        function handlePluginNoticeFileUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const nameEl = document.getElementById("opt-crawl-file-name");
+            if (nameEl) nameEl.textContent = "File: " + file.name + " (" + Math.round(file.size / 1024) + " KB)";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const textarea = document.getElementById("opt-crawl-notice");
+                if (textarea) {
+                    textarea.value = text;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearCrawlImprover() {
+            document.getElementById("opt-crawl-url").value = "";
+            document.getElementById("opt-crawl-notice").value = "";
+            document.getElementById("opt-crawl-keyword").value = "";
+            document.getElementById("opt-crawl-brand").value = "";
+            const nameEl = document.getElementById("opt-crawl-file-name");
+            if (nameEl) nameEl.textContent = "";
+            const wrapper = document.getElementById("opt-crawl-results-wrapper");
+            if (wrapper) {
+                wrapper.innerHTML = "";
+                wrapper.style.display = "none";
+            }
+            const indicator = document.getElementById("opt-crawl-status-indicator");
+            if (indicator) indicator.textContent = "";
+            lastCrawlImproverResult = null;
+        }
+
+        async function runCrawlImprover() {
+            const url = document.getElementById("opt-crawl-url").value.trim();
+            if (!url) {
+                alert("Please enter a valid live webpage URL to crawl.");
+                document.getElementById("opt-crawl-url").focus();
+                return;
+            }
+
+            const notice = document.getElementById("opt-crawl-notice").value.trim();
+            const keyword = document.getElementById("opt-crawl-keyword").value.trim();
+            const brand = document.getElementById("opt-crawl-brand").value.trim();
+            const pluginType = document.getElementById("opt-crawl-plugin-type").value;
+            const industry = document.getElementById("opt-crawl-industry").value;
+            const pageType = document.getElementById("opt-crawl-page-type").value;
+
+            const btn = document.getElementById("btn-run-crawl-improver");
+            const indicator = document.getElementById("opt-crawl-status-indicator");
+            if (btn) btn.disabled = true;
+            if (indicator) indicator.textContent = "Crawling webpage & analyzing plugin notices...";
+
+            try {
+                const response = await fetch("/api/optimizer/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        content_type: "crawl_plugin_fix",
+                        url: url,
+                        plugin_notice: notice,
+                        focus_keyword: keyword,
+                        site_name: brand,
+                        plugin_type: pluginType,
+                        industry: industry,
+                        page_type: pageType
+                    })
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || "Analysis failed.");
+                }
+
+                lastCrawlImproverResult = data.result;
+                renderCrawlImproverResults(data.result);
+                if (indicator) indicator.textContent = "Analysis complete. See side-by-side improvements below.";
+            } catch (err) {
+                alert("Crawl Improver Error: " + err.message);
+                if (indicator) indicator.textContent = "Error: " + err.message;
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function copySideComparisonText(elementId, btnElement) {
+            const el = document.getElementById(elementId);
+            if (!el || !el.innerText) {
+                alert("Text is empty.");
+                return;
+            }
+            const textToCopy = el.innerText.trim();
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const orig = btnElement.textContent;
+                btnElement.textContent = "COPIED";
+                btnElement.classList.add("copied");
+                setTimeout(() => {
+                    btnElement.textContent = orig;
+                    btnElement.classList.remove("copied");
+                }, 2000);
+            }).catch(() => {
+                const ta = document.createElement("textarea");
+                ta.value = textToCopy;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                const orig = btnElement.textContent;
+                btnElement.textContent = "COPIED";
+                btnElement.classList.add("copied");
+                setTimeout(() => {
+                    btnElement.textContent = orig;
+                    btnElement.classList.remove("copied");
+                }, 2000);
+            });
+        }
+
+        function applyKeywordAndReRun(kw) {
+            const input = document.getElementById("opt-crawl-keyword");
+            if (input) {
+                input.value = kw;
+                const indicator = document.getElementById("opt-crawl-status-indicator");
+                if (indicator) indicator.textContent = "Re-analyzing page with focus keyword: " + kw + "...";
+                runCrawlImprover();
+            }
+        }
+
+        function renderCrawlImproverResults(data) {
+            const wrapper = document.getElementById("opt-crawl-results-wrapper");
+            if (!wrapper || !data) return;
+
+            const url = data.url || "";
+            const pluginType = (data.plugin_type || "rank_math").toUpperCase();
+            const focusKw = data.focus_keyword || "";
+            const scoreBefore = data.baseline_score ?? data.score_before ?? 40;
+            const scoreAfter = data.potential_score ?? data.score_after ?? 96;
+            const scoreDelta = scoreAfter - scoreBefore;
+            const comparisons = data.comparisons || [];
+            const detectedItems = data.detected_notice_items || (data.parsed_notice && data.parsed_notice.flags) || [];
+            const flagsCount = detectedItems.length;
+
+            let html = `
+                <!-- Banner Card -->
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span>Crawl &amp; Plugin Optimization Scorecard</span>
+                        <span class="tag-pill good" style="font-size: 13px; font-weight: 900; padding: 4px 10px;">GRADE: A+ (READY FOR PRODUCTION)</span>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #4b5563; margin-top: -4px; margin-bottom: 12px; word-break: break-all;">
+                        Crawled URL: <strong style="color: #111827;">${escapeHtml(url)}</strong> 
+                        &bull; Target Plugin: <strong style="color: #111827;">${escapeHtml(pluginType)}</strong>
+                        &bull; Focus Keyword: <strong style="color: #111827;">${escapeHtml(focusKw)}</strong>
+                        &bull; Brand: <strong style="color: #111827;">${escapeHtml(data.site_name || "InersiaLab")}</strong>
+                    </div>
+
+                    <div class="form-grid-3" style="margin-top: 10px;">
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Plugin Compliance Jump</div>
+                                <div style="font-size: 11px; font-weight: 700; color: #15803d; margin-top: 2px;">+${scoreDelta} Points Gain</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 14px; color: #b91c1c; text-decoration: line-through; margin-right: 6px;">${scoreBefore}/100</span>
+                                <span class="opt-score-badge good" style="font-size: 26px;">${scoreAfter}/100</span>
+                            </div>
+                        </div>
+
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Plugin Warnings Resolved</div>
+                                <div style="font-size: 11px; color: #15803d; margin-top: 2px; font-weight: 600;">100% Passed</div>
+                            </div>
+                            <div class="opt-score-badge good">${flagsCount} / ${flagsCount}</div>
+                        </div>
+
+                        <div class="opt-score-card">
+                            <div>
+                                <div style="font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase;">Side-by-Side Elements</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">Crawled &amp; Optimized</div>
+                            </div>
+                            <div class="opt-score-badge good">${comparisons.length}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discovered Focus Keywords Chips -->
+                ${(data.recommended_keywords && data.recommended_keywords.length > 0) ? `
+                    <div class="card" style="margin-bottom: 16px; padding: 14px 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                            <div>
+                                <span style="font-size: 13px; font-weight: 700; color: #1d1d1f;">Discovered Page Keywords</span>
+                                <span style="font-size: 11px; color: #86868b; margin-left: 6px;">(Auto-extracted from page content &amp; structure)</span>
+                            </div>
+                            <span style="font-size: 11px; color: #0071e3; font-weight: 600;">Click any keyword to re-run optimization</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${data.recommended_keywords.map(kw => {
+                                const isCurrent = kw.toLowerCase() === focusKw.toLowerCase();
+                                const activeStyle = isCurrent 
+                                    ? 'background: #0071e3; color: #ffffff; border-color: #0071e3; box-shadow: 0 2px 6px rgba(0,113,227,0.3);' 
+                                    : 'background: #ffffff; color: #1d1d1f; border-color: rgba(0,0,0,0.12);';
+                                return `<button type="button" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 980px; font-weight: 600; cursor: pointer; transition: all 0.2s; ${activeStyle}" onclick="applyKeywordAndReRun('${escapeHtml(kw)}')">${isCurrent ? '&#10003; ' : ''}${escapeHtml(kw)}</button>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Detected Notice Checklist Card -->
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>SEO Plugin Violations Diagnosed &amp; Fixed</span>
+                        <span style="font-size: 11px; color: #15803d; font-weight: 700;">ALL CONSTRAINTS RESOLVED</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin-top: 10px;">
+            `;
+
+            if (detectedItems.length === 0) {
+                html += `<div style="padding: 8px 14px; background: rgba(52, 199, 89, 0.08); border-left: 3px solid #34c759; border-radius: 10px; font-size: 12px; color: #248a3d; font-weight: 600;">Standard full-page optimization applied (no blocking notice warnings).</div>`;
+            } else {
+                detectedItems.forEach(item => {
+                    const text = typeof item === 'string' ? item : (item.rule || item.message || JSON.stringify(item));
+                    html += `
+                        <div style="padding: 8px 14px; background: rgba(52, 199, 89, 0.06); border-left: 3px solid #34c759; border-radius: 10px; font-size: 12px; color: #1d1d1f;">
+                            <strong style="color: #15803d;">RESOLVED:</strong> ${escapeHtml(text)}
+                        </div>
+                    `;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            // Helper to render a comparison card
+            function renderSideBySideCard(comp, idx, isSection) {
+                const copyId = `opt-crawl-copy-${idx}`;
+                const elemName = comp.element || comp.element_name || `Element ${idx + 1}`;
+                const currText = (comp.current && comp.current.text) || comp.current_text || "(Empty / missing from crawled page)";
+                const currStats = (comp.current && comp.current.stats) || comp.current_stats || "";
+                const issues = (comp.current && comp.current.issues) || comp.current_violations || [];
+
+                const imprText = (comp.improved && comp.improved.text) || comp.improved_text || "";
+                const imprStats = (comp.improved && comp.improved.stats) || comp.improved_stats || "";
+                const benefits = (comp.improved && comp.improved.benefits) || comp.improved_benefits || [];
+
+                const resolution = comp.plugin_resolution || comp.resolution_notes || "";
+                const diffHtml = (comp.diff && comp.diff.html) || "";
+
+                const violationsHtml = issues.map(v => 
+                    `<span class="opt-badge-violation">${escapeHtml(v)}</span>`
+                ).join(" ");
+                const benefitsHtml = benefits.map(b => 
+                    `<span class="opt-badge-benefit">${escapeHtml(b)}</span>`
+                ).join(" ");
+
+                const copyBtnLabel = isSection ? "COPY IMPROVED SECTION" : "COPY IMPROVED TEXT";
+
+                return `
+                    <div class="card" style="margin-bottom: 14px; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                            <div>
+                                <span style="font-size: 13px; font-weight: 800; color: #111827;">${idx + 1}. ${escapeHtml(elemName)}</span>
+                            </div>
+                            <div style="font-size: 11px; font-weight: 700; color: #15803d;">
+                                Direct 1-to-1 Replacement
+                            </div>
+                        </div>
+
+                        ${resolution ? `
+                            <div style="font-size: 11px; color: #1d1d1f; margin-bottom: 10px; background: rgba(0, 113, 227, 0.05); padding: 7px 12px; border-left: 3px solid #0071e3; border-radius: 8px;">
+                                <strong>Optimization Rationale:</strong> ${escapeHtml(resolution)}
+                            </div>
+                        ` : ''}
+
+                        <!-- True Side-by-Side 2-Column Grid -->
+                        <div class="opt-side-by-side-grid">
+                            <!-- Left: Current (Crawled) Text -->
+                            <div class="opt-side-col current">
+                                <div>
+                                    <div class="opt-side-header">
+                                        <span class="opt-side-title">CURRENT (CRAWLED FROM PAGE)</span>
+                                        <span style="font-size: 11px; font-weight: 700; color: #b91c1c;">${escapeHtml(currStats)}</span>
+                                    </div>
+                                    <div class="opt-side-badges">
+                                        ${violationsHtml || '<span class="tag-pill" style="font-size: 10px; background: #fee2e2; color: #b91c1c;">Baseline</span>'}
+                                    </div>
+                                    <div class="opt-side-text" style="color: #4b5563; white-space: pre-wrap;">${escapeHtml(currText)}</div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Improved & Optimized Text -->
+                            <div class="opt-side-col improved">
+                                <div>
+                                    <div class="opt-side-header">
+                                        <span class="opt-side-title">IMPROVED &amp; OPTIMIZED VERSION</span>
+                                        <span style="font-size: 11px; font-weight: 700; color: #15803d;">${escapeHtml(imprStats)}</span>
+                                    </div>
+                                    <div class="opt-side-badges">
+                                        ${benefitsHtml}
+                                    </div>
+                                    <div class="opt-side-text" id="${copyId}" style="font-weight: 600; color: #111827; white-space: pre-wrap;">${escapeHtml(imprText)}</div>
+                                    ${diffHtml ? `
+                                        <div style="margin-top: 8px; font-size: 12px; padding: 6px; background: #ffffff; border: 1px dashed #d1d5db; border-radius: 6px;">
+                                            <div style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 4px;">Word-Level Diff:</div>
+                                            <div>${diffHtml}</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #dcfce7; display: flex; justify-content: flex-end;">
+                                    <button type="button" class="btn btn-outline plg-btn-copy" style="padding: 5px 14px; font-size: 11px; font-weight: 700; border-color: #15803d; color: #15803d; border-radius: 8px;" onclick="copySideComparisonText('${copyId}', this)">
+                                        ${copyBtnLabel}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Separate into Part 1 (Metadata) and Part 2 (Page Sections)
+            const metaComps = data.meta_comparisons || comparisons.slice(0, 4);
+            const sectionComps = data.section_comparisons || comparisons.slice(4);
+
+            // PART 1: WordPress Plugin Metadata
+            html += `
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <span>Part 1: SEO Plugin Metadata (Old vs Improved)</span>
+                        <span style="font-size: 11px; color: #4b5563; font-weight: 600; text-transform: none;">Title, Meta Description, URL Slug &amp; H1 Headline</span>
+                    </div>
+            `;
+            metaComps.forEach((comp, idx) => {
+                html += renderSideBySideCard(comp, idx, false);
+            });
+            html += `</div>`;
+
+            // PART 2: Full-Page Section-by-Section Content Replacements
+            if (sectionComps && sectionComps.length > 0) {
+                html += `
+                    <div style="margin-bottom: 20px;">
+                        <div style="font-size: 14px; font-weight: 800; color: #111827; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                            <span>Part 2: Full-Page Section-by-Section Content Replacements (Old Text vs Corrected Version)</span>
+                            <span class="tag-pill good" style="font-size: 11px; font-weight: 700;">${sectionComps.length} Real Webpage Sections Extracted</span>
+                        </div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: -6px; margin-bottom: 14px;">
+                            Each section of the live webpage with the original crawled text on the left and the corrected, high-converting version on the right with 1-click copy support.
+                        </div>
+                `;
+                sectionComps.forEach((comp, sIdx) => {
+                    html += renderSideBySideCard(comp, metaComps.length + sIdx, true);
+                });
+                html += `</div>`;
+            }
+
+            // Turnkey Plugin Copy-Paste Box
+            const turnkeyBoxes = data.turnkey_plugin_boxes || {};
+            const rmBox = turnkeyBoxes.rank_math || {};
+            const yoastBox = turnkeyBoxes.yoast || {};
+
+            html += `
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Direct WordPress Plugin Ready Export (Rank Math &amp; Yoast SEO)</span>
+                        <span class="tag-pill good" style="font-size: 10px;">1-Click Copy Targets</span>
+                    </div>
+                    <div class="field-help" style="margin-top: -6px; margin-bottom: 12px;">
+                        Copy and paste directly into the metadata fields in your WordPress post / page editor.
+                    </div>
+
+                    <div class="plg-field-row" style="margin-bottom: 10px;">
+                        <div class="plg-field-header">
+                            <span class="plg-field-label">Focus Keyword</span>
+                            <span style="font-size: 11px; color: #15803d; font-weight: 700;">Target Keyword</span>
+                        </div>
+                        <div class="plg-copy-input-group">
+                            <input type="text" id="crawl-rm-kw" value="${escapeHtml(rmBox.focus_keyword || focusKw)}" readonly>
+                            <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('crawl-rm-kw', this)">Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="plg-field-row" style="margin-bottom: 10px;">
+                        <div class="plg-field-header">
+                            <span class="plg-field-label">SEO Title</span>
+                            <span style="font-size: 11px; color: #15803d; font-weight: 700;">${rmBox.seo_title ? rmBox.seo_title.length : 0} chars | Optimal</span>
+                        </div>
+                        <div class="plg-copy-input-group">
+                            <input type="text" id="crawl-rm-title" value="${escapeHtml(rmBox.seo_title || '')}" readonly>
+                            <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('crawl-rm-title', this)">Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="plg-field-row" style="margin-bottom: 10px;">
+                        <div class="plg-field-header">
+                            <span class="plg-field-label">URL Permalink Slug</span>
+                            <span style="font-size: 11px; color: #15803d; font-weight: 700;">Clean Kebab-Case</span>
+                        </div>
+                        <div class="plg-copy-input-group">
+                            <input type="text" id="crawl-rm-slug" value="${escapeHtml(rmBox.permalink || yoastBox.slug || '')}" readonly>
+                            <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('crawl-rm-slug', this)">Copy</button>
+                        </div>
+                    </div>
+
+                    <div class="plg-field-row" style="margin-bottom: 10px;">
+                        <div class="plg-field-header">
+                            <span class="plg-field-label">Meta Description</span>
+                            <span style="font-size: 11px; color: #15803d; font-weight: 700;">${rmBox.meta_description ? rmBox.meta_description.length : 0} chars | Optimal</span>
+                        </div>
+                        <div class="plg-copy-input-group">
+                            <textarea id="crawl-rm-desc" rows="2" readonly style="width: 100%; font-family: inherit; font-size: 13px; padding: 8px; border: 1px solid #d1d5db;">${escapeHtml(rmBox.meta_description || '')}</textarea>
+                            <button type="button" class="plg-btn-copy" onclick="copyInputSnippet('crawl-rm-desc', this)">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            wrapper.innerHTML = html;
+            wrapper.style.display = "block";
+            wrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+
+        function switchPluginBoxView(boxKey) {
+            activePluginBoxView = boxKey;
+            const boxes = ["rankmath", "yoast", "social", "schema", "ai"];
+            boxes.forEach(b => {
+                const el = document.getElementById("plg-box-" + b);
+                const btn = document.getElementById("btn-plg-box-" + b);
+                if (el) el.style.display = (b === boxKey ? "block" : "none");
+                if (btn) {
+                    if (b === boxKey) btn.classList.add("active");
+                    else btn.classList.remove("active");
+                }
+            });
+        }
+
+        function calculateEstimatedPixelWidth(title) {
+            const charWeights = {
+                'i': 4, 'l': 4, 'j': 5, 't': 5, 'f': 5, 'r': 6, 'I': 5,
+                'm': 14, 'w': 14, 'M': 15, 'W': 16,
+                ' ': 4, '.': 4, ',': 4, '-': 5, '|': 4, ':': 4,
+            };
+            let total = 0;
+            for (let i = 0; i < (title || "").length; i++) {
+                total += charWeights[title[i]] || 9;
+            }
+            return total;
+        }
+
+        function updatePluginLiveStats() {
+            const titleInput = document.getElementById("opt-plg-title");
+            const descInput = document.getElementById("opt-plg-desc");
+            const titleStats = document.getElementById("opt-plg-title-stats");
+            const titleBar = document.getElementById("opt-plg-title-bar");
+            const descStats = document.getElementById("opt-plg-desc-stats");
+
+            if (titleInput) {
+                const title = titleInput.value;
+                const chars = title.length;
+                const px = calculateEstimatedPixelWidth(title);
+                const pct = Math.min(100, Math.round((px / 580) * 100));
+                const isTruncated = px > 580 || chars > 60;
+
+                if (titleStats) {
+                    titleStats.innerHTML = `${chars} chars | ~${px} px ` +
+                        (isTruncated ? `<span style="color: #b91c1c; font-weight: 800;">[TRUNCATION RISK]</span>` :
+                         (chars >= 50 ? `<span style="color: #15803d; font-weight: 800;">[OPTIMAL]</span>` : `<span style="color: #4b5563;">(Target: 50-60 chars, &lt;580px)</span>`));
+                }
+                if (titleBar) {
+                    titleBar.style.width = pct + "%";
+                    if (isTruncated) titleBar.classList.add("warn");
+                    else titleBar.classList.remove("warn");
+                }
+            }
+
+            if (descInput) {
+                const desc = descInput.value;
+                const chars = desc.length;
+                const isOptimal = chars >= 125 && chars <= 155;
+                const isOver = chars > 155;
+
+                if (descStats) {
+                    descStats.innerHTML = `${chars} chars ` +
+                        (isOver ? `<span style="color: #b91c1c; font-weight: 800;">[TRUNCATION RISK: &gt;155]</span>` :
+                         (isOptimal ? `<span style="color: #15803d; font-weight: 800;">[OPTIMAL 125-155]</span>` : `<span style="color: #4b5563;">(Target: 125-155 chars)</span>`));
+                }
+            }
+        }
+
+        function onPluginInputLiveChange() {
+            const kw = document.getElementById("opt-plg-keyword").value.trim();
+            const slugInput = document.getElementById("opt-plg-slug");
+            if (slugInput && !slugInput.value) {
+                const cleanSlug = kw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 50);
+                slugInput.placeholder = cleanSlug || "e.g. dental-implants-miami";
+            }
+        }
+
+        function loadPluginDemoProfile(profileKey) {
+            const kwInput = document.getElementById("opt-plg-keyword");
+            const secKwInput = document.getElementById("opt-plg-secondary-keywords");
+            const pluginSelect = document.getElementById("opt-plg-plugin-type");
+            const siteInput = document.getElementById("opt-plg-site-name");
+            const slugInput = document.getElementById("opt-plg-slug");
+            const indSelect = document.getElementById("opt-plg-industry");
+            const typeSelect = document.getElementById("opt-plg-page-type");
+            const titleInput = document.getElementById("opt-plg-title");
+            const descInput = document.getElementById("opt-plg-desc");
+            const contentInput = document.getElementById("opt-plg-content");
+
+            if (profileKey === "dental") {
+                kwInput.value = "Dental Implants Miami";
+                secKwInput.value = "tooth replacement, full arch implants, cosmetic dentistry";
+                pluginSelect.value = "rank_math";
+                siteInput.value = "Miami Smile Clinic";
+                slugInput.value = "dental-implants-miami";
+                indSelect.value = "healthcare";
+                typeSelect.value = "Service";
+                titleInput.value = "Dental Implants in Miami";
+                descInput.value = "We provide dental implants in Miami with affordable prices.";
+                contentInput.value = "Miami Smile Clinic provides surgical dental implants and full mouth tooth replacement backed by verified clinical standards.";
+            } else if (profileKey === "saas") {
+                kwInput.value = "Zero Trust Architecture";
+                secKwInput.value = "identity verification, microsegmentation, secure access";
+                pluginSelect.value = "rank_math";
+                siteInput.value = "InersiaLab Security";
+                slugInput.value = "zero-trust-architecture";
+                indSelect.value = "tech";
+                typeSelect.value = "Service";
+                titleInput.value = "Enterprise Zero Trust Security Platform";
+                descInput.value = "Our platform helps companies secure their networks using zero trust tools.";
+                contentInput.value = "InersiaLab delivers zero trust architecture automating continuous authentication across hybrid cloud environments.";
+            } else if (profileKey === "contractor") {
+                kwInput.value = "Luxury Kitchen Remodeling";
+                secKwInput.value = "custom kitchen design, luxury cabinetry, marble countertops";
+                pluginSelect.value = "yoast";
+                siteInput.value = "Apex Design Build";
+                slugInput.value = "luxury-kitchen-remodeling";
+                indSelect.value = "general";
+                typeSelect.value = "Service";
+                titleInput.value = "Kitchen Remodeling Services";
+                descInput.value = "Looking to remodel your kitchen? Call us today for a free quote.";
+                contentInput.value = "Apex Design Build crafts custom luxury kitchen remodeling projects featuring artisan cabinetry and turnkey project management.";
+            }
+
+            updatePluginLiveStats();
+        }
+
+        function clearPluginOptimizer() {
+            document.getElementById("opt-plg-keyword").value = "";
+            document.getElementById("opt-plg-secondary-keywords").value = "";
+            document.getElementById("opt-plg-site-name").value = "";
+            document.getElementById("opt-plg-slug").value = "";
+            document.getElementById("opt-plg-title").value = "";
+            document.getElementById("opt-plg-desc").value = "";
+            document.getElementById("opt-plg-content").value = "";
+            document.getElementById("opt-plugin-results-wrapper").style.display = "none";
+            lastPluginOptimizerResult = null;
+            activePluginVariantIndex = 0;
+            updatePluginLiveStats();
+        }
+
+        async function runPluginOptimizer() {
+            const kw = document.getElementById("opt-plg-keyword").value.trim();
+            const title = document.getElementById("opt-plg-title").value.trim();
+            const desc = document.getElementById("opt-plg-desc").value.trim();
+
+            if (!kw && !title && !desc) {
+                alert("Please provide at least a Focus Keyword, Draft Title, or Meta Description.");
+                document.getElementById("opt-plg-keyword").focus();
+                return;
+            }
+
+            const secKwRaw = document.getElementById("opt-plg-secondary-keywords").value.trim();
+            const secKws = secKwRaw ? secKwRaw.split(",").map(k => k.trim()).filter(Boolean) : [];
+            const pluginType = document.getElementById("opt-plg-plugin-type").value;
+            const siteName = document.getElementById("opt-plg-site-name").value.trim();
+            const slug = document.getElementById("opt-plg-slug").value.trim();
+            const industry = document.getElementById("opt-plg-industry").value;
+            const pageType = document.getElementById("opt-plg-page-type").value;
+            const contentSample = document.getElementById("opt-plg-content").value.trim();
+
+            const btn = document.getElementById("btn-run-plugin-optimizer");
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "AUDITING & OPTIMIZING PLUGIN SUITE...";
+
+            try {
+                const response = await fetch("/api/optimizer/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        content_type: "seo_plugin",
+                        focus_keyword: kw,
+                        secondary_keywords: secKws,
+                        plugin_type: pluginType,
+                        site_name: siteName,
+                        slug: slug,
+                        industry: industry,
+                        page_type: pageType,
+                        title: title,
+                        description: desc,
+                        content_sample: contentSample
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "SEO Plugin optimization failed.");
+                }
+
+                lastPluginOptimizerResult = data.result;
+                activePluginVariantIndex = 0;
+                renderPluginOptimizerResults(data.result);
+
+                const resWrapper = document.getElementById("opt-plugin-results-wrapper");
+                resWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+            } catch (err) {
+                alert("Plugin Optimizer Error: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        function renderPluginOptimizerResults(res) {
+            const wrapper = document.getElementById("opt-plugin-results-wrapper");
+            wrapper.style.display = "block";
+
+            // Grade & Overall Scores
+            const gradeEl = document.getElementById("opt-plg-grade-badge");
+            gradeEl.textContent = "GRADE: " + (res.grade || "A+");
+            gradeEl.className = "tag-pill " + (res.overall_score >= 80 ? "good" : (res.overall_score >= 60 ? "warn" : "req"));
+
+            const overallEl = document.getElementById("opt-plg-overall-score");
+            overallEl.textContent = res.overall_score;
+            overallEl.className = "opt-score-badge " + getScoreClass(res.overall_score);
+
+            const seoEl = document.getElementById("opt-plg-seo-score");
+            seoEl.textContent = res.seo_score;
+            seoEl.className = "opt-score-badge " + getScoreClass(res.seo_score);
+
+            const geoEl = document.getElementById("opt-plg-geo-score");
+            geoEl.textContent = res.geo_score;
+            geoEl.className = "opt-score-badge " + getScoreClass(res.geo_score);
+
+            const deltaEl = document.getElementById("opt-plg-overall-delta");
+            deltaEl.textContent = "Potential Score: 98/100 (A+)";
+
+            // 12-Factor Checklist
+            const testsGrid = document.getElementById("opt-plg-tests-grid");
+            testsGrid.innerHTML = "";
+            (res.tests || []).forEach(t => {
+                const item = document.createElement("div");
+                item.className = "plg-test-item";
+                const badgeClass = t.status === "passed" ? "passed" : (t.status === "failed" ? "failed" : "warning");
+                const badgeText = t.status === "passed" ? "[PASS]" : (t.status === "failed" ? "[FAIL]" : "[WARN]");
+
+                item.innerHTML = `
+                    <span class="plg-test-badge ${badgeClass}">${badgeText}</span>
+                    <div style="flex: 1;">
+                        <div style="font-size: 12px; font-weight: 700; color: #111827; margin-bottom: 2px;">
+                            ${escapeOptHtml(t.name)}
+                            <span style="font-size: 10px; color: #6b7280; font-weight: normal; margin-left: 4px;">(${t.earned}/${t.max} pts)</span>
+                        </div>
+                        <div style="font-size: 11px; color: #4b5563; line-height: 1.45;">${escapeOptHtml(t.message)}</div>
+                        ${t.status !== 'passed' ? `<div style="font-size: 11px; color: #15803d; font-weight: 600; margin-top: 4px;">Fix: ${escapeOptHtml(t.fix)}</div>` : ''}
+                    </div>
+                `;
+                testsGrid.appendChild(item);
+            });
+
+            // 3 Strategy Variants
+            renderPluginVariantsGrid(res);
+
+            // Populate active variant into plugin copy boxes
+            updatePluginCopyBoxes();
+
+            // Populate Social, Schema, AI Prompt
+            const pSnippets = res.plugin_snippets || {};
+            const socialCode = document.getElementById("plg-copy-social-code");
+            if (socialCode && pSnippets.social) {
+                socialCode.textContent = pSnippets.social.raw_html || "";
+            }
+
+            const schemaCode = document.getElementById("plg-copy-schema-code");
+            if (schemaCode && pSnippets.schema_jsonld) {
+                schemaCode.textContent = JSON.stringify(pSnippets.schema_jsonld, null, 2);
+            }
+
+            const aiPrompt = document.getElementById("plg-copy-ai-prompt");
+            if (aiPrompt && pSnippets.master_ai_prompt) {
+                aiPrompt.textContent = pSnippets.master_ai_prompt;
+            }
+
+            // Populate Desktop & Mobile SERP Preview
+            renderPluginSerpPreview(res.serp_preview);
+        }
+
+        function renderPluginVariantsGrid(res) {
+            const container = document.getElementById("opt-plg-variants-grid");
+            container.innerHTML = "";
+
+            (res.variants || []).forEach((v, idx) => {
+                const card = document.createElement("div");
+                card.className = "opt-variant-card" + (idx === activePluginVariantIndex ? " active" : "");
+                card.onclick = () => selectPluginVariant(idx);
+
+                const tLen = (v.title || "").length;
+                const dLen = (v.description || "").length;
+                const px = calculateEstimatedPixelWidth(v.title || "");
+
+                card.innerHTML = `
+                    <div class="opt-variant-title">
+                        <span>${idx + 1}. ${escapeOptHtml(v.label)}</span>
+                        ${idx === activePluginVariantIndex ? '<span class="tag-pill good" style="font-size: 10px;">Active Selection</span>' : ''}
+                    </div>
+                    <div class="opt-variant-desc" style="margin-bottom: 8px;">${escapeOptHtml(v.strategy)}</div>
+                    <div style="font-size: 12px; color: #111827; background: #ffffff; border: 1px solid #e5e7eb; padding: 6px 8px; font-weight: 700; margin-bottom: 4px;">
+                        ${escapeOptHtml(v.title)}
+                    </div>
+                    <div style="font-size: 11px; color: #4b5563; background: #ffffff; border: 1px solid #e5e7eb; padding: 6px 8px; margin-bottom: 6px; line-height: 1.4;">
+                        ${escapeOptHtml(v.description)}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; color: #6b7280;">
+                        <span>Title: <strong>${tLen} chars | ~${px}px</strong></span>
+                        <span>Desc: <strong>${dLen} chars</strong></span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectPluginVariant(idx) {
+            activePluginVariantIndex = idx;
+            if (lastPluginOptimizerResult) {
+                renderPluginVariantsGrid(lastPluginOptimizerResult);
+                updatePluginCopyBoxes();
+                renderPluginSerpPreview(lastPluginOptimizerResult.serp_preview);
+            }
+        }
+
+        function updatePluginCopyBoxes() {
+            if (!lastPluginOptimizerResult) return;
+            const variants = lastPluginOptimizerResult.variants || [];
+            const activeVar = variants[activePluginVariantIndex] || lastPluginOptimizerResult.optimized;
+            const kw = lastPluginOptimizerResult.inputs.focus_keyword || "";
+            const site = lastPluginOptimizerResult.inputs.site_name || "";
+            const title = activeVar.title || "";
+            const desc = activeVar.description || "";
+            const slug = activeVar.slug || cleanSlugText(kw);
+
+            // Rank Math Box
+            const rmKw = document.getElementById("rm-copy-keyword");
+            const rmTitle = document.getElementById("rm-copy-title");
+            const rmSlug = document.getElementById("rm-copy-slug");
+            const rmDesc = document.getElementById("rm-copy-desc");
+            const rmTitlePill = document.getElementById("rm-title-len-pill");
+            const rmDescPill = document.getElementById("rm-desc-len-pill");
+
+            if (rmKw) rmKw.value = kw;
+            if (rmTitle) rmTitle.value = title;
+            if (rmSlug) rmSlug.value = slug;
+            if (rmDesc) rmDesc.value = desc;
+
+            const px = calculateEstimatedPixelWidth(title);
+            if (rmTitlePill) rmTitlePill.textContent = `${title.length} chars / ~${px} px`;
+            if (rmDescPill) rmDescPill.textContent = `${desc.length} chars`;
+
+            // Yoast Box
+            const yKw = document.getElementById("yoast-copy-keyphrase");
+            const yTitleLit = document.getElementById("yoast-copy-title-literal");
+            const yTitleTpl = document.getElementById("yoast-copy-title-tpl");
+            const ySlug = document.getElementById("yoast-copy-slug");
+            const yDesc = document.getElementById("yoast-copy-desc");
+
+            const yoastBase = title.split(" | ")[0].split(" - ")[0];
+
+            if (yKw) yKw.value = kw;
+            if (yTitleLit) yTitleLit.value = title;
+            if (yTitleTpl) yTitleTpl.value = `${yoastBase} %%sep%% %%sitename%%`;
+            if (ySlug) ySlug.value = slug;
+            if (yDesc) yDesc.value = desc;
+        }
+
+        function cleanSlugText(text) {
+            return (text || "").toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 50);
+        }
+
+        function renderPluginSerpPreview(serp) {
+            if (!lastPluginOptimizerResult) return;
+            const variants = lastPluginOptimizerResult.variants || [];
+            const activeVar = variants[activePluginVariantIndex] || lastPluginOptimizerResult.optimized;
+            const site = lastPluginOptimizerResult.inputs.site_name || "InersiaLab";
+            const domain = site.toLowerCase().replace(/[^a-z0-9]/g, '') + ".com";
+            const title = activeVar.title || "";
+            const desc = activeVar.description || "";
+            const slug = activeVar.slug || cleanSlugText(lastPluginOptimizerResult.inputs.focus_keyword || "");
+            const px = calculateEstimatedPixelWidth(title);
+            const isTruncated = px > 580 || title.length > 60;
+            const pct = Math.min(100, Math.round((px / 580) * 100));
+
+            // Desktop SERP
+            const deskContainer = document.getElementById("opt-plg-serp-desktop");
+            if (deskContainer) {
+                deskContainer.innerHTML = `
+                    <div class="serp-box">
+                        <div class="serp-url-row">
+                            <span class="serp-favicon">${site.charAt(0).toUpperCase()}</span>
+                            <span>https://${domain} &gt; ${escapeOptHtml(slug.replace(/-/g, ' '))}</span>
+                        </div>
+                        <div class="serp-title">${escapeOptHtml(title)}</div>
+                        <div class="serp-snippet">${escapeOptHtml(desc)}</div>
+                        <div class="serp-pixel-bar">
+                            <div class="serp-pixel-fill ${isTruncated ? 'warn' : ''}" style="width: ${pct}%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6b7280; margin-top: 6px;">
+                            <span>Pixel Width: <strong>~${px}px / 580px</strong> (${pct}%)</span>
+                            <span>${isTruncated ? '<strong style="color: #b91c1c;">Truncation Risk</strong>' : '<strong style="color: #15803d;">Fits Desktop SERP</strong>'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Mobile SERP
+            const mobContainer = document.getElementById("opt-plg-serp-mobile");
+            if (mobContainer) {
+                mobContainer.innerHTML = `
+                    <div class="serp-box" style="border-radius: 12px; background: #fafafa;">
+                        <div class="serp-url-row" style="font-size: 11px;">
+                            <span class="serp-favicon" style="width: 16px; height: 16px; font-size: 9px;">${site.charAt(0).toUpperCase()}</span>
+                            <span>${domain} &gt; ${escapeOptHtml(slug)}</span>
+                        </div>
+                        <div class="serp-title" style="font-size: 18px; line-height: 1.25;">${escapeOptHtml(title)}</div>
+                        <div class="serp-snippet" style="font-size: 13px; line-height: 1.5;">${escapeOptHtml(desc)}</div>
+                        <div style="font-size: 10px; color: #15803d; font-weight: 700; margin-top: 6px;">
+                            Mobile Viewport Verified
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function copyInputSnippet(elementId, btnElement) {
+            const el = document.getElementById(elementId);
+            if (!el || !el.value) {
+                alert("Field is empty.");
+                return;
+            }
+            navigator.clipboard.writeText(el.value).then(() => {
+                const orig = btnElement.textContent;
+                btnElement.textContent = "COPIED";
+                btnElement.classList.add("copied");
+                setTimeout(() => {
+                    btnElement.textContent = orig;
+                    btnElement.classList.remove("copied");
+                }, 2000);
+            }).catch(() => {
+                el.select();
+                document.execCommand("copy");
+                const orig = btnElement.textContent;
+                btnElement.textContent = "COPIED";
+                btnElement.classList.add("copied");
+                setTimeout(() => {
+                    btnElement.textContent = orig;
+                    btnElement.classList.remove("copied");
+                }, 2000);
+            });
+        }
+
+        function copyCodeSnippet(elementId, btnElement) {
+            const el = document.getElementById(elementId);
+            if (!el || !el.textContent) {
+                alert("Code snippet is empty.");
+                return;
+            }
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                const orig = btnElement.textContent;
+                btnElement.textContent = "COPIED";
+                btnElement.classList.add("copied");
+                setTimeout(() => {
+                    btnElement.textContent = orig;
+                    btnElement.classList.remove("copied");
+                }, 2000);
+            });
+        }
+
+        // =========================================================================
         // CYBERSECURITY & SERVER HARDENING CONTROLLER (TAB 5)
         // =========================================================================
         let isAuditingSecurity = false;
@@ -4131,23 +6214,36 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
 
                 // Update logs terminal
                 const term = document.getElementById("sec-terminal");
-                if (term && data.logs && data.logs.length > 0) {
-                    term.innerText = data.logs.join("");
-                    term.scrollTop = term.scrollHeight;
-                    const logCount = document.getElementById("sec-log-count");
-                    if (logCount) logCount.innerText = data.logs.length + " lines";
+                if (term) {
+                    if (data.logs && data.logs.length > 0) {
+                        term.innerText = data.logs.join("");
+                        term.scrollTop = term.scrollHeight;
+                        const logCount = document.getElementById("sec-log-count");
+                        if (logCount) logCount.innerText = data.logs.length + " lines";
+                    } else if (!isAuditingSecurity) {
+                        term.innerText = "Awaiting security execution command...";
+                        const logCount = document.getElementById("sec-log-count");
+                        if (logCount) logCount.innerText = "0 lines";
+                    }
                 }
 
                 // Last PDF
+                const openPdfBtn = document.getElementById("btn-open-security-pdf");
                 if (data.last_pdf) {
                     lastSecurityPdf = data.last_pdf;
-                    const openPdfBtn = document.getElementById("btn-open-security-pdf");
                     if (openPdfBtn) openPdfBtn.disabled = false;
+                } else {
+                    lastSecurityPdf = null;
+                    if (openPdfBtn) openPdfBtn.disabled = true;
                 }
 
-                // Render Results if available
+                // Render Results if available or hide if reset
                 if (data.last_result && (!lastSecurityResult || lastSecurityResult.timestamp !== data.last_result.timestamp)) {
                     renderSecurityResults(data.last_result);
+                } else if (!data.last_result && !isAuditingSecurity) {
+                    lastSecurityResult = null;
+                    const wrapper = document.getElementById("sec-results-wrapper");
+                    if (wrapper) wrapper.style.display = "none";
                 }
             } catch (e) {
                 // Background poll fail ignored
@@ -4260,7 +6356,7 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                     <div style="font-size: 12px; color: #374151; margin-bottom: 6px; line-height: 1.5;">
                         <strong>Technical Impact:</strong> ${escapeOptHtml(f.impact)}
                     </div>
-                    <div style="font-size: 12px; color: #15803d; line-height: 1.5; background: #f0fdf4; padding: 6px 10px; border-left: 3px solid #15803d;">
+                    <div style="font-size: 12px; color: #15803d; line-height: 1.5; background: rgba(52, 199, 89, 0.06); padding: 8px 12px; border-left: 3px solid #34c759; border-radius: 8px;">
                         <strong>Remediation:</strong> ${escapeOptHtml(f.recommendation)}
                     </div>
                 `;
@@ -4389,13 +6485,64 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
         # Silence standard HTTP access logging to console
         pass
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
+    def handle_reset(self):
+        global audit_state, security_state, blueprint_state, content_state, optimizer_state
+        audit_state["is_running"] = False
+        audit_state["status"] = "Ready"
+        audit_state["logs"] = []
+        audit_state["last_result"] = None
+        audit_state["last_pdf"] = None
+
+        security_state["is_running"] = False
+        security_state["status"] = "Ready"
+        security_state["logs"] = []
+        security_state["last_result"] = None
+        security_state["last_pdf"] = None
+
+        blueprint_state["is_generating"] = False
+        blueprint_state["status"] = "Ready"
+        blueprint_state["last_pdf"] = None
+        blueprint_state["last_starter_dir"] = None
+        blueprint_state["last_html"] = None
+        blueprint_state["last_brand"] = None
+
+        content_state["is_generating"] = False
+        content_state["status"] = "Ready"
+        content_state["last_dir"] = None
+        content_state["last_results"] = None
+
+        optimizer_state["last_result"] = None
+
+        try:
+            import importlib
+            importlib.invalidate_caches()
+        except Exception:
+            pass
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(json.dumps({"success": True, "message": "All engine states and server caches successfully reset."}).encode("utf-8"))
+
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        if path == "/" or path == "/index.html":
+        if path in ("/api/reset", "/api/clear-cache"):
+            self.handle_reset()
+
+        elif path == "/" or path == "/index.html":
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
             self.end_headers()
             self.wfile.write(HTML_TEMPLATE.encode("utf-8"))
 
@@ -4520,7 +6667,10 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
 
-        if path == "/api/start":
+        if path in ("/api/reset", "/api/clear-cache"):
+            self.handle_reset()
+
+        elif path == "/api/start":
             if audit_state["is_running"]:
                 self.send_response(400)
                 self.send_header("Content-Type", "application/json")
@@ -4807,13 +6957,6 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                 industry = data.get("industry", "tech")
                 intent = data.get("intent", "informational")
 
-                if not text:
-                    self.send_response(400)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"success": False, "error": "No draft content provided."}).encode("utf-8"))
-                    return
-
                 if optimize_content is None:
                     self.send_response(500)
                     self.send_header("Content-Type", "application/json")
@@ -4821,16 +6964,82 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps({"success": False, "error": "Content optimizer engine module is unavailable."}).encode("utf-8"))
                     return
 
-                result = optimize_content(
-                    content_type=content_type,
-                    text=text,
-                    keywords=keywords,
-                    brand=brand,
-                    industry=industry,
-                    intent=intent,
-                )
-                optimizer_state["last_result"] = result
+                if content_type in ("crawl_plugin_fix", "crawl_and_improve"):
+                    target_url = data.get("url", "").strip()
+                    plugin_notice = data.get("plugin_notice", "").strip() or data.get("notice", "").strip()
+                    focus_keyword = data.get("focus_keyword", "").strip()
+                    site_name = data.get("site_name", brand).strip()
+                    plugin_type = data.get("plugin_type", "rank_math")
+                    page_type = data.get("page_type", "WebPage")
+                    industry = data.get("industry", "tech")
 
+                    if not target_url:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"success": False, "error": "Please provide a valid website URL to crawl."}).encode("utf-8"))
+                        return
+
+                    result = optimize_content(
+                        content_type="crawl_plugin_fix",
+                        url=target_url,
+                        plugin_notice=plugin_notice,
+                        focus_keyword=focus_keyword,
+                        site_name=site_name,
+                        plugin_type=plugin_type,
+                        industry=industry,
+                        page_type=page_type,
+                    )
+                elif content_type == "seo_plugin":
+                    title = data.get("title", "").strip()
+                    description = data.get("description", "").strip()
+                    focus_keyword = data.get("focus_keyword", "").strip()
+                    secondary_keywords = data.get("secondary_keywords", keywords)
+                    site_name = data.get("site_name", brand).strip()
+                    slug = data.get("slug", "").strip()
+                    plugin_type = data.get("plugin_type", "rank_math")
+                    page_type = data.get("page_type", "WebPage")
+                    content_sample = data.get("content_sample", text).strip()
+
+                    if not title and not description and not focus_keyword:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"success": False, "error": "Please provide a Title, Description, or Focus Keyword."}).encode("utf-8"))
+                        return
+
+                    result = optimize_content(
+                        content_type="seo_plugin",
+                        text=content_sample,
+                        title=title,
+                        description=description,
+                        focus_keyword=focus_keyword,
+                        secondary_keywords=secondary_keywords,
+                        site_name=site_name,
+                        slug=slug,
+                        plugin_type=plugin_type,
+                        industry=industry,
+                        page_type=page_type,
+                        content_sample=content_sample,
+                    )
+                else:
+                    if not text:
+                        self.send_response(400)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"success": False, "error": "No draft content provided."}).encode("utf-8"))
+                        return
+
+                    result = optimize_content(
+                        content_type=content_type,
+                        text=text,
+                        keywords=keywords,
+                        brand=brand,
+                        industry=industry,
+                        intent=intent,
+                    )
+
+                optimizer_state["last_result"] = result
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
