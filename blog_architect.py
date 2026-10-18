@@ -47,24 +47,24 @@ MIN_QUESTIONS = [
     {
         "id": "topic",
         "label": "1. Blog Topic / Main Subject",
-        "placeholder": "e.g., Liver Transplantation in Turkey / زراعة الكبد في تركيا",
-        "default": "زراعة الكبد في تركيا",
+        "placeholder": "e.g., Sustainable Architecture in 2026 / How to Start Real Estate Investing / Guide to Intermittent Fasting",
+        "default": "",
         "help": "The primary subject and overarching thesis of the article.",
         "required": True,
     },
     {
         "id": "focus_keyword",
         "label": "2. Primary Focus Keyword",
-        "placeholder": "e.g., زراعة الكبد في تركيا / liver transplant cost turkey",
-        "default": "زراعة الكبد في تركيا",
+        "placeholder": "e.g., sustainable architecture / real estate investing / intermittent fasting",
+        "default": "",
         "help": "Exact keyword targeted for Google and AI search citability.",
         "required": True,
     },
     {
         "id": "target_audience",
         "label": "3. Target Audience & Reader Intent",
-        "placeholder": "e.g., Patients seeking treatment, families, medical tourists",
-        "default": "المرضى وعائلاتهم والباحثون عن العلاج المتقدم في تركيا",
+        "placeholder": "e.g., Homeowners, B2B decision makers, beginners, or industry specialists",
+        "default": "",
         "help": "Defines the technical depth, vocabulary, and pain-point alignment.",
         "required": True,
     },
@@ -72,11 +72,11 @@ MIN_QUESTIONS = [
         "id": "language",
         "label": "4. Target Language",
         "placeholder": "en, fr, or ar",
-        "default": "ar",
+        "default": "en",
         "options": [
-            {"val": "ar", "label": "العربية (Arabic - Modern Standard with RTL Layout)"},
             {"val": "en", "label": "English (US/UK Global Standard)"},
             {"val": "fr", "label": "Français (French - International Standard)"},
+            {"val": "ar", "label": "العربية (Arabic - Modern Standard with RTL Layout)"},
         ],
         "help": "Generates native linguistic structures with appropriate RTL directional styles.",
         "required": True,
@@ -96,39 +96,39 @@ MAX_QUESTIONS = MIN_QUESTIONS + [
     {
         "id": "secondary_keywords",
         "label": "6. Secondary & Semantic (LSI) Entities",
-        "placeholder": "e.g., تكلفة زراعة الكبد، شروط التبرع، أفضل مستشفيات تركيا، نسبة النجاح",
-        "default": "تكلفة زراعة الكبد في تركيا, شروط المتبرع الحي, نسبة نجاح العملية, فترة التعافي",
+        "placeholder": "e.g., energy efficiency, passive solar, LEED certification, building materials",
+        "default": "",
         "help": "Topical entities that reinforce topical authority in Google's Knowledge Graph.",
         "required": False,
     },
     {
         "id": "author_name",
         "label": "7. Author Name & E-E-A-T Credentials",
-        "placeholder": "e.g., د. أحمد المنصور، استشاري جراحة الكبد والأورام",
-        "default": "الفريق الطبي الاستشاري لجراحة وزراعة الأعضاء",
+        "placeholder": "e.g., Jane Doe, Senior Sustainable Architect, AIA, LEED AP",
+        "default": "",
         "help": "Author pedigree for E-E-A-T credibility boxes and Schema.org Author entity.",
         "required": False,
     },
     {
         "id": "tone",
         "label": "8. Tone of Voice & Editorial Angle",
-        "placeholder": "e.g., Authoritative, compassionate, evidence-based, clear",
-        "default": "طبي موثوق، علمي دقيق، إنساني مطمئن، وافٍ بالتفاصيل العملية",
+        "placeholder": "e.g., Authoritative, educational, empirical, engaging, practical",
+        "default": "Authoritative, insightful, engaging, and practically actionable",
         "help": "Directs the pacing, sentence length, and analytical posture.",
         "required": False,
     },
     {
         "id": "subtopics",
         "label": "9. Required Sub-Topics & Must-Include Points",
-        "placeholder": "e.g., 1. الشروط والمعايير. 2. خطوات العملية. 3. مقارنة التكاليف. 4. فترة الإقامة والشفاء.",
-        "default": "1. دواعي إجراء زراعة الكبد وشروط المتبرع. 2. مراحل العملية الجراحية. 3. تكلفة العملية مقارنة بدول العالم. 4. المستشفيات المعتمدة وفترة النقاهة.",
+        "placeholder": "e.g., 1. Core principles 2. Cost-benefit analysis 3. Step-by-step roadmap 4. Real-world case study",
+        "default": "",
         "help": "Specific technical sections or arguments that must appear in the final blog.",
         "required": False,
     },
     {
         "id": "competitor_url",
         "label": "10. Competitor URL to Outrank (Optional)",
-        "placeholder": "e.g., https://competitor.com/blog/liver-transplant-turkey",
+        "placeholder": "e.g., https://competitor.com/blog/sustainable-architecture-guide",
         "default": "",
         "help": "If provided, the system spot-checks competitor heading structure to engineer superior coverage.",
         "required": False,
@@ -136,16 +136,16 @@ MAX_QUESTIONS = MIN_QUESTIONS + [
     {
         "id": "cta",
         "label": "11. Call to Action (CTA) & Conversion Target",
-        "placeholder": "e.g., تواصل مع المستشار الطبي للحصول على استشارة مجانية وتقييم للحالة",
-        "default": "احجز استشارتك الطبية المجانية الآن مع أفضل أطباء زراعة الكبد في تركيا",
+        "placeholder": "e.g., Download our free checklist / Schedule a discovery consultation",
+        "default": "",
         "help": "Natural, high-value conclusion invitation.",
         "required": False,
     },
     {
         "id": "faqs",
         "label": "12. Specific FAQs to Answer (Optional)",
-        "placeholder": "e.g., كم تبلغ نسبة نجاح زراعة الكبد؟ هل يعيش المتبرع حياة طبيعية؟ كم مدة الإقامة؟",
-        "default": "ما هي نسبة نجاح زراعة الكبد في تركيا؟ ما هي شروط المتبرع الحي بالكبد؟ كم تبلغ التكلفة التقريبية؟ كم مدة التعافي بعد العملية؟",
+        "placeholder": "e.g., What are the upfront costs? How long until positive ROI? What are common mistakes?",
+        "default": "",
         "help": "Questions to format for Schema.org FAQPage rich snippets.",
         "required": False,
     },
@@ -156,35 +156,35 @@ MAX_QUESTIONS = MIN_QUESTIONS + [
 # MASTER SYSTEM & USER PROMPTS FOR LLM GENERATION
 # ==============================================================================
 
-def build_system_prompt(language: str = "ar") -> str:
-    lang = (language or "ar").lower()
+def build_system_prompt(language: str = "en") -> str:
+    lang = (language or "en").lower()
 
     if lang == "ar":
-        return """أنت كبير المحررين الطبيين وخبراء معمارية محتوى الويب وتحسين محركات البحث التوليدية (SEO / GEO / AEO) في InersiaLab.
-مهمتك كتابة مقال مدونة مرجعي، شامل، دقيق بنسبة 100% ومفصل حول الموضوع والكلمة المفتاحية المحددة من قبل المستخدم.
+        return """أنت خبير التحرير وصياغة المحتوى المتخصص وتحسين محركات البحث التوليدية (SEO / GEO / AEO) في InersiaLab.
+مهمتك كتابة مقال مرجعي متكامل وشامل وموثوق لأي موضوع أو مجال يحدده المستخدم (طبي، تقني، مالي، قانوني، سياحي، تعليمي، تجاري، علمي، إلخ).
 
 تعليمات التحرير والمعايير الإلزامية:
-1. الالتزام المطلق بموضوع المستخدم: اكتب بدقة متناهية حول الموضوع المعطى. إذا كان الموضوع طبياً (مثل زراعة الكبد، التكاليف، المستشفيات)، فيجب أن تكون كافة الأقسام والمصطلحات طبية وسريرية وإنسانية صرفة. لا تخلط أبداً بمصطلحات برمجية أو هندسية (مثل CI/CD أو النظم البرمجية) إلا إذا كان موضوع المستخدم تقنياً برمجياً!
+1. الالتزام المطلق بمجال وموضوع المستخدم: اكتب بدقة واحترافية مستخدماً المصطلحات الأصيلة الخاصة بالمجال المستهدف.
 2. تنسيق المخرجات: اكتب المقال كاملاً بتنسيق GitHub Flavored Markdown فقط. ابدأ مباشرة بعنوان المقال H1 ولا تضع أي مقدمات خارج الماركداون أو كتل كود (```json أو ```markdown).
 3. هيكل المقال الإلزامي:
-   # [عنوان SEO جذاب وشامل بين 50 إلى 60 حرفاً يتضمن الكلمة المفتاحية الرئيسية]
+   # [عنوان SEO جذاب وشامل بين 45 إلى 65 حرفاً يتضمن الكلمة المفتاحية الرئيسية]
 
    > **الخلاصة التنفيذية (إجابة مباشرة لمحركات الذكاء الاصطناعي):** [إجابة قطعية ومباشرة في جملتين إلى ثلاث تشرح الموضوع وتجيب عن أهم تساؤلات القارئ لمحركات البحث مثل SearchGPT و Perplexity و Google AI Overviews].
 
    ## 1. [القسم الأول: مقدمة تشخيصية ونظرة شاملة حول الموضوع]
    [يجب أن تبدأ أول جملة في كل عنوان H2 بتعريف مباشر وواضح قابل للاقتباس الفوري (GEO Citability Hook)].
 
-   ## 2. [القسم الثاني: المراحل والشروط التفصيلية أو المنهجية التطبيقية]
-   [شرح متعمق للمراحل والخطوات العملية بشكل منظم، مع عناوين فرعية H3 لكل مرحلة].
+   ## 2. [القسم الثاني: المنهجية التطبيقية أو المراحل التفصيلية أو المحاور الجوهرية]
+   [شرح متعمق للمراحل والخطوات العملية بشكل منظم، مع عناوين فرعية H3 لكل محور].
 
-   ## 3. [القسم الثالث: جدول بيانات ومقارنة مفصلة (Markdown Table)]
-   [جدول ماركداون احترافي يقارن التكاليف أو نسب النجاح أو المعايير أو الخيارات المتاحة بأرقام دقيقة وواضحة].
+   ## 3. [القسم الثالث: جدول مقارنة أو بيانات رقمية مفصلة (Markdown Table)]
+   [جدول ماركداون احترافي يقارن الخيارات أو المعايير أو التكاليف أو المزايا بأرقام وبيانات واضحة ومحددة].
 
-   ## 4. [القسم الرابع: المعايير العملية وإرشادات الاختيار وفترة الشفاء/النتائج]
-   [قوائم نقطية، نصائح عملية، وخطوات تطبيقية للمتابعة والوصول لأفضل النتائج].
+   ## 4. [القسم الرابع: خطة العمل العملية وأفضل الممارسات والأخطاء الشائعة]
+   [قوائم نقطية، نصائح تطبيقية، وتوجيهات عملية واضحة للجمهور المستهدف].
 
    ## 5. الأسئلة الشائعة حول [الموضوع] (FAQ)
-   [اطرح من 4 إلى 6 أسئلة بحثية شائعة، بحيث يكون كل سؤال في عنوان فرعي مستقل H3 متبوعاً بإجابة نموذجية ومباشرة من 40 إلى 60 كلمة]:
+   [اطرح من 4 إلى 6 أسئلة بحثية حقيقية يطرحها الجمهور، بحيث يكون كل سؤال في عنوان فرعي مستقل H3 متبوعاً بإجابة نموذجية ومباشرة من 40 إلى 60 كلمة]:
    ### [السؤال الأول]؟
    [الإجابة المباشرة والواضحة].
 
@@ -192,34 +192,34 @@ def build_system_prompt(language: str = "ar") -> str:
    [الإجابة المباشرة والواضحة].
 
    ## بيانات الاعتماد والتحقق التحريري
-   - **الخبير المشرف:** [اسم الكاتب أو الفريق الاستشاري]
-   - **المراجعة والتدقيق:** هيئة التدقيق العلمي والتحرير المتخصص
+   - **الكاتب / الخبير المشرف:** [اسم الكاتب أو الفريق الاستشاري]
+   - **المراجعة والتدقيق:** هيئة التدقيق والتحرير المتخصص
    - **الخطوة التالية (دعوة لاتخاذ إجراء):** [الدعوة لاتخاذ إجراء المحددة من المستخدم]
 
 اكتب بلغة عربية فصحى راقية، واضحة، متماسكة، خالية من الركاكة والأخطاء، وتناسب تطلعات الجمهور المستهدف بدقة."""
 
     elif lang == "fr":
         return """Vous êtes le rédacteur en chef et architecte de contenu SEO & GEO chez InersiaLab.
-Votre mission est de rédiger un article de blog exhaustif, professionnel et rigoureusement optimisé pour le référencement naturel et les moteurs génératifs (SearchGPT, Perplexity, Google AI Overviews).
+Votre mission est de rédiger un article de blog exhaustif, professionnel et rigoureusement optimisé pour le référencement naturel et les moteurs génératifs (SearchGPT, Perplexity, Google AI Overviews), adapté à N'IMPORTE QUEL domaine (technologie, finance, santé, tourisme, droit, immobilier, lifestyle, etc.).
 
 DIRECTIVES STRICTES :
-1. Pertinence absolue du sujet : Traitez exactement le sujet et le mot-clé fournis par l'utilisateur avec le vocabulaire métier approprié. Si le sujet est médical, le contenu doit être purement clinique et médical, sans aucun jargon informatique !
+1. Pertinence absolue du domaine : Adoptez rigoureusement le vocabulaire métier, le ton et les concepts propres au secteur d'activité du sujet choisi par l'utilisateur.
 2. Format de sortie : Rédigez l'article complet directement en GitHub Flavored Markdown sans balises de code (```markdown) ni texte préliminaire.
 3. Structure obligatoire :
-   # [Titre SEO percutant de 50 à 60 caractères contenant le mot-clé principal]
+   # [Titre SEO percutant de 45 à 65 caractères contenant le mot-clé principal]
 
    > **Synthèse Exécutive :** [Réponse directe en 2-3 phrases optimisée pour la citabilité IA].
 
-   ## 1. [Section 1 : Vue d'ensemble et contexte fondamental]
+   ## 1. [Section 1 : Vue d'ensemble, enjeux fondamentaux et définitions clés]
    [La première phrase de chaque H2 doit être une définition ou conclusion factuelle directe].
 
-   ## 2. [Section 2 : Méthodologie, étapes clés ou critères détaillés]
-   [Sous-sections H3 détaillées].
+   ## 2. [Section 2 : Méthodologie, étapes clés ou analyse détaillée]
+   [Sous-sections H3 détaillées et développées en profondeur].
 
-   ## 3. [Section 3 : Tableau comparatif en Markdown]
-   [Tableau Markdown comparant coûts, critères, protocoles ou performances].
+   ## 3. [Section 3 : Tableau comparatif ou métriques en Markdown]
+   [Tableau Markdown comparant options, critères, coûts, protocoles ou performances].
 
-   ## 4. [Section 4 : Recommandations pratiques et plan d'action]
+   ## 4. [Section 4 : Recommandations pratiques, plan d'action et pièges à éviter]
 
    ## 5. Foire Aux Questions (FAQ)
    [4 à 6 questions fréquentes avec titre H3 pour chaque question et réponse claire de 40 à 60 mots].
@@ -231,26 +231,26 @@ DIRECTIVES STRICTES :
 
     else:
         return """You are the Chief Editorial & SEO/GEO Architecture Engine at InersiaLab.
-Your mission is to produce an exhaustive, authoritative, deeply researched blog post strictly calibrated for #1 Google rankings and generative search citability (SearchGPT, Perplexity, Claude, and Google AI Overviews).
+Your mission is to produce an exhaustive, authoritative, deeply researched blog post strictly calibrated for #1 Google rankings and generative search citability (SearchGPT, Perplexity, Claude, and Google AI Overviews), across ANY domain or industry (technology, business, finance, healthcare, lifestyle, law, education, real estate, ecommerce, etc.).
 
 STRICT ARCHITECTURAL DIRECTIVES:
-1. Absolute Subject Fidelity: Address the user's exact topic and focus keyword with domain-native terminology. If the topic is medical or clinical, the article must be 100% medical, clinical, and patient-focused with ZERO software engineering/DevOps jargon!
+1. Complete Subject Fidelity: Seamlessly adapt to the specific domain and target audience of the user's prompt. Employ natural, authentic terminology specific to that industry.
 2. Output Format: Return the complete article purely in GitHub Flavored Markdown. Start immediately with `# ` Title. Do NOT wrap in ```json or markdown code fences.
 3. Required Structural Blueprint:
-   # [Compelling SEO Title Tag: 50–60 characters including focus keyword]
+   # [Compelling SEO Title Tag: 45–65 characters including focus keyword]
 
    > **Executive Answer:** [Direct 2–3 sentence definitional answer engineered for AI Overviews and Perplexity citability].
 
-   ## 1. [Section 1: Executive Overview & Foundational Landscape]
+   ## 1. [Section 1: Executive Overview, Foundational Landscape & Core Definitions]
    [The very first sentence of every H2 must be a crisp, standalone factual takeaway or definition].
 
-   ## 2. [Section 2: Comprehensive Framework, Phases, or Methodological Breakdown]
-   [Detailed subsections using ### H3 headers].
+   ## 2. [Section 2: Comprehensive Framework, Phases, or In-Depth Breakdown]
+   [Detailed subsections using ### H3 headers with actionable depth].
 
    ## 3. [Section 3: Comparative Benchmark Data Table]
-   [High-density Markdown table comparing costs, timelines, criteria, or outcomes].
+   [High-density Markdown table comparing options, criteria, costs, performance, or specifications].
 
-   ## 4. [Section 4: Strategic Roadmap & Actionable Best Practices]
+   ## 4. [Section 4: Strategic Roadmap, Practical Checklists & Best Practices]
 
    ## 5. Frequently Asked Questions (FAQ)
    [4 to 6 real search queries, each formatted as a ### H3 heading followed by an authoritative 40–60 word answer].
@@ -266,7 +266,7 @@ def build_user_prompt(data: Dict[str, Any]) -> str:
     focus_kw = data.get("focus_keyword", topic).strip()
     sec_kws = data.get("secondary_keywords", "").strip()
     audience = data.get("target_audience", "General Audience").strip()
-    lang = data.get("language", "ar").lower()
+    lang = data.get("language", "en").lower()
     min_w = data.get("min_words", 1200)
     max_w = data.get("max_words", 2400)
     author = data.get("author_name", "Editorial Team").strip()
@@ -353,7 +353,7 @@ class AlgorithmicBlogSynthesizer:
 
     @staticmethod
     def synthesize(data: Dict[str, Any]) -> Dict[str, Any]:
-        lang = data.get("language", "ar").lower()
+        lang = data.get("language", "en").lower()
         topic = data.get("topic", "Comprehensive Strategic Guide").strip()
         focus_kw = data.get("focus_keyword", topic).strip()
         audience = data.get("target_audience", "Industry specialists and decision makers").strip()
@@ -907,7 +907,7 @@ class BlogArchitect:
         elif clean_md.startswith("```"):
             clean_md = clean_md[3:].rsplit("```", 1)[0].strip()
 
-        lang = intake_data.get("language", "ar").lower()
+        lang = intake_data.get("language", "en").lower()
         topic = intake_data.get("topic", "Comprehensive Strategic Guide").strip()
         focus_kw = intake_data.get("focus_keyword", topic).strip()
         author = intake_data.get("author_name", "InersiaLab Editorial Board").strip()
@@ -1024,7 +1024,7 @@ class BlogArchitect:
                 print(f"[BlogArchitect] {safe}")
 
         topic = intake_data.get("topic", "Modern Strategy").strip()
-        lang = intake_data.get("language", "ar").lower()
+        lang = intake_data.get("language", "en").lower()
         comp_url = intake_data.get("competitor_url", "").strip()
 
         log(f"Initiating Autonomous AI Blog Synthesis for: '{topic}' [{lang.upper()}]")
@@ -1236,7 +1236,7 @@ Return the fully updated and refined markdown article now:"""
         out_dir = os.path.join(DOWNLOADS_DIR, folder_name)
         os.makedirs(out_dir, exist_ok=True)
 
-        lang = blog.get("language", "ar")
+        lang = blog.get("language", "en")
         is_rtl = lang == "ar"
         md_content = blog.get("markdown_content", "")
         title = blog.get("title", "")
