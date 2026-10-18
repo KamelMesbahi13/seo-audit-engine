@@ -74,6 +74,18 @@ try:
 except ImportError:
     run_security_audit = None
 
+# Import blog architect and llm modules
+try:
+    from blog_architect import blog_architect, MIN_QUESTIONS, MAX_QUESTIONS
+    from llm import catalog as llm_catalog, client as llm_client
+except ImportError:
+    blog_architect = None
+    MIN_QUESTIONS = []
+    MAX_QUESTIONS = []
+    llm_catalog = None
+    llm_client = None
+
+
 # Global state for audit execution
 audit_state = {
     "is_running": False,
@@ -114,6 +126,17 @@ security_state = {
     "last_result": None,
     "last_pdf": None,
 }
+
+# Global state for AI Blog Architect (SEO & GEO Studio)
+blog_state = {
+    "is_generating": False,
+    "status": "Ready",
+    "logs": [],
+    "last_result": None,
+    "last_pdf": None,
+    "last_dir": None,
+}
+
 
 log_subscribers = []
 
@@ -254,8 +277,41 @@ def run_security_in_background(target_url: str):
         security_state["is_running"] = False
 
 
+def run_blog_in_background(intake_data: dict, provider_name: str = None, model_id: str = None, api_key: str = None):
+    global blog_state
+    blog_state["is_generating"] = True
+    blog_state["status"] = "Initiating Autonomous Multi-Engine Synthesis..."
+    blog_state["logs"] = []
+
+    def on_log(msg: str):
+        blog_state["logs"].append(msg)
+        if len(blog_state["logs"]) > 2000:
+            blog_state["logs"].pop(0)
+        blog_state["status"] = msg
+
+    try:
+        if not blog_architect:
+            raise RuntimeError("blog_architect module could not be loaded.")
+        res = blog_architect.generate_blog(
+            intake_data=intake_data,
+            provider_name=provider_name,
+            model_id=model_id,
+            api_key=api_key,
+            on_log=on_log
+        )
+        blog_state["last_result"] = res
+        blog_state["last_dir"] = res.get("export", {}).get("folder")
+        blog_state["last_pdf"] = res.get("export", {}).get("pdf")
+        blog_state["status"] = "Blog Architecture Generated Successfully!"
+    except Exception as e:
+        blog_state["status"] = f"Error: {str(e)}"
+        blog_state["logs"].append(f"[ERROR] Synthesis failed: {str(e)}")
+    finally:
+        blog_state["is_generating"] = False
+
 
 HTML_TEMPLATE = r"""<!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1610,7 +1666,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <button id="nav-btn-content" class="tab-btn" onclick="switchTab('content')">3. Page Content Architect</button>
             <button id="nav-btn-optimizer" class="tab-btn" onclick="switchTab('optimizer')">4. SEO &amp; GEO Optimizer</button>
             <button id="nav-btn-security" class="tab-btn" onclick="switchTab('security')">5. Cybersecurity &amp; Server Hardening</button>
+            <button id="nav-btn-blog" class="tab-btn" onclick="switchTab('blog')">6. AI Blog Architect (SEO &amp; GEO)</button>
         </nav>
+
 
         <!-- ============================================================= -->
         <!-- TAB 1: EXISTING WEBSITE AUDIT -->
@@ -3264,7 +3322,255 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
                 </div>
             </div>
         </section>
+
+        <!-- ============================================================= -->
+        <!-- TAB 6: AI BLOG ARCHITECT (SEO & GEO STUDIO) -->
+        <!-- ============================================================= -->
+        <section id="tab-blog" class="tab-content">
+            <!-- Studio Header -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <div class="org-label" style="background: rgba(0, 113, 227, 0.08); color: #0071e3;">Autonomous Editorial Engine</div>
+                        <h2 style="font-size: 20px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.02em; margin-bottom: 6px;">AI Blog Architect — SEO &amp; GEO Publication Studio</h2>
+                        <div style="font-size: 13px; color: #6e6e73; max-width: 820px; line-height: 1.5;">
+                            Synthesize publication-grade, deeply researched technical blogs engineered for Google #1 rankings and Generative AI Search (SearchGPT, Perplexity, Claude, Google AI Overviews). Multilingual in English, French, and Arabic with native RTL formatting.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <span style="font-size: 11px; font-weight: 600; color: #15803d; background: rgba(21, 128, 61, 0.08); padding: 4px 10px; border-radius: 980px;">E-E-A-T Calibrated</span>
+                        <span style="font-size: 11px; font-weight: 600; color: #7c3aed; background: rgba(124, 58, 237, 0.08); padding: 4px 10px; border-radius: 980px;">100% Free • Multi-Engine</span>
+                        <span style="font-size: 11px; font-weight: 600; color: #0071e3; background: rgba(0, 113, 227, 0.08); padding: 4px 10px; border-radius: 980px;">Schema.org JSON-LD</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blog Architectural Intake Questionnaire -->
+            <div class="card">
+                <div class="card-title">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span style="font-weight: 700;">Blog Specifications &amp; Architectural Intake</span>
+                        <span style="font-size: 11px; padding: 3px 10px; border-radius: 980px; background: rgba(21, 128, 61, 0.1); color: #15803d; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #15803d;"></span>
+                            Autonomous Multi-Engine • 100% Free (Zero Setup)
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <span style="font-size: 11.5px; font-weight: 500; color: #86868b; margin-right: 4px;">Intake Depth:</span>
+                        <div style="display: inline-flex; background: rgba(0,0,0,0.06); padding: 3px; border-radius: 8px; gap: 2px;">
+                            <button type="button" id="btn-intake-min" class="btn active" style="padding: 4px 12px; font-size: 11px; border-radius: 6px;" onclick="switchBlogIntakeMode('min')">Essential Intake (Min Questions)</button>
+                            <button type="button" id="btn-intake-max" class="btn" style="padding: 4px 12px; font-size: 11px; border-radius: 6px; background: transparent; color: #6e6e73;" onclick="switchBlogIntakeMode('max')">Comprehensive Intake (Max Questions)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form: Essential Questions (Min Mode - Always Visible) -->
+                <div class="form-grid-2">
+                    <div class="field-group">
+                        <label class="field-label" for="blog-topic">1. Blog Topic / Main Subject <span style="color:#b91c1c;">*</span></label>
+                        <input type="text" id="blog-topic" placeholder="e.g. Enterprise Zero-Trust Cloud Security Architecture" value="Enterprise Zero-Trust Cloud Security Architecture">
+                        <div class="field-help">Core overarching subject and architectural thesis of the blog.</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="blog-focus-kw">2. Primary Focus Keyword (Target Search Intent) <span style="color:#b91c1c;">*</span></label>
+                        <input type="text" id="blog-focus-kw" placeholder="e.g. zero trust cloud security" value="zero trust cloud security">
+                        <div class="field-help">Primary keyword frontloaded into title, first 100 words, and schema.</div>
+                    </div>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="field-group">
+                        <label class="field-label" for="blog-audience">3. Target Audience &amp; Reader Persona <span style="color:#b91c1c;">*</span></label>
+                        <input type="text" id="blog-audience" placeholder="e.g. Enterprise CISOs and Cloud Architects" value="Enterprise CISOs, DevSecOps Engineers, and Cloud Infrastructure Leaders">
+                        <div class="field-help">Defines the vocabulary, depth, and practical pain points.</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="blog-lang">4. Target Language <span style="color:#b91c1c;">*</span></label>
+                        <select id="blog-lang" onchange="onBlogLanguageChange()">
+                            <option value="en" selected>English (US/UK Global Standard)</option>
+                            <option value="fr">Français (French - International Standard)</option>
+                            <option value="ar">العربية (Arabic - Modern Standard with RTL Layout)</option>
+                        </select>
+                        <div class="field-help" id="blog-lang-note">Generates native linguistic structures and appropriate RTL layouts.</div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">5. Target Word Count Range (Min / Max)</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="blog-min-words" placeholder="Min" value="1200" style="flex: 1;">
+                            <span style="color: #86868b; font-size: 12px;">to</span>
+                            <input type="number" id="blog-max-words" placeholder="Max" value="2400" style="flex: 1;">
+                        </div>
+                        <div class="field-help">High-depth technical long-form content engineered to outrank thin content.</div>
+                    </div>
+                </div>
+
+                <!-- Form: Comprehensive Questions (Max Mode Container - Hidden by default) -->
+                <div id="blog-max-container" style="display: none; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 18px; margin-top: 6px;">
+                    <div class="form-grid-2">
+                        <div class="field-group">
+                            <label class="field-label" for="blog-sec-kws">6. Secondary &amp; Semantic (LSI) Entity Keywords</label>
+                            <input type="text" id="blog-sec-kws" placeholder="e.g. microsegmentation, IAM governance, identity verification, continuous posture" value="microsegmentation, identity and access management, cloud workload protection, continuous authentication">
+                            <div class="field-help">Entities that reinforce topical authority in Google's Knowledge Graph.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="blog-author">7. Author Name &amp; E-E-A-T Credentials</label>
+                            <input type="text" id="blog-author" placeholder="e.g. Dr. Sarah Mansouri, Chief Cloud Security Architect & CISSP" value="Dr. Sarah Mansouri, Chief Cloud Security Architect & CISSP">
+                            <div class="field-help">Pedigree byline for Schema.org Author entity and trust badges.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="field-group">
+                            <label class="field-label" for="blog-tone">8. Tone of Voice &amp; Editorial Posture</label>
+                            <input type="text" id="blog-tone" placeholder="e.g. Authoritative, analytical, empirical with zero fluff" value="Authoritative, analytical, empirical, and strictly actionable with zero marketing fluff">
+                            <div class="field-help">Directs sentence rhythm, technical rigor, and perspective.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="blog-cta">11. Call to Action (CTA) &amp; Conversion Goal</label>
+                            <input type="text" id="blog-cta" placeholder="e.g. Schedule a Zero-Trust Infrastructure Assessment with InersiaLab" value="Schedule a Zero-Trust Infrastructure Assessment with InersiaLab Engineering">
+                            <div class="field-help">Closing invitation for business engagement.</div>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="blog-comp-url">10. Competitor URL to Outrank (Optional Live Inspection)</label>
+                        <input type="text" id="blog-comp-url" placeholder="https://competitor.com/blog/zero-trust-guide">
+                        <div class="field-help">If provided, our crawler inspects competitor heading hierarchies to engineer superior coverage.</div>
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div class="field-group">
+                            <label class="field-label" for="blog-subtopics">9. Required Sub-Topics &amp; Must-Include Points</label>
+                            <textarea id="blog-subtopics" rows="3" style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); padding: 8px 12px; font-size: 12.5px; font-family: inherit;">1. Why perimeter VPNs fail against modern credential stuffing.
+2. The 5 architectural pillars of enterprise zero-trust.
+3. Multi-cloud deployment roadmap across 4 phases.
+4. Measurable operational ROI and latency benchmarks.</textarea>
+                            <div class="field-help">Specific technical points that must appear in the final blog.</div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="blog-faqs">12. Specific FAQs to Answer (FAQ Schema)</label>
+                            <textarea id="blog-faqs" rows="3" style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); padding: 8px 12px; font-size: 12.5px; font-family: inherit;">How does zero-trust differ from traditional defense-in-depth?
+What are the immediate quick wins for enterprise cloud security?
+What is the measurable impact on end-user latency?</textarea>
+                            <div class="field-help">Questions formatted for Schema.org FAQPage rich snippets.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Directives & User Prompt Field -->
+                <div class="field-group" style="margin-top: 14px;">
+                    <label class="field-label" for="blog-custom-prompt">Custom AI Directives &amp; Style Prompt (Optional User Instructions)</label>
+                    <textarea id="blog-custom-prompt" rows="2" placeholder="e.g. Include a comparative data table, write in punchy paragraphs, incorporate concrete cloud security examples, avoid corporate fluff." style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); padding: 8px 12px; font-size: 12.5px; font-family: inherit;"></textarea>
+                    <div class="field-help">Custom instructions directly injected into the LLM synthesis pipeline.</div>
+                </div>
+
+                <!-- Action Buttons Bar -->
+                <div style="display: flex; gap: 12px; align-items: center; margin-top: 20px; flex-wrap: wrap;">
+                    <button type="button" id="btn-run-blog" class="btn btn-accent" style="padding: 10px 24px; font-size: 13px;" onclick="generateBlog()">
+                        GENERATE SEO &amp; GEO BLOG
+                    </button>
+
+                    <button type="button" id="btn-open-blog-pdf" class="btn btn-outline" style="padding: 10px 18px; font-size: 13px;" onclick="openBlogPdf()" disabled>
+                        OPEN BLOG PDF
+                    </button>
+
+                    <button type="button" id="btn-open-blog-folder" class="btn btn-outline" style="padding: 10px 18px; font-size: 13px;" onclick="openBlogFolder()" disabled>
+                        OPEN EXPORT FOLDER
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: Real-Time Generation Status & Console -->
+            <div id="blog-status-box" class="card" style="display: none; background: #fafafa; border: 1px solid rgba(0, 113, 227, 0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="spinner" style="border-top-color: #0071e3;"></span>
+                        <strong id="blog-status-text" style="font-size: 13px; color: #1d1d1f;">Synthesizing Blog...</strong>
+                    </div>
+                    <span id="blog-engine-badge" style="font-size: 11px; background: rgba(0, 113, 227, 0.08); color: #0071e3; padding: 2px 8px; border-radius: 4px; font-weight: 600;">LLM Active</span>
+                </div>
+                <div style="height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 10px;">
+                    <div id="blog-progress-bar" style="height: 100%; width: 45%; background: #0071e3; border-radius: 2px; transition: width 0.3s ease;"></div>
+                </div>
+                <pre id="blog-logs-console" style="background: #111827; color: #10b981; font-family: monospace; font-size: 11px; padding: 12px; border-radius: 8px; max-height: 160px; overflow-y: auto; white-space: pre-wrap; margin: 0;"></pre>
+            </div>
+
+            <!-- Card 4: Live Blog Studio & Multi-Format Inspector -->
+            <div id="blog-results-card" style="display: none;">
+                <div class="card" style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <!-- Segmented Format Buttons -->
+                        <div style="display: flex; background: rgba(0,0,0,0.06); padding: 3px; border-radius: 10px; gap: 2px;">
+                            <button type="button" id="btn-blog-view-preview" class="btn active" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="switchBlogView('preview')">Visual Article Preview</button>
+                            <button type="button" id="btn-blog-view-markdown" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; background: transparent; color: #6e6e73;" onclick="switchBlogView('markdown')">Markdown Source</button>
+                            <button type="button" id="btn-blog-view-scorecard" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; background: transparent; color: #6e6e73;" onclick="switchBlogView('scorecard')">SEO &amp; GEO Scorecard</button>
+                            <button type="button" id="btn-blog-view-schema" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 8px; background: transparent; color: #6e6e73;" onclick="switchBlogView('schema')">Schema.org JSON-LD</button>
+                        </div>
+
+                        <!-- Copy Actions -->
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11.5px;" onclick="copyBlogContent('markdown')">Copy Markdown</button>
+                            <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11.5px;" onclick="copyBlogContent('html')">Copy HTML</button>
+                            <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11.5px;" onclick="copyBlogContent('schema')">Copy JSON-LD</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-View 1: Visual Article Preview -->
+                <div id="blog-panel-preview" class="card" style="padding: 32px 36px;">
+                    <div id="blog-preview-container"></div>
+                </div>
+
+                <!-- Sub-View 2: Markdown Source -->
+                <div id="blog-panel-markdown" class="card" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span class="card-title" style="margin-bottom: 0;">Markdown Source Code</span>
+                        <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copyBlogContent('markdown')">Copy to Clipboard</button>
+                    </div>
+                    <textarea id="blog-markdown-textarea" rows="22" style="width: 100%; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); padding: 12px 14px; font-family: monospace; font-size: 12px; line-height: 1.6;"></textarea>
+                </div>
+
+                <!-- Sub-View 3: SEO & GEO Scorecard -->
+                <div id="blog-panel-scorecard" class="card" style="display: none;">
+                    <div class="card-title">SEO &amp; GEO Validation Scorecard</div>
+                    <div id="blog-scorecard-container"></div>
+                </div>
+
+                <!-- Sub-View 4: Schema.org JSON-LD -->
+                <div id="blog-panel-schema" class="card" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span class="card-title" style="margin-bottom: 0;">Schema.org JSON-LD Structured Data</span>
+                        <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size: 11px;" onclick="copyBlogContent('schema')">Copy JSON-LD</button>
+                    </div>
+                    <pre id="blog-schema-code" class="code-block" style="max-height: 480px;"></pre>
+                </div>
+
+                <!-- Card 5: Interactive Prompt Refiner Box -->
+                <div class="card" style="margin-top: 20px; background: #fafafa; border: 1px solid rgba(0,0,0,0.08);">
+                    <div class="card-title" style="margin-bottom: 10px;">
+                        <span>Interactive Prompt Refiner — Modify Blog with AI</span>
+                        <span style="font-size: 11px; color: #6e6e73;">Real-time prompt modifications</span>
+                    </div>
+                    <div class="field-help" style="margin-bottom: 12px;">
+                        Instruct the AI to adjust tone, expand a technical section, add case studies, translate conclusions, or format additional FAQs.
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;">
+                        <textarea id="blog-refine-prompt" rows="2" placeholder="e.g. Add 2 concrete code snippets to section 3, make the tone more authoritative, and add an FAQ about cloud compliance." style="flex: 1; min-width: 300px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.12); padding: 8px 12px; font-size: 12.5px; font-family: inherit;"></textarea>
+                        <button type="button" id="btn-apply-refine" class="btn btn-accent" style="padding: 10px 20px; font-size: 12px;" onclick="refineBlogWithPrompt()">
+                            APPLY REFINEMENT PROMPT
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
+
 
     <!-- Reset Notification Toast -->
     <div id="reset-toast" style="display: none;">
@@ -3298,7 +3604,11 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
             if (tabId === "security" && !window.securityReportsLoaded) {
                 loadSecurityReports();
             }
+            if (tabId === "blog" && !window.blogStudioLoaded) {
+                loadBlogStudio();
+            }
         }
+
 
         // Scope toggle
         function toggleCustomScope() {
@@ -6460,11 +6770,393 @@ Q: What happens if a dental implant fails to integrate? | A: While our surgical 
             });
         }
 
+        // =============================================================
+        // TAB 6: AI BLOG ARCHITECT CONTROLLER
+        // =============================================================
+        let blogProvidersList = [];
+        let isBlogGenerating = false;
+        let lastBlogResult = null;
+        let blogPollTimer = null;
+        let currentBlogView = "preview";
+        let currentBlogIntakeMode = "min";
+
+        async function loadBlogStudio() {
+            window.blogStudioLoaded = true;
+        }
+
+        function switchBlogIntakeMode(mode) {
+            currentBlogIntakeMode = mode;
+            const container = document.getElementById("blog-max-container");
+            const btnMin = document.getElementById("btn-intake-min");
+            const btnMax = document.getElementById("btn-intake-max");
+
+            if (mode === "max") {
+                container.style.display = "block";
+                btnMax.classList.add("active");
+                btnMax.style.background = "#ffffff";
+                btnMax.style.color = "#1d1d1f";
+                btnMin.classList.remove("active");
+                btnMin.style.background = "transparent";
+                btnMin.style.color = "#6e6e73";
+            } else {
+                container.style.display = "none";
+                btnMin.classList.add("active");
+                btnMin.style.background = "#ffffff";
+                btnMin.style.color = "#1d1d1f";
+                btnMax.classList.remove("active");
+                btnMax.style.background = "transparent";
+                btnMax.style.color = "#6e6e73";
+            }
+        }
+
+        function onBlogLanguageChange() {
+            const lang = document.getElementById("blog-lang").value;
+            const note = document.getElementById("blog-lang-note");
+            if (lang === "ar") {
+                note.textContent = "العربية : سيتم إنشاء محتوى عربي فصيح عالي الدقة مع تنسيق كامل من اليمين إلى اليسار (RTL).";
+                note.style.color = "#0071e3";
+            } else if (lang === "fr") {
+                note.textContent = "Français : Génération en français soigné avec balises sémantiques et citations expertes.";
+                note.style.color = "#6e6e73";
+            } else {
+                note.textContent = "English : High-precision global standard with AEO citability and schema markup.";
+                note.style.color = "#6e6e73";
+            }
+        }
+
+        async function generateBlog() {
+            const topic = document.getElementById("blog-topic").value.trim();
+            const focusKw = document.getElementById("blog-focus-kw").value.trim();
+            const audience = document.getElementById("blog-audience").value.trim();
+            const lang = document.getElementById("blog-lang").value;
+            const minWords = parseInt(document.getElementById("blog-min-words").value || "1000");
+            const maxWords = parseInt(document.getElementById("blog-max-words").value || "2400");
+
+            if (!topic) {
+                alert("Please enter a blog topic.");
+                document.getElementById("blog-topic").focus();
+                return;
+            }
+
+            const intake = {
+                topic: topic,
+                focus_keyword: focusKw || topic,
+                target_audience: audience,
+                language: lang,
+                min_words: minWords,
+                max_words: maxWords,
+                custom_prompt: document.getElementById("blog-custom-prompt").value.trim()
+            };
+
+            if (currentBlogIntakeMode === "max") {
+                intake.secondary_keywords = document.getElementById("blog-sec-kws").value.trim();
+                intake.author_name = document.getElementById("blog-author").value.trim();
+                intake.tone = document.getElementById("blog-tone").value.trim();
+                intake.subtopics = document.getElementById("blog-subtopics").value.trim();
+                intake.competitor_url = document.getElementById("blog-comp-url").value.trim();
+                intake.cta = document.getElementById("blog-cta").value.trim();
+                intake.faqs = document.getElementById("blog-faqs").value.trim();
+            }
+
+            const runBtn = document.getElementById("btn-run-blog");
+            runBtn.disabled = true;
+            runBtn.textContent = "SYNTHESIZING BLOG...";
+
+            const statusBox = document.getElementById("blog-status-box");
+            statusBox.style.display = "block";
+            document.getElementById("blog-status-text").textContent = "Dispatching Multi-Engine Parallel Synthesis...";
+            document.getElementById("blog-progress-bar").style.width = "20%";
+            document.getElementById("blog-logs-console").textContent = "[Autonomous Engine] Starting Free Multi-Engine Synthesis Pipeline...\n";
+
+            try {
+                const res = await fetch("/api/blog/generate", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        intake: intake
+                    })
+                });
+
+                const data = await res.json();
+                if (data.status === "started") {
+                    startBlogPolling();
+                } else {
+                    alert("Could not start blog generation: " + (data.error || "Unknown error"));
+                    runBtn.disabled = false;
+                    runBtn.textContent = "GENERATE SEO & GEO BLOG";
+                }
+            } catch (e) {
+                alert("Failed to start generation: " + e);
+                runBtn.disabled = false;
+                runBtn.textContent = "GENERATE SEO & GEO BLOG";
+            }
+        }
+
+        function startBlogPolling() {
+            if (blogPollTimer) clearInterval(blogPollTimer);
+            let progress = 20;
+
+            blogPollTimer = setInterval(async () => {
+                try {
+                    const res = await fetch("/api/blog/status");
+                    const data = await res.json();
+
+                    if (data.logs && data.logs.length > 0) {
+                        document.getElementById("blog-logs-console").textContent = data.logs.join("\n");
+                        const c = document.getElementById("blog-logs-console");
+                        c.scrollTop = c.scrollHeight;
+                    }
+
+                    if (data.status) {
+                        document.getElementById("blog-status-text").textContent = data.status;
+                    }
+
+                    progress = Math.min(progress + 8, 92);
+                    document.getElementById("blog-progress-bar").style.width = progress + "%";
+
+                    if (!data.is_generating) {
+                        clearInterval(blogPollTimer);
+                        blogPollTimer = null;
+                        document.getElementById("blog-progress-bar").style.width = "100%";
+                        document.getElementById("btn-run-blog").disabled = false;
+                        document.getElementById("btn-run-blog").textContent = "GENERATE SEO & GEO BLOG";
+
+                        if (data.last_result) {
+                            lastBlogResult = data.last_result;
+                            document.getElementById("btn-open-blog-pdf").disabled = !data.last_pdf;
+                            document.getElementById("btn-open-blog-folder").disabled = !data.last_dir;
+                            renderBlogResults(lastBlogResult);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Polling error:", e);
+                }
+            }, 800);
+        }
+
+        function renderBlogResults(blog) {
+            const resultsCard = document.getElementById("blog-results-card");
+            if (!resultsCard) return;
+            resultsCard.style.display = "block";
+
+            // 1. Preview
+            const prevContainer = document.getElementById("blog-preview-container");
+            const isRtl = blog.language === "ar";
+            const dirAttr = isRtl ? 'dir="rtl"' : 'dir="ltr"';
+            const alignStyle = isRtl ? 'text-align: right;' : 'text-align: left;';
+            const fontStyle = isRtl ? "font-family: 'Tajawal', Arial, sans-serif;" : "";
+
+            let md = blog.markdown_content || "";
+            let previewHtml = `<div ${dirAttr} style="${alignStyle} ${fontStyle} line-height: 1.8;">`;
+            previewHtml += `<div style="font-size: 11.5px; color: #0071e3; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">${escapeOptHtml(blog.generation_engine || 'InersiaLab SEO Engine')}</div>`;
+            previewHtml += `<h1 style="font-size: 26px; font-weight: 800; color: #111827; margin-bottom: 12px; line-height: 1.3;">${escapeOptHtml(blog.title)}</h1>`;
+            previewHtml += `<div style="background: #f9fafb; border-${isRtl ? 'right' : 'left'}: 4px solid #0071e3; padding: 12px 16px; border-radius: 6px; font-size: 13.5px; margin-bottom: 24px; color: #374151;"><strong>${isRtl ? 'الخلاصة المباشرة (AEO):' : 'Executive AEO Summary:'}</strong> ${escapeOptHtml(blog.aeo_summary || blog.meta_description)}</div>`;
+
+            const lines = md.split("\n");
+            let inList = false;
+            lines.forEach(l => {
+                const s = l.trim();
+                if (!s || s.startsWith("# ") || s.startsWith("> **")) return;
+                if (s.startsWith("## ")) {
+                    if (inList) { previewHtml += "</ul>"; inList = false; }
+                    previewHtml += `<h2 style="font-size: 19px; font-weight: 700; color: #111827; margin-top: 26px; margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px;">${escapeOptHtml(s.slice(3))}</h2>`;
+                } else if (s.startsWith("### ")) {
+                    if (inList) { previewHtml += "</ul>"; inList = false; }
+                    previewHtml += `<h3 style="font-size: 15.5px; font-weight: 600; color: #1f2937; margin-top: 18px; margin-bottom: 8px;">${escapeOptHtml(s.slice(4))}</h3>`;
+                } else if (s.startsWith("- ") || s.startsWith("* ")) {
+                    if (!inList) { previewHtml += `<ul style="margin-bottom: 16px; padding-${isRtl ? 'right' : 'left'}: 20px;">`; inList = true; }
+                    let item = escapeOptHtml(s.slice(2));
+                    item = item.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                    previewHtml += `<li style="margin-bottom: 6px; color: #374151; font-size: 13.5px;">${item}</li>`;
+                } else if (s.startsWith("|")) {
+                    if (inList) { previewHtml += "</ul>"; inList = false; }
+                    if (!s.includes("---")) {
+                        const cells = s.split("|").filter(c => c.trim().length > 0);
+                        previewHtml += `<div style="display: flex; gap: 8px; font-size: 12px; background: #f9fafb; padding: 6px 10px; border-bottom: 1px solid #e5e7eb;">${cells.map(c => `<span style="flex:1;">${escapeOptHtml(c.trim())}</span>`).join('')}</div>`;
+                    }
+                } else {
+                    if (inList) { previewHtml += "</ul>"; inList = false; }
+                    let p = escapeOptHtml(s);
+                    p = p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                    previewHtml += `<p style="margin-bottom: 14px; color: #374151; font-size: 13.5px;">${p}</p>`;
+                }
+            });
+            if (inList) previewHtml += "</ul>";
+            previewHtml += "</div>";
+            prevContainer.innerHTML = previewHtml;
+
+            // 2. Markdown Source
+            document.getElementById("blog-markdown-textarea").value = blog.markdown_content || "";
+
+            // 3. Schema Code
+            document.getElementById("blog-schema-code").textContent = JSON.stringify(blog.schema_json || {}, null, 2);
+
+            // 4. Scorecard
+            const sc = blog.scorecard || {};
+            const scContainer = document.getElementById("blog-scorecard-container");
+            const checks = sc.checks || [];
+
+            let scHtml = `
+                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 24px; padding: 20px; background: #fafafa; border-radius: 12px; border: 1px solid rgba(0,0,0,0.06);">
+                    <div style="text-align: center; min-width: 110px;">
+                        <div style="font-size: 38px; font-weight: 800; color: ${sc.overall_score >= 85 ? '#15803d' : '#b91c1c'};">${sc.overall_score || 90}</div>
+                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #86868b;">Overall SEO/GEO</div>
+                    </div>
+                    <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <div style="background: #ffffff; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <div style="font-size: 11px; color: #86868b;">Title Length</div>
+                            <strong style="font-size: 14px; color: #111827;">${sc.title_length || 0} chars</strong>
+                        </div>
+                        <div style="background: #ffffff; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <div style="font-size: 11px; color: #86868b;">Meta Description</div>
+                            <strong style="font-size: 14px; color: #111827;">${sc.meta_length || 0} chars</strong>
+                        </div>
+                        <div style="background: #ffffff; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <div style="font-size: 11px; color: #86868b;">Word Count</div>
+                            <strong style="font-size: 14px; color: #111827;">${sc.word_count || 0} words</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    ${checks.map(c => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #ffffff; border-radius: 8px; border: 1px solid ${c.passed ? 'rgba(21, 128, 61, 0.2)' : 'rgba(185, 28, 28, 0.2)'};">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${c.passed ? '#15803d' : '#b91c1c'};"></span>
+                                <span style="font-size: 12.5px; font-weight: 500; color: #1d1d1f;">${escapeOptHtml(c.name)}</span>
+                            </div>
+                            <span style="font-size: 11px; font-weight: 600; color: ${c.passed ? '#15803d' : '#b91c1c'};">${escapeOptHtml(c.val)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            scContainer.innerHTML = scHtml;
+            resultsCard.scrollIntoView({behavior: "smooth"});
+        }
+
+        function switchBlogView(view) {
+            currentBlogView = view;
+            ["preview", "markdown", "scorecard", "schema"].forEach(v => {
+                const el = document.getElementById("blog-panel-" + v);
+                const btn = document.getElementById("btn-blog-view-" + v);
+                if (el) el.style.display = (v === view) ? "block" : "none";
+                if (btn) {
+                    if (v === view) {
+                        btn.classList.add("active");
+                        btn.style.background = "#ffffff";
+                        btn.style.color = "#1d1d1f";
+                    } else {
+                        btn.classList.remove("active");
+                        btn.style.background = "transparent";
+                        btn.style.color = "#6e6e73";
+                    }
+                }
+            });
+        }
+
+        async function refineBlogWithPrompt() {
+            const prompt = document.getElementById("blog-refine-prompt").value.trim();
+            if (!prompt) {
+                alert("Please type instructions into the refinement box.");
+                return;
+            }
+
+            const btn = document.getElementById("btn-apply-refine");
+            btn.disabled = true;
+            btn.textContent = "REFINING...";
+
+            try {
+                const res = await fetch("/api/blog/refine", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({
+                        prompt: prompt
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success && data.result) {
+                    lastBlogResult = data.result;
+                    renderBlogResults(lastBlogResult);
+                    document.getElementById("blog-refine-prompt").value = "";
+                    alert("Blog updated successfully according to your prompt!");
+                } else {
+                    alert("Refinement failed: " + (data.error || "Unknown error"));
+                }
+            } catch (e) {
+                alert("Refinement error: " + e);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "APPLY REFINEMENT PROMPT";
+            }
+        }
+
+        async function openBlogPdf() {
+            try {
+                const res = await fetch("/api/blog/open-pdf", {method: "POST"});
+                const data = await res.json();
+                if (!data.success) {
+                    alert("Could not open PDF: " + (data.error || "File not found"));
+                }
+            } catch (e) {
+                alert("Failed to open PDF: " + e);
+            }
+        }
+
+        async function openBlogFolder() {
+            try {
+                const res = await fetch("/api/blog/open-dir", {method: "POST"});
+                const data = await res.json();
+                if (!data.success) {
+                    alert("Could not open folder: " + (data.error || "Directory not found"));
+                }
+            } catch (e) {
+                alert("Failed to open folder: " + e);
+            }
+        }
+
+        function copyBlogContent(type) {
+            if (!lastBlogResult) {
+                alert("Generate a blog first.");
+                return;
+            }
+            let text = "";
+            let name = "";
+            if (type === "markdown") {
+                text = lastBlogResult.markdown_content || "";
+                name = "Markdown Source";
+            } else if (type === "schema") {
+                text = JSON.stringify(lastBlogResult.schema_json || {}, null, 2);
+                name = "Schema.org JSON-LD";
+            } else if (type === "html") {
+                text = document.getElementById("blog-preview-container").innerHTML;
+                name = "Formatted HTML";
+            }
+
+            if (!text) {
+                alert("Content is empty.");
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert(name + " copied to clipboard!");
+            }).catch(() => {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                alert(name + " copied to clipboard!");
+            });
+        }
+
         // Intervals
         setInterval(pollAuditStatus, 1500);
         setInterval(pollSecurityStatus, 1500);
         setInterval(loadReportsList, 5000);
         setInterval(loadSecurityReports, 5000);
+
 
         // Init
         window.addEventListener("DOMContentLoaded", () => {
@@ -6492,7 +7184,8 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
         super().end_headers()
 
     def handle_reset(self):
-        global audit_state, security_state, blueprint_state, content_state, optimizer_state
+        global audit_state, security_state, blueprint_state, content_state, optimizer_state, blog_state
+
         audit_state["is_running"] = False
         audit_state["status"] = "Ready"
         audit_state["logs"] = []
@@ -6518,6 +7211,14 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
         content_state["last_results"] = None
 
         optimizer_state["last_result"] = None
+
+        blog_state["is_generating"] = False
+        blog_state["status"] = "Ready"
+        blog_state["logs"] = []
+        blog_state["last_result"] = None
+        blog_state["last_pdf"] = None
+        blog_state["last_dir"] = None
+
 
         try:
             import importlib
@@ -6657,9 +7358,41 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(optimizer_state.get("last_result") or {}, ensure_ascii=False).encode("utf-8"))
 
+        elif path == "/api/blog/schema":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            resp = {
+                "min_questions": MIN_QUESTIONS if MIN_QUESTIONS else [],
+                "max_questions": MAX_QUESTIONS if MAX_QUESTIONS else [],
+            }
+            self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))
+
+        elif path == "/api/blog/providers":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            providers = llm_catalog.get_all() if llm_catalog else []
+            self.wfile.write(json.dumps({"providers": providers}, ensure_ascii=False).encode("utf-8"))
+
+        elif path == "/api/blog/status":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.end_headers()
+            resp = {
+                "is_generating": blog_state["is_generating"],
+                "status": blog_state["status"],
+                "logs": blog_state["logs"][-35:],
+                "last_result": blog_state["last_result"],
+                "last_pdf": blog_state["last_pdf"],
+                "last_dir": blog_state["last_dir"],
+            }
+            self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))
+
         else:
             self.send_response(404)
             self.end_headers()
+
 
     def do_POST(self):
         parsed = urlparse(self.path)
@@ -7050,9 +7783,124 @@ class SEOHttpHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
 
+        elif path == "/api/blog/test-connection":
+            try:
+                data = json.loads(body) if body else {}
+                provider = data.get("provider", "")
+                model = data.get("model", "")
+                key = data.get("api_key", "")
+                if not llm_client:
+                    raise ValueError("LLM client not loaded.")
+                test_res = llm_client.test_connection(provider, model, key)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(test_res, ensure_ascii=False).encode("utf-8"))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/blog/generate":
+            if blog_state["is_generating"]:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Blog generation already in progress."}).encode("utf-8"))
+                return
+            try:
+                data = json.loads(body) if body else {}
+                intake_data = data.get("intake", {})
+
+                t = threading.Thread(
+                    target=run_blog_in_background,
+                    args=(intake_data,),
+                    daemon=True
+                )
+                t.start()
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "started"}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/blog/refine":
+            try:
+                data = json.loads(body) if body else {}
+                user_prompt = data.get("prompt", "")
+
+                current_blog = blog_state.get("last_result")
+                if not current_blog:
+                    raise ValueError("No active blog to refine. Generate a blog first.")
+
+                updated = blog_architect.refine_blog(
+                    current_blog=current_blog,
+                    user_prompt=user_prompt,
+                )
+                blog_state["last_result"] = updated
+                blog_state["last_dir"] = updated.get("export", {}).get("folder")
+                blog_state["last_pdf"] = updated.get("export", {}).get("pdf")
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True, "result": updated}, ensure_ascii=False).encode("utf-8"))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/blog/open-pdf":
+            pdf_p = blog_state.get("last_pdf")
+            if pdf_p and os.path.exists(pdf_p):
+                try:
+                    os.startfile(pdf_p)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            else:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "PDF not generated yet or file missing."}).encode("utf-8"))
+
+        elif path == "/api/blog/open-dir":
+            d = blog_state.get("last_dir")
+            if d and os.path.exists(d):
+                try:
+                    os.startfile(d)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            else:
+                self.send_response(404)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": "Export directory not found."}).encode("utf-8"))
+
         else:
             self.send_response(404)
             self.end_headers()
+
 
 
 def start_server(port=8765):

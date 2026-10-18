@@ -84,5 +84,13 @@ Run a full-site audit with the dedicated Python virtual environment:
 - Titles engineered to 50–60 chars, meta descriptions to 140–160 chars.
 - First-sentence Answer Engine Optimization (AEO) hooks in every section for AI search citability (SearchGPT, Perplexity, Claude).
 - Generates Schema.org JSON-LD structured data block for every page.
-- Exports clean Markdown (`.md`), semantic HTML (`.html`), JSON, master document (`MASTER_CONTENT.md`), and `llms.txt` directly to the user's Downloads directory.
 - Integrated into **Web Browser UI** (Tab 3: Page Content Architect) and **Desktop PC GUI** (Tab 3: Page Content Architect).
+
+### 5. AI Blog Architect & GEO Publication Studio (`blog_architect.py`)
+- Full multilingual long-form blog generation in English, French, and Modern Standard Arabic with native RTL layout.
+- Autonomous Parallel Free Multi-Engine Synthesis: All SEO, GEO, E-E-A-T, Schema.org, and free LLM models run simultaneously in parallel for free with zero API key configuration or setup required.
+- Dual Intake Modes: Essential Intake (Min: 5 text fields) and Comprehensive Intake (Max: 12 text fields).
+- Custom prompt field for user directives and interactive prompt refiner to edit and expand blogs on the fly.
+- High-precision SEO & GEO calibration: 50–60c titles, 140–160c meta descriptions, single H1, ordered H2/H3, AEO citability hooks, and Schema.org `BlogPosting` + `FAQPage` + `BreadcrumbList` JSON-LD.
+- Integrated into **Web Browser UI** (Tab 6: AI Blog Architect).
+

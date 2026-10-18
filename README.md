@@ -44,7 +44,18 @@ An executive-grade technical SEO audit engine, pre-launch technical architecture
   - AI Crawler Index (`llms.txt`)
   - Sitemap URLs (`sitemap_urls.txt`)
 
+### 4. AI Blog Architect & GEO Publication Studio (`blog_architect.py`)
+- **Parallel Free Multi-Engine Synthesis**: Operates all SEO, GEO, E-E-A-T, Schema.org, and free LLM models concurrently and 100% free with zero API key configuration or setup required.
+- **Dual Intake Modes**:
+  - **Essential Intake (Min Questions)**: 5 core text fields (Topic, Primary Keyword, Target Audience, Language, Word Count Min/Max).
+  - **Comprehensive Intake (Max Questions)**: 12 technical text fields adding LSI Semantic Entities, Author E-E-A-T pedigree, Tone, Required Sub-topics, Competitor URL to Outrank, Call to Action, and Custom FAQs.
+- **Custom Directives & Interactive Prompt Refiner**: Live prompt textarea to customize style, plus post-generation interactive prompt refiner to modify and expand sections on the fly.
+- **Multilingual Support**: High-authority English (EN), French (FR), and Modern Standard Arabic (AR) with native RTL formatting and typography.
+- **SEO & GEO Calibration**: Automatic Title tag (50–60c), Meta Description (140–160c), single `<h1>`, ordered `<h2>`/`<h3>`, first-sentence AEO citability hooks, and Schema.org `BlogPosting` + `FAQPage` + `BreadcrumbList` JSON-LD.
+- **Export Package**: Structured Markdown (`blog.md`), styled HTML (`blog.html`), JSON-LD (`schema.json`), metadata scorecard (`metadata.json`), and `llms.txt` saved directly to Downloads.
+
 ## Strict Executive Design Standards
+
 - Exactly 3 brand colors: Black (#111827), Red (#b91c1c), Green (#15803d).
 - Pure white background (#ffffff), no colored background box fills, no box shadows, zero icons/emojis.
 - All reports, blueprints, starter kits, and content exports saved directly to the user's Downloads folder.
