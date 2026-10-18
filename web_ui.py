@@ -1702,7 +1702,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                         <label class="field-label" for="audit-mode">Executive Report Mode</label>
                         <select id="audit-mode">
                             <option value="detailed" selected>Detailed Report (Full page-by-page diagnosis & fixes)</option>
-                            <option value="short">Short Report (Executive summary of issues & global fixes)</option>
+                            <option value="medium">Medium Report (Executive diagnosis & top priority page breakdowns)</option>
+                            <option value="short">Short Report (Executive summary of issues & global scorecards)</option>
                             <option value="both">Both Reports (Detailed manual + Executive brief)</option>
                         </select>
                         <div class="field-help">Saved directly into your local Downloads directory as print-ready PDF.</div>

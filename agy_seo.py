@@ -330,6 +330,8 @@ def run_audit(url: str, max_pages: int = None, output_path: str = None,
     for mode in modes_to_generate:
         if mode == "short":
             mode_path = output_path.replace(".pdf", "_SHORT.pdf")
+        elif mode == "medium":
+            mode_path = output_path.replace(".pdf", "_MEDIUM.pdf")
         else:
             mode_path = output_path
         
@@ -497,8 +499,8 @@ def main():
     audit_parser.add_argument("url", help="Target website URL")
     audit_parser.add_argument("--max-pages", type=int, default=0,
                              help="Maximum pages to crawl (default: 0 = unlimited, crawls all pages)")
-    audit_parser.add_argument("--mode", "--format", dest="report_mode", choices=["detailed", "short", "both"],
-                             default="detailed", help="Report format: detailed, short, or both (default: detailed)")
+    audit_parser.add_argument("--mode", "--format", dest="report_mode", choices=["detailed", "medium", "short", "both"],
+                             default="detailed", help="Report format: detailed, medium, short, or both (default: detailed)")
     audit_parser.add_argument("--output", "-o", help="Output PDF path (default: ~/Downloads/)")
 
     # Blueprint command

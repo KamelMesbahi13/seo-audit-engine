@@ -125,9 +125,12 @@ class SiteCrawler:
                 if k_lower == "start" and v.isdigit() and int(v) > 60:
                     return False
 
-            # Spider trap prevention 5: Cap query variations to at most 2 per base path
+            # Spider trap prevention 5: Cap repetitive query variations, but preserve distinct content/product IDs
+            content_id_params = {"p", "id", "page_id", "post_id", "product_id", "article", "article_id", "item", "item_id", "prod", "slug"}
+            has_content_id = any(k.lower() in content_id_params for k, _ in parse_qsl(parsed.query))
+            max_query_allowed = 150 if has_content_id else 4
             query_count = self.path_query_counts.get(path_lower, 0)
-            if query_count >= 2:
+            if query_count >= max_query_allowed:
                 return False
             self.path_query_counts[path_lower] = query_count + 1
 
@@ -158,7 +161,12 @@ class SiteCrawler:
         # Add common fallback paths
         parsed = urlparse(self.base_url)
         base = f"{parsed.scheme}://{parsed.netloc}"
-        for path in ["/sitemap.xml", "/sitemap_index.xml", "/wp-sitemap.xml"]:
+        for path in [
+            "/sitemap.xml", "/sitemap_index.xml", "/wp-sitemap.xml",
+            "/sitemap/sitemap.xml", "/post-sitemap.xml", "/page-sitemap.xml",
+            "/sitemap-index.xml", "/sitemap_index.xml.gz", "/sitemap.xml.gz",
+            "/sitemaps/sitemap.xml"
+        ]:
             candidate = base + path
             if candidate not in sitemap_candidates:
                 sitemap_candidates.append(candidate)
@@ -185,6 +193,14 @@ class SiteCrawler:
 
         self.sitemap_urls.append(url)
         xml_text = result["html"]
+        # Support gzipped XML sitemaps (.xml.gz)
+        if url.endswith(".gz") or (result.get("content") and isinstance(result["content"], bytes) and result["content"][:2] == b"\x1f\x8b"):
+            import gzip
+            try:
+                raw_bytes = result.get("content") or xml_text.encode("latin1", errors="ignore")
+                xml_text = gzip.decompress(raw_bytes).decode("utf-8", errors="replace")
+            except Exception as gz_err:
+                self.log(f"  Could not decompress gzipped sitemap {url}: {gz_err}")
 
         try:
             # Strip namespace for easier parsing

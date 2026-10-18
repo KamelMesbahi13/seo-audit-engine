@@ -252,7 +252,7 @@ class SEOAuditApp:
         self.mode_combo = ttk.Combobox(
             inputs_frame,
             textvariable=self.mode_var,
-            values=["Detailed", "Short", "Both"],
+            values=["Detailed", "Medium", "Short", "Both"],
             state="readonly",
             width=10,
             font=("Segoe UI", 9)
