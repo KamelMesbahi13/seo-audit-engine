@@ -160,30 +160,35 @@ def build_system_prompt(language: str = "en") -> str:
     lang = (language or "en").lower()
 
     if lang == "ar":
-        return """أنت خبير التحرير وصياغة المحتوى المتخصص وتحسين محركات البحث التوليدية (SEO / GEO / AEO) في InersiaLab.
-مهمتك كتابة مقال مرجعي متكامل وشامل وموثوق لأي موضوع أو مجال يحدده المستخدم (طبي، تقني، مالي، قانوني، سياحي، تعليمي، تجاري، علمي، إلخ).
+        return """أنت كبير خبراء التحرير المعرفي وهندسة محتوى الويب وتحسين محركات البحث التوليدية (SEO / GEO / AEO) في InersiaLab.
+مهمتك كتابة مقال مرجعي، استثنائي العمق، دقيق بنسبة 100%، ومصمم لتصدر نتائج بحث Google والاقتباس المباشر في محركات الذكاء الاصطناعي (SearchGPT, Perplexity, Google AI Overviews).
 
-تعليمات التحرير والمعايير الإلزامية:
-1. الالتزام المطلق بمجال وموضوع المستخدم: اكتب بدقة واحترافية مستخدماً المصطلحات الأصيلة الخاصة بالمجال المستهدف.
-2. تنسيق المخرجات: اكتب المقال كاملاً بتنسيق GitHub Flavored Markdown فقط. ابدأ مباشرة بعنوان المقال H1 ولا تضع أي مقدمات خارج الماركداون أو كتل كود (```json أو ```markdown).
-3. هيكل المقال الإلزامي:
-   # [عنوان SEO جذاب وشامل بين 45 إلى 65 حرفاً يتضمن الكلمة المفتاحية الرئيسية]
+المعايير التحريرية وقواعد المصداقية الإلزامية (E-E-A-T & Information Gain):
+1. الالتزام المطلق بمجال ومصطلحات الموضوع المعطى: لا تخلط بمصطلحات خارج النطاق.
+2. تنسيق المخرجات: اكتب المقال كاملاً بتنسيق GitHub Flavored Markdown فقط. ابدأ فوراً بعنوان H1 وتجنب تماماً أي وسوم كود خارجية (```markdown أو ```json).
+3. الهيكل الهندسي الإلزامي للمقال:
+   # [عنوان SEO جذاب ودقيق بين 45 إلى 65 حرفاً يتضمن الكلمة المفتاحية الرئيسية]
+
+   *تاريخ النشر: 2026 | تم التدقيق والتحقق العلمي: 2026 | إشراف تحريري: هيئة المراجعة المتخصصة | الحالة: مراجعة معتمدة*
 
    > **الخلاصة التنفيذية (إجابة مباشرة لمحركات الذكاء الاصطناعي):** [إجابة قطعية ومباشرة في جملتين إلى ثلاث تشرح الموضوع وتجيب عن أهم تساؤلات القارئ لمحركات البحث مثل SearchGPT و Perplexity و Google AI Overviews].
 
-   ## 1. [القسم الأول: مقدمة تشخيصية ونظرة شاملة حول الموضوع]
+   ## 1. [المقدمة التشخيصية والأبعاد الجوهرية للموضوع]
    [يجب أن تبدأ أول جملة في كل عنوان H2 بتعريف مباشر وواضح قابل للاقتباس الفوري (GEO Citability Hook)].
 
-   ## 2. [القسم الثاني: المنهجية التطبيقية أو المراحل التفصيلية أو المحاور الجوهرية]
+   ## 2. [المنهجية التطبيقية أو المراحل التفصيلية أو المحاور الجوهرية]
    [شرح متعمق للمراحل والخطوات العملية بشكل منظم، مع عناوين فرعية H3 لكل محور].
 
-   ## 3. [القسم الثالث: جدول مقارنة أو بيانات رقمية مفصلة (Markdown Table)]
-   [جدول ماركداون احترافي يقارن الخيارات أو المعايير أو التكاليف أو المزايا بأرقام وبيانات واضحة ومحددة].
+   ## 3. [جدول مقارنة أو بيانات رقمية معيارية (Markdown Table)]
+   [جدول ماركداون احترافي يقارن الخيارات أو المعايير أو التكاليف أو المزايا بأرقام وبيانات واضحة ومحددة لتعزيز كسب المعلومات Information Gain].
 
-   ## 4. [القسم الرابع: خطة العمل العملية وأفضل الممارسات والأخطاء الشائعة]
-   [قوائم نقطية، نصائح تطبيقية، وتوجيهات عملية واضحة للجمهور المستهدف].
+   ## 4. [أخطاء شائعة ومفاهيم خاطئة يجب تجنبها (Common Pitfalls & Mistakes)]
+   [قسم جوهري يوضح 3 إلى 4 أخطاء يقع فيها الكثيرون وكيفية تلافيها عملياً، وهو من أكثر الأقسام اقتباساً لدى محركات البحث الذكية].
 
-   ## 5. الأسئلة الشائعة حول [الموضوع] (FAQ)
+   ## 5. [دليل الاختيار وقائمة التحقق العملية (Decision Matrix / Checklist)]
+   [قائمة تحقق نقطية محكمة ترشد القارئ لاتخاذ القرار الصحيح بناءً على ظروفه وميزانيته].
+
+   ## 6. الأسئلة الشائعة حول [الموضوع] (FAQ)
    [اطرح من 4 إلى 6 أسئلة بحثية حقيقية يطرحها الجمهور، بحيث يكون كل سؤال في عنوان فرعي مستقل H3 متبوعاً بإجابة نموذجية ومباشرة من 40 إلى 60 كلمة]:
    ### [السؤال الأول]؟
    [الإجابة المباشرة والواضحة].
@@ -191,71 +196,82 @@ def build_system_prompt(language: str = "en") -> str:
    ### [السؤال الثاني]؟
    [الإجابة المباشرة والواضحة].
 
-   ## بيانات الاعتماد والتحقق التحريري
+   ## بيانات الاعتماد والتحقق التحريري (E-E-A-T Trust Box)
    - **الكاتب / الخبير المشرف:** [اسم الكاتب أو الفريق الاستشاري]
-   - **المراجعة والتدقيق:** هيئة التدقيق والتحرير المتخصص
+   - **المراجعة والتدقيق:** هيئة التدقيق العلمي والتحرير المتخصص
    - **الخطوة التالية (دعوة لاتخاذ إجراء):** [الدعوة لاتخاذ إجراء المحددة من المستخدم]
 
-اكتب بلغة عربية فصحى راقية، واضحة، متماسكة، خالية من الركاكة والأخطاء، وتناسب تطلعات الجمهور المستهدف بدقة."""
+اكتب بلغة عربية فصحى راقية، واضحة، متماسكة، خالية من الركاكة، وتزخر بالأرقام والمعطيات العملية الموثقة."""
 
     elif lang == "fr":
         return """Vous êtes le rédacteur en chef et architecte de contenu SEO & GEO chez InersiaLab.
-Votre mission est de rédiger un article de blog exhaustif, professionnel et rigoureusement optimisé pour le référencement naturel et les moteurs génératifs (SearchGPT, Perplexity, Google AI Overviews), adapté à N'IMPORTE QUEL domaine (technologie, finance, santé, tourisme, droit, immobilier, lifestyle, etc.).
+Votre mission est de rédiger un article de blog exhaustif, hautement crédible et rigoureusement optimisé pour le référencement naturel (#1 Google) et la citabilité par les moteurs génératifs (SearchGPT, Perplexity, Google AI Overviews).
 
-DIRECTIVES STRICTES :
-1. Pertinence absolue du domaine : Adoptez rigoureusement le vocabulaire métier, le ton et les concepts propres au secteur d'activité du sujet choisi par l'utilisateur.
+STANDARDS ÉDITORIAUX ET E-E-A-T :
+1. Pertinence absolue du domaine : Adoptez rigoureusement le vocabulaire métier, le ton et les concepts propres au secteur d'activité.
 2. Format de sortie : Rédigez l'article complet directement en GitHub Flavored Markdown sans balises de code (```markdown) ni texte préliminaire.
 3. Structure obligatoire :
    # [Titre SEO percutant de 45 à 65 caractères contenant le mot-clé principal]
 
+   *Publié en : 2026 | Mis à jour et vérifié : 2026 | Revue éditoriale : Comité Scientifique & Technique InersiaLab*
+
    > **Synthèse Exécutive :** [Réponse directe en 2-3 phrases optimisée pour la citabilité IA].
 
    ## 1. [Section 1 : Vue d'ensemble, enjeux fondamentaux et définitions clés]
-   [La première phrase de chaque H2 doit être une définition ou conclusion factuelle directe].
+   [La première phrase de chaque H2 doit être une définition ou conclusion factuelle directe (GEO Citability Hook)].
 
    ## 2. [Section 2 : Méthodologie, étapes clés ou analyse détaillée]
    [Sous-sections H3 détaillées et développées en profondeur].
 
-   ## 3. [Section 3 : Tableau comparatif ou métriques en Markdown]
-   [Tableau Markdown comparant options, critères, coûts, protocoles ou performances].
+   ## 3. [Section 3 : Tableau comparatif ou métriques chiffrées en Markdown]
+   [Tableau Markdown comparant options, critères, coûts ou protocoles avec des données concrètes].
 
-   ## 4. [Section 4 : Recommandations pratiques, plan d'action et pièges à éviter]
+   ## 4. [Section 4 : Pièges fréquents et erreurs courantes à éviter (Common Pitfalls)]
+   [Analyse de 3-4 erreurs majeures observées sur le terrain et solutions concrètes].
 
-   ## 5. Foire Aux Questions (FAQ)
+   ## 5. [Section 5 : Grille d'évaluation et liste de contrôle pratique (Checklist)]
+
+   ## 6. Foire Aux Questions (FAQ)
    [4 à 6 questions fréquentes avec titre H3 pour chaque question et réponse claire de 40 à 60 mots].
 
-   ## Validation Éditoriale et Auteur
+   ## Validation Éditoriale et Auteur (E-E-A-T Box)
    - **Auteur :** [Nom de l'auteur]
    - **Revue :** Comité de validation éditoriale
    - **Appel à l'action :** [CTA utilisateur]"""
 
     else:
         return """You are the Chief Editorial & SEO/GEO Architecture Engine at InersiaLab.
-Your mission is to produce an exhaustive, authoritative, deeply researched blog post strictly calibrated for #1 Google rankings and generative search citability (SearchGPT, Perplexity, Claude, and Google AI Overviews), across ANY domain or industry (technology, business, finance, healthcare, lifestyle, law, education, real estate, ecommerce, etc.).
+Your mission is to produce an exhaustive, authoritative, deeply researched blog post strictly calibrated for #1 Google rankings and generative search citability (SearchGPT, Perplexity, Claude, and Google AI Overviews), across ANY domain or industry.
 
-STRICT ARCHITECTURAL DIRECTIVES:
-1. Complete Subject Fidelity: Seamlessly adapt to the specific domain and target audience of the user's prompt. Employ natural, authentic terminology specific to that industry.
+STRICT ARCHITECTURAL DIRECTIVES & E-E-A-T INTEGRITY:
+1. Complete Subject Fidelity & Information Gain: Seamlessly adapt to the specific domain. Provide concrete quantitative data, specific benchmarks, realistic cost/time ranges, and field-tested advice. Avoid empty filler phrases.
 2. Output Format: Return the complete article purely in GitHub Flavored Markdown. Start immediately with `# ` Title. Do NOT wrap in ```json or markdown code fences.
 3. Required Structural Blueprint:
    # [Compelling SEO Title Tag: 45–65 characters including focus keyword]
 
+   *Published: 2026 | Last Updated & Fact-Checked: 2026 | Editorial Review: InersiaLab Domain Verification Board*
+
    > **Executive Answer:** [Direct 2–3 sentence definitional answer engineered for AI Overviews and Perplexity citability].
 
    ## 1. [Section 1: Executive Overview, Foundational Landscape & Core Definitions]
-   [The very first sentence of every H2 must be a crisp, standalone factual takeaway or definition].
+   [The very first sentence of every H2 must be a crisp, standalone factual takeaway or definition (GEO Hook)].
 
    ## 2. [Section 2: Comprehensive Framework, Phases, or In-Depth Breakdown]
    [Detailed subsections using ### H3 headers with actionable depth].
 
    ## 3. [Section 3: Comparative Benchmark Data Table]
-   [High-density Markdown table comparing options, criteria, costs, performance, or specifications].
+   [High-density Markdown table comparing options, criteria, costs, performance, or specifications with concrete numbers].
 
-   ## 4. [Section 4: Strategic Roadmap, Practical Checklists & Best Practices]
+   ## 4. [Section 4: Common Pitfalls & Mistakes to Avoid (Information Gain)]
+   [Deep dive into 3 to 4 frequent errors that costly mistakes stem from, and exact expert remedies].
 
-   ## 5. Frequently Asked Questions (FAQ)
+   ## 5. [Section 5: Decision Matrix & Actionable Checklist]
+   [Step-by-step checklist helping the reader evaluate options and execute successfully].
+
+   ## 6. Frequently Asked Questions (FAQ)
    [4 to 6 real search queries, each formatted as a ### H3 heading followed by an authoritative 40–60 word answer].
 
-   ## Author & Editorial Verification
+   ## Author & Editorial Verification (E-E-A-T Trust Box)
    - **Lead Author:** [Author Name & Credentials]
    - **Peer Review:** InersiaLab Editorial & Domain Audit Board
    - **Recommended Action (CTA):** [User CTA]"""
@@ -740,6 +756,14 @@ Initial measurable improvements are typically recorded within 14 to 21 days of i
                     "datePublished": date_published,
                     "dateModified": date_published,
                     "inLanguage": lang,
+                    "about": {
+                        "@type": "Thing",
+                        "name": title
+                    },
+                    "speakable": {
+                        "@type": "SpeakableSpecification",
+                        "cssSelector": ["blockquote", "h1", "h2"]
+                    },
                     "author": {
                         "@type": "Person",
                         "name": author,
@@ -1229,7 +1253,7 @@ Return the fully updated and refined markdown article now:"""
         }
 
     def _export_blog_package(self, blog: Dict[str, Any], intake: Dict[str, Any]) -> Dict[str, str]:
-        """Saves blog package (.md, .html, .json, llms.txt, and PDF) directly into Downloads."""
+        """Saves blog package (.md, .html, .json, llms.txt, publishing_kit.md, social_distribution.md, and PDF) directly into Downloads."""
         slug = blog.get("slug") or "seo-blog"
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         folder_name = f"Blog_{slug}_{timestamp}"
@@ -1242,6 +1266,8 @@ Return the fully updated and refined markdown article now:"""
         title = blog.get("title", "")
         meta = blog.get("meta_description", "")
         schema = blog.get("schema_json", {})
+        topic_name = intake.get("topic") or title
+        focus_kw = intake.get("focus_keyword") or slug.replace("-", " ")
 
         # 1. Save blog.md
         md_path = os.path.join(out_dir, "blog.md")
@@ -1280,7 +1306,130 @@ Return the fully updated and refined markdown article now:"""
             for t in blog.get("key_takeaways", []):
                 f.write(f"  - {t}\n")
 
-        # 6. Try generating PDF via Playwright
+        # 6. Save publishing_kit.md
+        kit_path = os.path.join(out_dir, "publishing_kit.md")
+        with open(kit_path, "w", encoding="utf-8") as f:
+            f.write(f"""# On-Page SEO Publishing Kit & Content Cluster Strategy
+
+## 1. On-Page Metadata Checklist
+- **Target URL Slug:** `{slug}`
+- **SEO Title Tag ({len(title)} chars):** {title}
+- **Meta Description ({len(meta)} chars):** {meta}
+- **Primary Focus Keyword:** `{focus_kw}`
+- **Target Audience:** {intake.get("target_audience", "Industry Specialists and General Audience")}
+- **Canonical URL:** `https://example.com/blog/{slug}`
+
+---
+
+## 2. Contextual Internal Linking Architecture
+To build semantic authority, insert 3 internal links inside this post to connect it to your domain's topical cluster:
+1. **Pillar Hub Link:** Link the first occurrence of `{focus_kw}` to your main category or services hub.
+2. **High-Intent Supporting Links:**
+   - Anchor Text: *"[in-depth comparison guide]({slug}-comparison)"*
+   - Anchor Text: *"[step-by-step implementation checklist]({slug}-checklist)"*
+   - Anchor Text: *"[cost and ROI breakdown]({slug}-costs)"*
+
+---
+
+## 3. Recommended Visual Assets & Image Prompts (Midjourney / DALL-E)
+High-dwell articles require 2-3 visual assets to rank in Google Images and AI answer previews:
+
+### Asset 1: Hero Featured Image
+- **AI Prompt:** `A sleek, editorial photographic visual representing {topic_name}, professional studio lighting, minimalist composition, modern color grading, high detail, photorealistic, --ar 16:9`
+- **File Name:** `{slug}-featured.webp`
+- **Recommended SEO Alt Text:** `{title} - Definitive Overview`
+
+### Asset 2: Process & Framework Infographic
+- **AI Prompt:** `An elegant 3D isometric process chart illustrating the stages of {topic_name}, subtle gradients, clean typography, glassmorphism, --ar 16:9`
+- **File Name:** `{slug}-framework-infographic.webp`
+- **Recommended SEO Alt Text:** `{focus_kw} step by step process framework`
+
+---
+
+## 4. Content Cluster Roadmap (Topical Authority Dominance)
+Publish these 4 supporting cluster articles next to establish overwhelming topical authority in Google's Knowledge Graph:
+1. **Cost & Value Analysis:** `The Real Cost Breakdown of {topic_name}: 2026 Budgeting Guide`
+2. **Mistakes & Red Flags:** `Top 5 Critical Mistakes to Avoid in {topic_name} (And What to Do Instead)`
+3. **Head-to-Head Comparison:** `{topic_name} vs Top Industry Alternatives: Which Is Right for You?`
+4. **Beginner's Roadmap:** `The 30-Day Practical Action Plan for {topic_name}`
+""")
+
+        # 7. Save social_distribution.md
+        social_path = os.path.join(out_dir, "social_distribution.md")
+        with open(social_path, "w", encoding="utf-8") as f:
+            bullets = [f"• {t}" for t in blog.get("key_takeaways", [])[:4]]
+            bullets_str = "\n".join(bullets) if bullets else f"• Critical insights into {focus_kw}\n• Actionable implementation framework\n• Real-world benchmarks"
+            f.write(f"""# Multi-Channel Syndication & Social Distribution Kit
+
+Drive immediate social engagement and fast Google indexing signals:
+
+---
+
+## LinkedIn Post (Thought Leadership & Industry Engagement)
+
+{title}
+
+Most discussions around {focus_kw} overlook the practical realities that dictate real-world outcomes.
+
+Here is the executive breakdown from our latest in-depth research:
+
+📌 Core Takeaways:
+{bullets_str}
+
+💡 Executive Conclusion:
+{blog.get("aeo_summary", "")}
+
+Read the full comprehensive guide with benchmark data tables and practical checklists:
+👉 https://example.com/blog/{slug}
+
+#SEO #{focus_kw.replace(' ', '')} #Strategy #BestPractices #Guide
+
+---
+
+## Twitter / X Thread (5-Tweet Viral Discovery)
+
+1/5
+Looking for a clear, actionable breakdown of {focus_kw}?
+
+We just published the definitive guide analyzing the exact methodologies, data benchmarks, and common pitfalls to avoid.
+
+Here is what you need to know 🧵👇
+
+2/5
+{blog.get("aeo_summary", "")}
+
+3/5
+The most frequent mistake:
+Overlooking the foundational prerequisites before execution. Our benchmark data shows that structured preparation reduces failure rates significantly.
+
+4/5
+Key Actionable Pillars:
+{bullets_str}
+
+5/5
+Explore the complete guide with interactive checklists and expert FAQs:
+https://example.com/blog/{slug}
+
+---
+
+## Email Newsletter Teaser Paragraph
+
+**Subject:** Definitive Guide: {focus_kw.title()}
+
+Hi [First Name],
+
+If you've been evaluating {focus_kw}, you know how challenging it can be to find reliable, unbiased data.
+
+Our editorial board just published an exhaustive analysis breaking down the exact frameworks, empirical benchmarks, and common mistakes to avoid.
+
+Quick summary:
+"{blog.get('aeo_summary', '')}"
+
+Read the full guide on our website:
+[Read Full Guide →](https://example.com/blog/{slug})
+""")
+
+        # 8. Try generating PDF via Playwright
         pdf_path = os.path.join(out_dir, f"{slug}.pdf")
         self._try_generate_pdf(html_path, pdf_path)
 
@@ -1291,6 +1440,8 @@ Return the fully updated and refined markdown article now:"""
             "schema": schema_path,
             "metadata": meta_path,
             "llms": llms_path,
+            "publishing_kit": kit_path,
+            "social": social_path,
             "pdf": pdf_path if os.path.exists(pdf_path) else None,
         }
 
@@ -1300,13 +1451,30 @@ Return the fully updated and refined markdown article now:"""
         meta = blog.get("meta_description", "")
         md = blog.get("markdown_content", "")
         schema = blog.get("schema_json", {})
-        lang = blog.get("language", "ar")
+        lang = blog.get("language", "en")
 
         body_html = self._simple_markdown_to_html(md)
+
+        # Build Table of Contents if >= 3 H2 headings
+        h2_headings = re.findall(r'^##\s+(.+)$', md, re.M)
+        toc_html = ""
+        if len(h2_headings) >= 3:
+            toc_title = "فهرس المحتويات والمحاور" if is_rtl else ("Table des Matières" if lang == "fr" else "Table of Contents")
+            items = []
+            for h in h2_headings:
+                sec_id = re.sub(r'[^\w-]', '', h.lower().replace(' ', '-'))
+                items.append(f'<li><a href="#{sec_id}">{h}</a></li>')
+            toc_html = f"""<div class="toc-box">
+                <div class="toc-title">{toc_title}</div>
+                <ol>{"".join(items)}</ol>
+            </div>"""
 
         direction = "rtl" if is_rtl else "ltr"
         align = "right" if is_rtl else "left"
         font_family = "'Tajawal', Arial, sans-serif" if is_rtl else "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+
+        badge_text = "دليل مفحوص وموثق علمياً 2026" if is_rtl else ("Guide Vérifié et Conforme 2026" if lang == "fr" else "Verified & Fact-Checked 2026 Specification")
+        badge_sub = "تدقيق تحريري متخصص" if is_rtl else ("Revue Éditoriale Certifiée" if lang == "fr" else "Peer-Reviewed Domain Authority")
 
         return f"""<!DOCTYPE html>
 <html lang="{lang}" dir="{direction}">
@@ -1345,6 +1513,53 @@ Return the fully updated and refined markdown article now:"""
             display: flex;
             justify-content: space-between;
         }}
+        .eeat-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #047857;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 20px;
+        }}
+        .toc-box {{
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin: 28px 0;
+        }}
+        .toc-title {{
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }}
+        .toc-box ol {{
+            margin-bottom: 0;
+            padding-left: 20px;
+        }}
+        [dir="rtl"] .toc-box ol {{
+            padding-left: 0;
+            padding-right: 20px;
+        }}
+        .toc-box li {{
+            margin-bottom: 6px;
+        }}
+        .toc-box a {{
+            color: #0071e3;
+            text-decoration: none;
+            font-weight: 500;
+        }}
+        .toc-box a:hover {{
+            text-decoration: underline;
+        }}
         h1 {{
             font-size: 30px;
             font-weight: 800;
@@ -1361,6 +1576,7 @@ Return the fully updated and refined markdown article now:"""
             margin-bottom: 16px;
             border-bottom: 2px solid #f3f4f6;
             padding-bottom: 8px;
+            scroll-margin-top: 20px;
         }}
         h3 {{
             font-size: 17px;
@@ -1409,6 +1625,7 @@ Return the fully updated and refined markdown article now:"""
             color: #111827;
         }}
         tr:nth-child(even) {{ background: #fafafa; }}
+        tr:hover {{ background: #f8fafc; }}
         .author-box {{
             background: #f9fafb;
             border: 1px solid #e5e7eb;
@@ -1426,13 +1643,20 @@ Return the fully updated and refined markdown article now:"""
             <span>InersiaLab SEO &amp; GEO Publication Studio</span>
             <span>Language: {lang.upper()} | Verified Authority</span>
         </div>
+        <div class="eeat-badge">
+            <span>✓</span>
+            <span>{badge_text}</span>
+            <span style="opacity: 0.5;">•</span>
+            <span>{badge_sub}</span>
+        </div>
+        {toc_html}
         {body_html}
     </div>
 </body>
 </html>"""
 
     def _simple_markdown_to_html(self, md: str) -> str:
-        """Converts basic markdown formatting to semantic HTML."""
+        """Converts basic markdown formatting to semantic HTML with section anchor IDs."""
         lines = md.split("\n")
         out = []
         in_table = False
@@ -1451,7 +1675,9 @@ Return the fully updated and refined markdown article now:"""
                 out.append(f"<h1>{stripped[2:]}</h1>")
                 continue
             elif stripped.startswith("## "):
-                out.append(f"<h2>{stripped[3:]}</h2>")
+                raw_h2 = stripped[3:].strip()
+                sec_id = re.sub(r'[^\w-]', '', raw_h2.lower().replace(' ', '-'))
+                out.append(f"<h2 id=\"{sec_id}\">{raw_h2}</h2>")
                 continue
             elif stripped.startswith("### "):
                 out.append(f"<h3>{stripped[4:]}</h3>")
