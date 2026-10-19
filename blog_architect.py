@@ -110,59 +110,32 @@ def sanitize_article_text(text: str, lang: str = "en") -> str:
     return text.strip()
 
 
-def resolve_source_url(org_name: str, domain: str = "general") -> str:
-    """Maps organization names to official, verified registries and standards body URLs."""
-    org_lower = org_name.lower()
-    if "who" in org_lower or "صحة" in org_name or "oms" in org_lower:
-        return "https://www.who.int"
-    if "jci" in org_lower or "مشتركة" in org_name or "joint commission" in org_lower:
-        return "https://www.jointcommissioninternational.org"
-    if "aasld" in org_lower or "كبد" in org_name or "hepatology" in org_lower:
-        return "https://www.aasld.org"
-    if "ilts" in org_lower:
-        return "https://ilts.org"
-    if "niddk" in org_lower or "nih" in org_lower:
-        return "https://www.niddk.nih.gov"
-    if "iso" in org_lower or "معايير" in org_name:
-        return "https://www.iso.org"
-    if "nist" in org_lower:
-        return "https://www.nist.gov"
-    if "ieee" in org_lower:
-        return "https://www.ieee.org"
-    if "iata" in org_lower:
-        return "https://www.iata.org"
-    if "unwto" in org_lower or "سياحة" in org_name or "tourism" in org_lower:
-        return "https://www.unwto.org"
-    if "wttc" in org_lower:
-        return "https://wttc.org"
-    if "imf" in org_lower or "نقد" in org_name:
-        return "https://www.imf.org"
-    if "world bank" in org_lower or "بنك" in org_name:
-        return "https://www.worldbank.org"
-    if "fda" in org_lower or "غذاء" in org_name:
-        return "https://www.fda.gov"
-    if "cdc" in org_lower or "أوبئة" in org_name:
-        return "https://www.cdc.gov"
-    if "has" in org_lower or "haute autorité" in org_lower:
-        return "https://www.has-sante.fr"
-    if "anssi" in org_lower:
-        return "https://www.ssi.gouv.fr"
-    if "tts" in org_lower:
-        return "https://tts.org"
-    if "godt" in org_lower:
-        return "http://www.transplant-observatory.org"
-    if "srtr" in org_lower or "unos" in org_lower:
-        return "https://www.srtr.org"
+def resolve_source_url(org_name: str, doc_title: str = "", *args, **kwargs) -> str:
+    """Dynamically resolves authoritative source URLs directly from the LLM's cited source and publication.
+    ZERO static or canned dictionaries.
+    1. Extracts real URL if already present in the cited text (http:// or https://).
+    2. Detects referenced official domain names (.org, .gov, .edu, .int, etc.).
+    3. Generates a live academic and institutional registry query on Google Scholar for the exact organization and document title.
+    """
+    if not org_name and not doc_title:
+        return "https://scholar.google.com"
 
-    if "fao" in org_lower:
-        return "https://www.fao.org"
-    if "unesco" in org_lower:
-        return "https://www.unesco.org"
-    if "sec" in org_lower:
-        return "https://www.sec.gov"
+    combined = f"{org_name} {doc_title}".strip()
 
-    # Dynamic fallback: direct academic research query on Google Scholar for this exact institution
-    clean_query = re.sub(r'[^a-zA-Z0-9\u0600-\u06FF\s]', ' ', org_name).strip()
+    # 1. Direct URL in the cited source text
+    url_match = re.search(r'https?://[^\s)\]]+', combined)
+    if url_match:
+        return url_match.group(0).rstrip('.,;:()[]"\'')
+
+    # 2. Extract official domain name mentioned in source (e.g. who.int, nist.gov, iso.org, cdc.gov, ieee.org)
+    domain_match = re.search(r'\b([a-zA-Z0-9-]+\.(?:org|gov|edu|int|io|com|net|sa|ae|eg|fr|uk|de))\b', combined, re.IGNORECASE)
+    if domain_match:
+        return f"https://www.{domain_match.group(1).lower()}"
+
+    # 3. Dynamic Scholarly and Institutional Registry Query
+    # Constructs an exact research search for the specific organization and publication title
+    clean_query = re.sub(r'[^a-zA-Z0-9\u0600-\u06FF\s]', ' ', combined).strip()
+    clean_query = re.sub(r'\s+', ' ', clean_query)
     encoded = urllib.parse.quote_plus(clean_query)
     return f"https://scholar.google.com/scholar?q={encoded}"
 
@@ -206,7 +179,7 @@ def extract_sources_from_markdown(md: str, domain: str = "general", lang: str = 
                 sources.append({
                     "org": org_name,
                     "title": title_text,
-                    "url": extracted_url or resolve_source_url(org_name, domain),
+                    "url": extracted_url or resolve_source_url(org_name, title_text),
                     "citation_context": citation_ctx,
                     "raw": l
                 })
@@ -217,15 +190,31 @@ def extract_sources_from_markdown(md: str, domain: str = "general", lang: str = 
                 sources.append({
                     "org": "Accredited Authority" if lang != "ar" else "هيئة معتمدة",
                     "title": clean_no_url,
-                    "url": extracted_url or resolve_source_url(clean_no_url, domain),
+                    "url": extracted_url or resolve_source_url(clean_no_url, ""),
                     "citation_context": "مرجع مؤسسي معتمد ومعايير دولية محكمة" if lang == "ar" else "Authoritative institutional registry and peer-reviewed domain standard",
                     "raw": l
+                })
+
+    # If no sources in section 7, scan the entire article text for inline citations (provenance grounding)
+    if not sources:
+        inline_cites = re.findall(r'(?:\(|\[)(?:المصدر|المراجع|مرجع|Source|Reference|R[ée]f[ée]rence|According to|استناداً إلى|وفقاً لـ)\s*:?\s*([^()\[\]\n]+)(?:\)|\])', md, re.IGNORECASE)
+        for c in inline_cites:
+            c_clean = re.sub(r'[*_`]', '', c).strip()
+            if len(c_clean) > 8:
+                c_url_m = re.search(r'https?://[^\s)\]]+', c_clean)
+                c_url = c_url_m.group(0) if c_url_m else None
+                sources.append({
+                    "org": "Accredited Authority" if lang != "ar" else "هيئة معتمدة وموثقة",
+                    "title": c_clean,
+                    "url": c_url or resolve_source_url(c_clean, ""),
+                    "citation_context": "إسناد مباشر من نصوص المقال المعتمدة" if lang == "ar" else "Direct in-text provenance citation from article narrative",
+                    "raw": c_clean
                 })
 
     # Ensure every single source has an active registry URL and citation context
     for s in sources:
         if not s.get("url"):
-            s["url"] = resolve_source_url(s.get("org", ""), domain)
+            s["url"] = resolve_source_url(s.get("org", ""), s.get("title", ""))
         if not s.get("citation_context"):
             s["citation_context"] = "مرجع مؤسسي معتمد ومعايير دولية محكمة" if lang == "ar" else "Authoritative institutional registry and peer-reviewed domain standard"
 
@@ -361,11 +350,11 @@ def build_system_prompt(language: str = "en") -> str:
    - اكتب باللغة العربية الفصحى السليمة حصراً مع علامات الترقيم العربية القياسية (الفواصل "،" وعلامات الاستفهام "؟" والنقاط "." والأقواس "()").
    - لا تدرج أي وسوم تفكير نموذجية (<think> أو <reasoning>) أو وسوم نظام ([INST] أو <<SYS>>).
 
-2. الدقة الواقعية والمصداقية العلمية بنسبة 100% (Strict Factual Accuracy & Verification):
-   - جميع الأرقام، النسب المئوية، التكاليف، الجداول الزمنية، والمعطيات الإجرائية يجب أن تكون صحيحة ودقيقة ومطابقة للإجماع العلمي والميداني المعاصر لعام 2024–2026.
-   - يمنع منعاً باتاً اختلاق إحصائيات وهمية أو إطلاق وعود مطلقة زائفة (ممنوع الادعاء بنسبة نجاح 100%؛ بل اذكر النسب الموثقة في السجلات السريرية المعتمدة مثل 85% إلى 92%).
+2. الدقة الواقعية والمصداقية العلمية بنسبة 100% (Strict Factual Accuracy & Grounded Sources):
+   - جميع الأرقام، النسب المئوية، التكاليف، الجداول الزمنية، والمعطيات الإجرائية يجب أن تكون صحيحة ودقيقة ومطابقة للإجماع المهني والمعايير المعتمدة لعام 2024–2026.
+   - يمنع منعاً باتاً اختلاق إحصائيات وهمية أو إطلاق وعود مطلقة زائفة (ممنوع الادعاء بنسبة نجاح 100%؛ بل اذكر النسب الموثقة في السجلات المعتمدة).
    - التناسق العددي الكامل: يجب أن تتطابق الأرقام المذكورة في النص تماماً مع الأرقام الواردة في الجداول والأسئلة الشائعة والخلاصة التنفيذية.
-   - الإسناد المصدري الدقيق: ابحث في مصادرك المعرفية واسند كل حقيقة رئيسية إلى جهتها الرسمية التخصصية المعتمدة لموضوع المقال تحديداً.
+   - إسناد النصوص لمصادرها الحقيقية (Dynamic In-Text Grounding): اسند كل حقيقة رئيسية ورقم ومعيار إجرائي في متن المقال وجداوله صراحة إلى الهيئة أو المرجع الرسمي الحقيقي الذي استمدت منه هذه النصوص معلوماتها (مثال: "وفقاً لـ [اسم الهيئة: اسم التقرير]" أو "[استناداً لمعيار X]").
 
 3. الهيكل الهندسي الإلزامي للمقال (GitHub Flavored Markdown):
    # [عنوان SEO جذاب ودقيق بين 45 إلى 65 حرفاً يتضمن الكلمة المفتاحية الرئيسية]
@@ -398,9 +387,9 @@ def build_system_prompt(language: str = "en") -> str:
    [الإجابة المباشرة والواضحة].
 
    ## 7. المراجع والمصادر الرسمية المعتمدة (Official Verified Sources & References)
-   [ابحث في مصادرك المعرفية الرسمية المحكمة واستخرج من 4 إلى 6 مراجع معتمدة خاصة بموضوع المقال تحديداً بتنسيق نقطي واضح ومباشر]:
-   - **[اسم الهيئة أو المنظمة التخصصية الأولى]:** [اسم التقرير أو الدليل الإرشادي أو المعيار القياسي وسنة النشر 2024–2026] ([الرابط الرسمي إن وجد]) - [ما تثبته هذه المرجعية بدقة]
-   - **[اسم الهيئة الرقابية أو الاعتمادية الثانية]:** [المعايير الدولية أو الوطنية المطبقة] ([الرابط الرسمي إن وجد]) - [بيانات التوثيق والامتثال]
+   [اجمع من 4 إلى 6 مراجع وهيئات وتقارير رسمية حقيقية استمدت منها نصوص هذا المقال وجداوله معلوماتها بدقة، مع ذكر الرابط الرسمي الفعلي (URL) أو النطاق لكل جهة]:
+   - **[اسم الهيئة أو المنظمة الرسمية التي استند إليها النص]:** [اسم التقرير أو الدليل الإرشادي أو المعيار القياسي وسنة النشر] ([الرابط الرسمي إن وجد]) - [ما تثبته هذه المرجعية بدقة في نصوص المقال]
+   - **[اسم الهيئة الرقابية أو الاعتمادية الثانية]:** [المعايير الدولية أو الوطنية المطبقة] ([الرابط الرسمي إن وجد]) - [بيانات التوثيق والامتثال في المقال]
    - **[اسم الجمعية التخصصية أو الأكاديمية الثالثة]:** [الدليل الإرشادي التخصصي المعتمد] ([الرابط الرسمي إن وجد]) - [الإسناد العلمي والميداني]
    - **[اسم السجل الرسمي أو الدوري المحكم الرابع]:** [البيانات الإحصائية ومعدلات الأداء الموثقة] ([الرابط الرسمي إن وجد]) - [التحقق الإحصائي المعتمد]
 
@@ -425,7 +414,7 @@ STANDARDS ÉDITORIAUX ET EXACTITUDE FACTUELLE (CRITICAL DIRECTIVES) :
 2. Rigueur factuelle et cohérence des données chiffrées (100% Accurate & Verified) :
    - Chaque chiffre, taux de réussite, calendrier, coût et protocole doit être strictement exact, vérifiable et conforme au consensus professionnel international (2024–2026).
    - Cohérence numérique absolue entre le corps du texte, le tableau comparatif, les synthèses et la FAQ.
-   - Attribution obligatoire des chiffres à des organismes certificateurs officiels spécifiques au domaine de l'article.
+   - Traçabilité et Attribution Source Dynamique : Mentionnez directement dans le texte et les tableaux les organismes officiels dont sont issues les données de l'article (ex. « Selon [Organisme : Titre du rapport]... »).
 
 3. Structure obligatoire (GitHub Flavored Markdown) :
    # [Titre SEO percutant de 45 à 65 caractères contenant le mot-clé principal]
@@ -452,8 +441,8 @@ STANDARDS ÉDITORIAUX ET EXACTITUDE FACTUELLE (CRITICAL DIRECTIVES) :
    [4 à 6 questions fréquentes avec titre H3 pour chaque question et réponse claire de 40 à 60 mots].
 
    ## 7. Sources Officielles et Références Vérifiées (Official Verified Sources & References)
-   [Recherchez dans votre base de connaissances 4 à 6 organismes accrédités spécifiques au sujet] :
-   - **[Organisme / Autorité Spécialisée 1] :** [Titre du référentiel, rapport officiel ou norme] ([URL Officielle si disponible]) - [Validation des données]
+   [Rassemblez 4 à 6 organismes accrédités, normes et registres officiels dont sont directement issues les données et méthodologies de cet article, avec leurs liens officiels] :
+   - **[Organisme / Autorité dont est issu le texte] :** [Titre du Référentiel, Guide ou Norme] ([URL Officielle si disponible]) - [Validation précise des données de l'article]
    - **[Institution de Contrôle / Régulation 2] :** [Normes d'accréditation et critères appliqués] ([URL Officielle si disponible]) - [Garantie méthodologique]
    - **[Société Savante ou Conseil Professionnel 3] :** [Recommandations ou directives techniques 2024–2026] ([URL Officielle si disponible]) - [Consensus scientifique]
    - **[Registre Officiel ou Publication à Comité de Lecture 4] :** [Données empiriques et statistiques validées] ([URL Officielle si disponible]) - [Données de référence]
@@ -475,10 +464,10 @@ STRICT ARCHITECTURAL DIRECTIVES & DATA INTEGRITY:
    - Do NOT output model reasoning tags (<think> or <reasoning>) or raw markdown wrappers (```markdown).
 
 2. Mandatory Factual Accuracy & Data Precision (Zero Hallucination Policy):
-   - Every statistic, percentage, timeframe, cost benchmark, clinical rate, or technical protocol must be strictly accurate, grounded in verified consensus and accredited institutional registries (2024–2026).
+   - Every statistic, percentage, timeframe, cost benchmark, or technical protocol must be strictly accurate, grounded in verified consensus and accredited institutional registries (2024–2026).
    - Strict numerical consistency: Metrics stated in the narrative must match identically in comparison tables, executive summaries, and FAQs.
-   - Prohibit sensationalism or fabricated absolutes (e.g., never guarantee "100% success rate"; use verified empirical ranges like "85%–92% 5-year graft survival rate according to international registries").
-   - Explicit Source Attribution: Search your knowledge base and attribute all major data points to accredited governing bodies specific to this exact subject domain.
+   - Prohibit sensationalism or fabricated absolutes (e.g., never guarantee "100% success rate"; use verified empirical ranges grounded in accredited institutional data).
+   - Dynamic In-Text Source Provenance (Mandatory Grounding): Every major claim, framework, benchmark, and metric in the article text and comparison table MUST explicitly cite its real authoritative source directly in the text (e.g., "According to [Organization: Document Title / Official URL]...").
 
 3. Required Structural Blueprint (GitHub Flavored Markdown):
    # [Compelling SEO Title Tag: 45–65 characters including focus keyword]
@@ -506,8 +495,8 @@ STRICT ARCHITECTURAL DIRECTIVES & DATA INTEGRITY:
    [4 to 6 real search queries, each formatted as a ### H3 heading followed by an authoritative 40–60 word answer].
 
    ## 7. Verified Official Sources & References
-   [Search your knowledge base and retrieve 4 to 6 authentic accredited organizations, governing bodies, clinical/technical guidelines, or official registries specifically relevant to the topic]:
-   - **[Accredited Organization / Institution 1]:** [Official Standard / Guideline / Registry Report Title] ([Official URL if available]) - [What specific data or protocol it substantiates]
+   [Compile 4 to 6 authentic accredited organizations, governing bodies, or published guidelines from which this article's text, tables, and metrics were directly derived. Include official URLs or web domains for each source]:
+   - **[Exact Organization / Institution cited in text]:** [Official Standard / Guideline / Registry Report Title] ([Official URL or Domain if available]) - [The exact data point, section, or methodology this source substantiates in this article]
    - **[Accredited Research Authority 2]:** [Clinical / Technical Benchmark Study] ([Official URL if available]) - [Evidence verification]
    - **[Regulatory or Industry Board 3]:** [Standard Operating Procedure and Field Evidence] ([Official URL if available]) - [Governance standard]
    - **[Peer-Reviewed Registry / Global Authority 4]:** [Empirical Data and Performance Metrics] ([Official URL if available]) - [Statistical benchmark]
@@ -656,19 +645,19 @@ class AlgorithmicBlogSynthesizer:
             {
                 "org": f"الهيئة الدولية للاعتماد والمعايير المهنية",
                 "title": f"الدليل الإرشادي والمعايير القياسية لـ {topic} (2024–2026)",
-                "url": resolve_source_url(topic, domain),
+                "url": resolve_source_url("الهيئة الدولية للاعتماد والمعايير المهنية", f"الدليل الإرشادي لـ {topic}"),
                 "citation_context": f"المعايير المرجعية وضوابط الجودة المطبقة لـ {focus_kw}"
             },
             {
                 "org": f"المجلس التخصصي للبحوث والدراسات",
                 "title": f"التقرير السنوي لمؤشرات الكفاءة والأداء المعتمد لـ {topic}",
-                "url": resolve_source_url(f"{topic} research", domain),
+                "url": resolve_source_url("المجلس التخصصي للبحوث والدراسات", f"مؤشرات الأداء لـ {topic}"),
                 "citation_context": f"البيانات الإحصائية ومعدلات الأداء الموثقة"
             },
             {
                 "org": f"منظمة المعايير الدولية",
                 "title": f"المواصفة القياسية لإدارة المخاطر وضمان جودة المخرجات في {topic}",
-                "url": resolve_source_url("iso", domain),
+                "url": resolve_source_url("منظمة المعايير الدولية", f"إدارة المخاطر في {topic}"),
                 "citation_context": "إطار الامتثال وضمان الجودة والموثوقية"
             }
         ]
@@ -764,8 +753,8 @@ class AlgorithmicBlogSynthesizer:
         aeo_summary = f"{focus_kw.title()} représente le cadre structuré permettant aux acteurs concernés d'obtenir des résultats mesurables, pérennes et conformes aux meilleures normes internationales."
 
         sources = [
-            {"org": f"Institut International de Normalisation - {topic}", "title": f"Référentiel des Bonnes Pratiques pour {topic} (2024–2026)", "url": resolve_source_url(topic, domain), "citation_context": f"Normes de référence pour {focus_kw}"},
-            {"org": "Conseil d'Audit et de Conformité", "title": f"Indicateurs de Performance et de Qualité pour {topic}", "url": resolve_source_url(f"{topic} audit", domain), "citation_context": "Données statistiques et protocoles validés"}
+            {"org": f"Institut International de Normalisation - {topic}", "title": f"Référentiel des Bonnes Pratiques pour {topic} (2024–2026)", "url": resolve_source_url(f"Institut International de Normalisation {topic}", f"Référentiel {topic}"), "citation_context": f"Normes de référence pour {focus_kw}"},
+            {"org": "Conseil d'Audit et de Conformité", "title": f"Indicateurs de Performance et de Qualité pour {topic}", "url": resolve_source_url(f"Conseil d'Audit et de Conformité {topic}", f"Indicateurs {topic}"), "citation_context": "Données statistiques et protocoles validés"}
         ]
         sources_md = "\n".join([f"- **{s['org']} :** {s['title']}." for s in sources])
 
@@ -858,8 +847,8 @@ Les premiers effets notables s'observent dès les premières semaines suivant la
         aeo_summary = f"{focus_kw.title()} is the structured framework enabling {audience.lower()} to achieve verified, high-impact results through proven operational protocols and evidence-based standards."
 
         sources = [
-            {"org": f"International Standards Board for {topic}", "title": f"Official Practice Guidelines & Operational Framework for {topic} (2024–2026)", "url": resolve_source_url(topic, domain), "citation_context": f"Authoritative benchmark for {focus_kw}"},
-            {"org": "Global Research & Verification Council", "title": f"Annual Statistical Report & Empirical Standards for {topic}", "url": resolve_source_url(f"{topic} research", domain), "citation_context": "Empirical data and verified performance metrics"}
+            {"org": f"International Standards Board for {topic}", "title": f"Official Practice Guidelines & Operational Framework for {topic} (2024–2026)", "url": resolve_source_url(f"International Standards Board for {topic}", f"Practice Guidelines {topic}"), "citation_context": f"Authoritative benchmark for {focus_kw}"},
+            {"org": "Global Research & Verification Council", "title": f"Annual Statistical Report & Empirical Standards for {topic}", "url": resolve_source_url(f"Global Research & Verification Council {topic}", f"Statistical Report {topic}"), "citation_context": "Empirical data and verified performance metrics"}
         ]
         sources_md = "\n".join([f"- **{s['org']}:** {s['title']}." for s in sources])
 
@@ -1142,24 +1131,53 @@ class BlogArchitect:
 
         return None
 
-    def _query_dynamic_sources(self, topic: str, lang: str = "en") -> List[Dict[str, str]]:
-        """Dynamically queries the keyless LLM to search its knowledge base and retrieve real-world authoritative sources for this exact topic."""
+    def _query_dynamic_sources(self, topic: str, lang: str = "en", article_text: str = "") -> List[Dict[str, str]]:
+        """Dynamically queries the keyless LLM to extract the real authoritative sources directly for the generated article text."""
         is_ar = (lang or "en").lower() == "ar"
         is_fr = (lang or "en").lower() == "fr"
 
+        text_snippet = ""
+        if article_text:
+            text_lines = [l.strip() for l in article_text.split("\n") if not l.startswith("#") and len(l.strip()) > 30]
+            text_snippet = "\n".join(text_lines[:15])[:1500].strip()
+
         if is_ar:
-            sys_p = "أنت باحث أكاديمي متخصص في استرجاع المصادر المعتمدة والمراجع الرسمية المحكمة. مهمتك البحث في معرفتك واستخراج 4 إلى 5 هيئات ومنظمات واعتمادات رسمية محكمة تتعلق بالموضوع المطلوب بدقة، دون أي رموز صينية أو وسوم تفكير."
-            user_p = f"""ابحث في مصادرك المعرفية الرسمية المعتمدة لعام 2024–2026 وقدم 4 إلى 5 مصادر وهيئات رسمية محكمة أو معايير قياسية لموضوع: '{topic}'.
+            sys_p = "أنت باحث أكاديمي متخصص في استرجاع وتوثيق المصادر الحقيقية للنصوص المكتوبة. مهمتك تحديد الهيئات والمنظمات والتقارير المعتمدة التي استمد منها هذا النص تحديداً معلوماته وأرقامه، دون أي رموز صينية أو وسوم تفكير."
+            if text_snippet:
+                user_p = f"""استناداً إلى نصوص المقال التالية المكتوبة حول '{topic}':
+\"\"\"
+{text_snippet}
+\"\"\"
+استخرج بدقة 4 إلى 5 هيئات ومنظمات واعتمادات ومراجع رسمية حقيقية استمدت منها هذه النصوص معاييرها وأرقامها، مع الرابط الرسمي الفعلي (URL) لكل جهة:
+- **[اسم الهيئة أو المنظمة الرسمية]**: [اسم التقرير أو الدليل الإرشادي أو المعيار القياسي] ([رابط الموقع الرسمي إن وجد]) - [ما تثبته هذه المرجعية بدقة في نصوص المقال]"""
+            else:
+                user_p = f"""ابحث في مصادرك المعرفية الرسمية المعتمدة لعام 2024–2026 وقدم 4 إلى 5 مصادر وهيئات رسمية محكمة أو معايير قياسية لموضوع: '{topic}'.
 المطلوب إخراج قائمة نقطية حصراً باللغة العربية بالتنسيق التالي:
 - **[اسم الهيئة أو المنظمة الرسمية]**: [اسم التقرير أو الدليل الإرشادي أو المعيار القياسي] ([رابط الموقع الرسمي إن وجد]) - [ما تثبته هذه المرجعية بدقة]"""
         elif is_fr:
-            sys_p = "Vous êtes un chercheur académique spécialisé dans la veille documentaire et les référentiels officiels."
-            user_p = f"""Recherchez dans votre base de connaissances 4 à 5 organismes officiels accrédités, registres ou normes internationales spécifiquement pour le sujet : '{topic}'.
+            sys_p = "Vous êtes un chercheur académique spécialisé dans le sourcing et la traçabilité documentaire des textes rédigés."
+            if text_snippet:
+                user_p = f"""En vous basant sur les extraits suivants de l'article rédigé pour le sujet '{topic}' :
+\"\"\"
+{text_snippet}
+\"\"\"
+Extrayez les 4 à 5 organismes officiels accrédités, registres ou normes dont sont directement issues ces informations, avec leurs liens officiels :
+- **[Nom de l'Organisme / Autorité]** : [Titre du Référentiel, Guide ou Norme] ([URL Officielle si disponible]) - [Ce que cette source valide dans le texte]"""
+            else:
+                user_p = f"""Recherchez dans votre base de connaissances 4 à 5 organismes officiels accrédités, registres ou normes internationales spécifiquement pour le sujet : '{topic}'.
 Format strict de liste à puces :
 - **[Nom de l'Organisme / Autorité]** : [Titre du Référentiel, Guide ou Norme] ([URL Officielle si disponible]) - [Ce que cette source valide]"""
         else:
-            sys_p = "You are an academic knowledge retrieval engine for authoritative institutions, clinical guidelines, and regulatory standards."
-            user_p = f"""Search your verified institutional knowledge base for 4 to 5 accredited governing bodies, official clinical/technical guidelines, or regulatory standards specifically governing: '{topic}'.
+            sys_p = "You are an academic knowledge retrieval engine specialized in direct text provenance and institutional sourcing."
+            if text_snippet:
+                user_p = f"""Based on the following article excerpts generated for topic '{topic}':
+\"\"\"
+{text_snippet}
+\"\"\"
+Extract 4 to 5 accredited governing bodies, official clinical/technical guidelines, or regulatory standards from which this exact text derived its facts, metrics, and procedures, including official URLs:
+- **[Accredited Organization / Institution]**: [Exact Standard / Guideline / Report Title] ([Official URL if available]) - [Specific benchmark or protocol substantiated in the text]"""
+            else:
+                user_p = f"""Search your verified institutional knowledge base for 4 to 5 accredited governing bodies, official clinical/technical guidelines, or regulatory standards specifically governing: '{topic}'.
 Strict bulleted format only:
 - **[Accredited Organization / Institution]**: [Exact Standard / Guideline / Report Title] ([Official URL if available]) - [Specific benchmark or protocol substantiated]"""
 
@@ -1277,7 +1295,7 @@ Strict bulleted format only:
         # Dynamic LLM search fallback: if Section 7 is missing or has fewer than 3 sources,
         # query the keyless LLM dynamically to search for authentic sources for THIS exact topic!
         if len(sources) < 3:
-            dynamic_sources = self._query_dynamic_sources(topic, lang)
+            dynamic_sources = self._query_dynamic_sources(topic, lang, article_text=clean_md)
             if dynamic_sources:
                 sources = dynamic_sources
 
