@@ -93,7 +93,11 @@ def sanitize_article_text(text: str, lang: str = "en") -> str:
     )
     text = cjk_pattern.sub('', text)
 
-    # 5. Clean up any artifacts introduced by removal (e.g. empty brackets, duplicate spaces, multiple commas)
+    # 5. Strip Unicode replacement character, BOM, and hidden control codes
+    text = text.replace('\ufffd', '').replace('\ufeff', '')
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+
+    # 6. Clean up any artifacts introduced by removal (e.g. empty brackets, duplicate spaces, multiple commas)
     text = re.sub(r'\(\s*\)', '', text)
     text = re.sub(r'\[\s*\]', '', text)
     text = re.sub(r'«\s*»', '', text)
@@ -624,11 +628,17 @@ class AlgorithmicBlogSynthesizer:
         now_iso = datetime.now().isoformat()
 
         if lang == "ar":
-            return AlgorithmicBlogSynthesizer._synthesize_arabic(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain)
+            res = AlgorithmicBlogSynthesizer._synthesize_arabic(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain)
         elif lang == "fr":
-            return AlgorithmicBlogSynthesizer._synthesize_french(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain)
+            res = AlgorithmicBlogSynthesizer._synthesize_french(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain)
         else:
-            return AlgorithmicBlogSynthesizer._synthesize_english(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain)
+            res = AlgorithmicBlogSynthesizer._synthesize_english(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain)
+
+        res["markdown_content"] = sanitize_article_text(res.get("markdown_content", ""), lang)
+        res["title"] = sanitize_article_text(res.get("title", ""), lang)
+        res["meta_description"] = sanitize_article_text(res.get("meta_description", ""), lang)
+        res["aeo_summary"] = sanitize_article_text(res.get("aeo_summary", ""), lang)
+        return res
 
     @staticmethod
     def _synthesize_arabic(data, topic, focus_kw, audience, author, cta, slug, now_iso, domain):
